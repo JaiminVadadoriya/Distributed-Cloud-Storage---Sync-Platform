@@ -1,0 +1,11 @@
+D:\college\cloud-storage\CloudStorage.Domain\bin\Debug\net9.0\CloudStorage.Domain.deps.json
+D:\college\cloud-storage\CloudStorage.Domain\bin\Debug\net9.0\CloudStorage.Domain.dll
+D:\college\cloud-storage\CloudStorage.Domain\bin\Debug\net9.0\CloudStorage.Domain.pdb
+D:\college\cloud-storage\CloudStorage.Domain\obj\Debug\net9.0\CloudStorage.Domain.GeneratedMSBuildEditorConfig.editorconfig
+D:\college\cloud-storage\CloudStorage.Domain\obj\Debug\net9.0\CloudStorage.Domain.AssemblyInfoInputs.cache
+D:\college\cloud-storage\CloudStorage.Domain\obj\Debug\net9.0\CloudStorage.Domain.AssemblyInfo.cs
+D:\college\cloud-storage\CloudStorage.Domain\obj\Debug\net9.0\CloudStorage.Domain.csproj.CoreCompileInputs.cache
+D:\college\cloud-storage\CloudStorage.Domain\obj\Debug\net9.0\CloudStorage.Domain.dll
+D:\college\cloud-storage\CloudStorage.Domain\obj\Debug\net9.0\refint\CloudStorage.Domain.dll
+D:\college\cloud-storage\CloudStorage.Domain\obj\Debug\net9.0\CloudStorage.Domain.pdb
+D:\college\cloud-storage\CloudStorage.Domain\obj\Debug\net9.0\ref\CloudStorage.Domain.dll

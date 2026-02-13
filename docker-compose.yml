@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  cloudstorage.api:
+    image: ${DOCKER_REGISTRY-}cloudstorageapi
+    build:
+      context: .
+      dockerfile: CloudStorage.API/Dockerfile
+    ports:
+      - "5000:8080"
+      - "5001:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=CloudStorageDb;Username=postgres;Password=yourpassword
+      - Jwt__Key=ThisIsASuperSecretKeyThatShouldBeLongEnoughForHS256Algorithm
+      - Jwt__Issuer=CloudStorageApi
+      - Jwt__Audience=CloudStorageClients
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    networks:
+      - cloudstorage-network
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: CloudStorageDb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: yourpassword
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - cloudstorage-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - cloudstorage-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  cloudstorage-network:
+    driver: bridge

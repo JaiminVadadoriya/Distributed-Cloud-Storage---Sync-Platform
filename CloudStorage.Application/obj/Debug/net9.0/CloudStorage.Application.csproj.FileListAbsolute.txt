@@ -1,0 +1,15 @@
+D:\college\cloud-storage\CloudStorage.Application\bin\Debug\net9.0\CloudStorage.Application.deps.json
+D:\college\cloud-storage\CloudStorage.Application\bin\Debug\net9.0\CloudStorage.Application.dll
+D:\college\cloud-storage\CloudStorage.Application\bin\Debug\net9.0\CloudStorage.Application.pdb
+D:\college\cloud-storage\CloudStorage.Application\bin\Debug\net9.0\CloudStorage.Domain.dll
+D:\college\cloud-storage\CloudStorage.Application\bin\Debug\net9.0\CloudStorage.Domain.pdb
+D:\college\cloud-storage\CloudStorage.Application\obj\Debug\net9.0\CloudStorage.Application.csproj.AssemblyReference.cache
+D:\college\cloud-storage\CloudStorage.Application\obj\Debug\net9.0\CloudStorage.Application.GeneratedMSBuildEditorConfig.editorconfig
+D:\college\cloud-storage\CloudStorage.Application\obj\Debug\net9.0\CloudStorage.Application.AssemblyInfoInputs.cache
+D:\college\cloud-storage\CloudStorage.Application\obj\Debug\net9.0\CloudStorage.Application.AssemblyInfo.cs
+D:\college\cloud-storage\CloudStorage.Application\obj\Debug\net9.0\CloudStorage.Application.csproj.CoreCompileInputs.cache
+D:\college\cloud-storage\CloudStorage.Application\obj\Debug\net9.0\CloudSto.E17EE974.Up2Date
+D:\college\cloud-storage\CloudStorage.Application\obj\Debug\net9.0\CloudStorage.Application.dll
+D:\college\cloud-storage\CloudStorage.Application\obj\Debug\net9.0\refint\CloudStorage.Application.dll
+D:\college\cloud-storage\CloudStorage.Application\obj\Debug\net9.0\CloudStorage.Application.pdb
+D:\college\cloud-storage\CloudStorage.Application\obj\Debug\net9.0\ref\CloudStorage.Application.dll

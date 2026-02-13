@@ -1,0 +1,26 @@
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
+USER app
+WORKDIR /app
+EXPOSE 8080
+EXPOSE 8081
+
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+ARG BUILD_CONFIGURATION=Release
+WORKDIR /src
+COPY ["CloudStorage.API/CloudStorage.API.csproj", "CloudStorage.API/"]
+COPY ["CloudStorage.Application/CloudStorage.Application.csproj", "CloudStorage.Application/"]
+COPY ["CloudStorage.Domain/CloudStorage.Domain.csproj", "CloudStorage.Domain/"]
+COPY ["CloudStorage.Infrastructure/CloudStorage.Infrastructure.csproj", "CloudStorage.Infrastructure/"]
+RUN dotnet restore "./CloudStorage.API/CloudStorage.API.csproj"
+COPY . .
+WORKDIR "/src/CloudStorage.API"
+RUN dotnet build "./CloudStorage.API.csproj" -c $BUILD_CONFIGURATION -o /app/build
+
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "./CloudStorage.API.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "CloudStorage.API.dll"]
