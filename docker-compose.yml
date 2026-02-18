@@ -28,6 +28,18 @@ services:
     networks:
       - cloudstorage-network
 
+  cloudstorage.client:
+    image: ${DOCKER_REGISTRY-}cloudstorageclient
+    build:
+      context: .
+      dockerfile: CloudStorage.Client/Dockerfile
+    ports:
+      - "4200:80"
+    depends_on:
+      - cloudstorage.api
+    networks:
+      - cloudstorage-network
+
   postgres:
     image: postgres:16-alpine
     environment:

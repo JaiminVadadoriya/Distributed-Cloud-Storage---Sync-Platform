@@ -1973,11 +1973,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "d:\\college\\cloud-storage\\tests\\CloudStorage.Domain.Tests\\CloudStorage.Domain.Tests.csproj",
+      "projectUniqueName": "D:\\college\\cloud-storage\\tests\\CloudStorage.Domain.Tests\\CloudStorage.Domain.Tests.csproj",
       "projectName": "CloudStorage.Domain.Tests",
-      "projectPath": "d:\\college\\cloud-storage\\tests\\CloudStorage.Domain.Tests\\CloudStorage.Domain.Tests.csproj",
+      "projectPath": "D:\\college\\cloud-storage\\tests\\CloudStorage.Domain.Tests\\CloudStorage.Domain.Tests.csproj",
       "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-      "outputPath": "d:\\college\\cloud-storage\\tests\\CloudStorage.Domain.Tests\\obj\\",
+      "outputPath": "D:\\college\\cloud-storage\\tests\\CloudStorage.Domain.Tests\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -1998,11 +1998,11 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "d:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj": {
-              "projectPath": "d:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj"
+            "D:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj": {
+              "projectPath": "D:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj"
             },
-            "d:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj": {
-              "projectPath": "d:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj"
+            "D:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj": {
+              "projectPath": "D:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj"
             }
           }
         }
