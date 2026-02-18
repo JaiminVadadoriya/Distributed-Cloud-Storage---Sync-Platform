@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using CloudStorage.API.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -92,5 +93,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHealthChecks("/health");
+
+app.MapHealthChecks("/health");
+
+app.ApplyMigrations();
 
 app.Run();

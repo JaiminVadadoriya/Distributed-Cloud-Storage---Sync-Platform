@@ -1,0 +1,16 @@
+**/.git
+**/.vs
+**/.vscode
+**/bin
+**/obj
+**/node_modules
+**/dist
+**/coverage
+**/tests
+**/TestResults
+docker-compose.yml
+docker-compose.override.yml
+README.md
+docs/
+masterplan.md
+.gitignore
