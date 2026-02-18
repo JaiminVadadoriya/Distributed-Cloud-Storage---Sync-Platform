@@ -1,0 +1,63 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio Code
+.vscode/
+
+# .NET Core
+**/bin/
+**/obj/
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Node.js
+**/node_modules/
+**/npm-debug.log
+**/yarn-error.log
+
+# Angular
+**/.angular/
+**/dist/
+**/tmp/
+**/out-tsc/
+**/bazel-out/
+**/decimal-pad-guard.js
+
+# Coverage
+**/coverage/
+**/.nyc_output/
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Environment Variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS Generated
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+docker-compose.override.yml
+
+# Test Results
+TestResults/
+**/test-results/
