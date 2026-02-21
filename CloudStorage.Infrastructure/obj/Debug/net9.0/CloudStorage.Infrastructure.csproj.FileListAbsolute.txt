@@ -30,3 +30,4 @@ D:\college\cloud-storage\CloudStorage.Infrastructure\obj\Debug\net9.0\CloudStora
 D:\college\cloud-storage\CloudStorage.Infrastructure\obj\Debug\net9.0\refint\CloudStorage.Infrastructure.dll
 D:\college\cloud-storage\CloudStorage.Infrastructure\obj\Debug\net9.0\CloudStorage.Infrastructure.pdb
 D:\college\cloud-storage\CloudStorage.Infrastructure\obj\Debug\net9.0\ref\CloudStorage.Infrastructure.dll
+d:\college\cloud-storage\CloudStorage.Infrastructure\obj\Debug\net9.0\CloudStorage.Infrastructure.sourcelink.json

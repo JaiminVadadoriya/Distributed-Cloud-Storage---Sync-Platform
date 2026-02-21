@@ -8,7 +8,7 @@ namespace CloudStorage.Application.Interfaces
     {
         Task<string> SaveChunkAsync(Guid fileId, int chunkIndex, Stream chunkData);
         Task<bool> ChunkExistsAsync(string hash);
-        Task<Stream> GetChunkAsync(Guid fileId, int chunkIndex);
-        Task DeleteChunkAsync(Guid fileId, int chunkIndex);
+        Task<Stream> GetChunkAsync(string storagePath);
+        Task DeleteChunkAsync(string storagePath);
     }
 }

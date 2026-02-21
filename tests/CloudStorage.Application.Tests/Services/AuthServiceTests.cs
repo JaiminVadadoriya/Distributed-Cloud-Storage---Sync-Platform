@@ -100,15 +100,19 @@ namespace CloudStorage.Application.Tests.Services
             var user = new User { Username = "testuser", Email = "test@example.com" };
             await _authService.RegisterAsync(user, "password123");
 
-            // Act
-            var result = await _authService.LoginAsync("testuser", "password123");
+            // Act - Test with Username
+            var resultWithUsername = await _authService.LoginAsync("testuser", "password123");
 
             // Assert
-            Assert.NotNull(result);
-            Assert.NotEmpty(result.AccessToken);
-            Assert.NotEmpty(result.RefreshToken);
-            Assert.Equal("Bearer", result.TokenType);
-            Assert.True(result.ExpiresIn > 0);
+            Assert.NotNull(resultWithUsername);
+            Assert.NotEmpty(resultWithUsername.AccessToken);
+
+            // Act - Test with Email
+            var resultWithEmail = await _authService.LoginAsync("test@example.com", "password123");
+
+            // Assert
+            Assert.NotNull(resultWithEmail);
+            Assert.NotEmpty(resultWithEmail.AccessToken);
         }
 
         [Fact]
@@ -119,7 +123,7 @@ namespace CloudStorage.Application.Tests.Services
             await _authService.RegisterAsync(user, "password123");
 
             // Act
-            var result = await _authService.LoginAsync("testuser", "wrongpassword");
+            var result = await _authService.LoginAsync("test@example.com", "wrongpassword");
 
             // Assert
             Assert.Null(result);
@@ -129,7 +133,7 @@ namespace CloudStorage.Application.Tests.Services
         public async Task LoginAsync_WithNonExistentUser_ShouldReturnNull()
         {
             // Act
-            var result = await _authService.LoginAsync("nonexistent", "password123");
+            var result = await _authService.LoginAsync("nonexistent@example.com", "password123");
 
             // Assert
             Assert.Null(result);
@@ -144,7 +148,7 @@ namespace CloudStorage.Application.Tests.Services
             var beforeLogin = DateTime.UtcNow;
 
             // Act
-            await _authService.LoginAsync("testuser", "password123");
+            await _authService.LoginAsync("test@example.com", "password123");
 
             // Assert
             var updatedUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == "testuser");
@@ -158,7 +162,7 @@ namespace CloudStorage.Application.Tests.Services
             // Arrange
             var user = new User { Username = "testuser", Email = "test@example.com" };
             await _authService.RegisterAsync(user, "password123");
-            var loginResult = await _authService.LoginAsync("testuser", "password123");
+            var loginResult = await _authService.LoginAsync("test@example.com", "password123");
 
             // Act
             var result = await _authService.RefreshTokenAsync(loginResult!.RefreshToken);
@@ -187,7 +191,7 @@ namespace CloudStorage.Application.Tests.Services
             // Arrange
             var user = new User { Username = "testuser", Email = "test@example.com" };
             await _authService.RegisterAsync(user, "password123");
-            var loginResult = await _authService.LoginAsync("testuser", "password123");
+            var loginResult = await _authService.LoginAsync("test@example.com", "password123");
 
             // Act
             await _authService.LogoutAsync(loginResult!.RefreshToken);

@@ -19,15 +19,18 @@ namespace CloudStorage.API.Controllers
     public class ChunkUploadController : ControllerBase
     {
         private readonly IFileMetadataRepository _fileRepository;
+        private readonly IRepository<FileChunk> _chunkRepository;
         private readonly IChunkStorageService _chunkStorage;
         private readonly IDeduplicationService _deduplication;
 
         public ChunkUploadController(
             IFileMetadataRepository fileRepository,
+            IRepository<FileChunk> chunkRepository,
             IChunkStorageService chunkStorage,
             IDeduplicationService deduplication)
         {
             _fileRepository = fileRepository;
+            _chunkRepository = chunkRepository;
             _chunkStorage = chunkStorage;
             _deduplication = deduplication;
         }
@@ -103,19 +106,22 @@ namespace CloudStorage.API.Controllers
                 if (fileMetadata.OwnerId != userId)
                     return Forbid("Unauthorized access to upload session");
 
-                // Check for deduplication
+                // Check for deduplication (avoid re-hashing/re-transmitting from network)
                 var isDuplicate = await _deduplication.IsChunkDuplicateAsync(hash);
                 string storagePath;
 
                 if (isDuplicate)
                 {
-                    // Reuse existing chunk
-                    var existingChunk = await _deduplication.RegisterChunkAsync(hash, string.Empty, chunk.Length);
-                    storagePath = existingChunk.StoragePath;
+                    // Even for duplicates, save the chunk under THIS file's own directory.
+                    // Reusing another file's StoragePath would cause cascading failures if
+                    // that original file is ever deleted. The dedup benefit is that the
+                    // client skips re-uploading identical bytes (server confirms via hash).
+                    using var stream = chunk.OpenReadStream();
+                    storagePath = await _chunkStorage.SaveChunkAsync(fileMetadata.Id, chunkIndex, stream);
                 }
                 else
                 {
-                    // Save new chunk
+                    // Save new chunk and register in dedup registry
                     using var stream = chunk.OpenReadStream();
                     storagePath = await _chunkStorage.SaveChunkAsync(fileMetadata.Id, chunkIndex, stream);
                     await _deduplication.RegisterChunkAsync(hash, storagePath, chunk.Length);
@@ -135,9 +141,9 @@ namespace CloudStorage.API.Controllers
                     UploadedAt = DateTime.UtcNow
                 };
 
-                // Update file metadata
-                fileMetadata.UploadedChunks++;
-                await _fileRepository.UpdateAsync(fileMetadata);
+                // Insert chunk into the repository explicitly
+                // NOT updating fileMetadata here to avoid Optimistic Concurrency exceptions.
+                await _chunkRepository.AddAsync(fileChunk);
 
                 var response = new ChunkUploadResponseDto
                 {
@@ -170,11 +176,11 @@ namespace CloudStorage.API.Controllers
                     return Forbid("Unauthorized access to upload session");
 
                 // Validate all chunks uploaded
-                if (fileMetadata.UploadedChunks != fileMetadata.ChunkCount)
+                if (fileMetadata.Chunks.Count != fileMetadata.ChunkCount)
                 {
                     return BadRequest(new
                     {
-                        message = $"Incomplete upload: {fileMetadata.UploadedChunks}/{fileMetadata.ChunkCount} chunks uploaded"
+                        message = $"Incomplete upload: {fileMetadata.Chunks.Count}/{fileMetadata.ChunkCount} chunks uploaded"
                     });
                 }
 

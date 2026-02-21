@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "/pYBAXfXsGw=",
+  "dgSpecHash": "Htbamod7nUg=",
   "success": true,
-  "projectFilePath": "D:\\college\\cloud-storage\\tests\\CloudStorage.Infrastructure.Tests\\CloudStorage.Infrastructure.Tests.csproj",
+  "projectFilePath": "d:\\college\\cloud-storage\\tests\\CloudStorage.Infrastructure.Tests\\CloudStorage.Infrastructure.Tests.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Lenovo\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\coverlet.collector\\6.0.2\\coverlet.collector.6.0.2.nupkg.sha512",

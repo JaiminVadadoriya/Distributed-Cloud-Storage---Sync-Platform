@@ -1,12 +1,15 @@
 using System;
+using System.IO;
 using System.Linq;
-using System.Security.Claims;
+using System.Net.Http.Headers;
+using System.Threading;
 using System.Threading.Tasks;
 using CloudStorage.Application.DTOs;
 using CloudStorage.Application.Interfaces;
 using CloudStorage.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace CloudStorage.API.Controllers
 {
@@ -16,10 +19,12 @@ namespace CloudStorage.API.Controllers
     public class FilesController : ControllerBase
     {
         private readonly IFileService _fileService;
+        private readonly IChunkStorageService _chunkStorage;
 
-        public FilesController(IFileService fileService)
+        public FilesController(IFileService fileService, IChunkStorageService chunkStorage)
         {
             _fileService = fileService;
+            _chunkStorage = chunkStorage;
         }
 
         private int GetUserId()
@@ -46,6 +51,21 @@ namespace CloudStorage.API.Controllers
             }
         }
 
+        [HttpGet("stats")]
+        public async Task<IActionResult> GetDashboardStats()
+        {
+            try
+            {
+                var userId = GetUserId();
+                var stats = await _fileService.GetDashboardStatsAsync(userId);
+                return Ok(stats);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
         [HttpGet("{id}")]
         public async Task<IActionResult> GetFileById(Guid id)
         {
@@ -62,6 +82,149 @@ namespace CloudStorage.API.Controllers
             catch (Exception ex)
             {
                 return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpGet("{id}/download")]
+        public async Task DownloadFile(Guid id, CancellationToken cancellationToken)
+        {
+            var userId = GetUserId();
+            var file = await _fileService.GetFileByIdAsync(id, userId);
+
+            if (file == null)
+            {
+                Response.StatusCode = 404;
+                return;
+            }
+
+            IEnumerable<string> chunkPaths;
+            try
+            {
+                chunkPaths = await _fileService.GetFileChunkPathsAsync(id, userId);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] GetFileChunkPaths Failed | FileId: {id} | Error: {ex}");
+                Response.StatusCode = 500;
+                return;
+            }
+
+            // Disable response buffering so we can stream terabyte/petabyte files
+            HttpContext.Features.Get<IHttpResponseBodyFeature>()?.DisableBuffering();
+
+            long totalLength = file.Size;
+            Response.Headers.Append("Accept-Ranges", "bytes");
+            Response.Headers.Append("X-Accel-Buffering", "no");
+            Response.ContentType = file.ContentType;
+            Response.Headers.Append(
+                "Content-Disposition",
+                $"attachment; filename=\"{Uri.EscapeDataString(file.FileName)}\"");
+
+            // --- HTTP Range request support (resumable downloads) ---
+            long rangeStart = 0;
+            long rangeEnd = totalLength - 1;
+            bool isRangeRequest = false;
+
+            var rangeHeader = Request.Headers["Range"].FirstOrDefault();
+            if (!string.IsNullOrEmpty(rangeHeader) && rangeHeader.StartsWith("bytes=", StringComparison.OrdinalIgnoreCase))
+            {
+                var rangePart = rangeHeader.Substring(6); // strip "bytes="
+                var dashIndex = rangePart.IndexOf('-');
+                if (dashIndex >= 0)
+                {
+                    var startStr = rangePart.Substring(0, dashIndex);
+                    var endStr = rangePart.Substring(dashIndex + 1);
+
+                    if (!string.IsNullOrEmpty(startStr) && long.TryParse(startStr, out var parsedStart))
+                        rangeStart = parsedStart;
+
+                    if (!string.IsNullOrEmpty(endStr) && long.TryParse(endStr, out var parsedEnd))
+                        rangeEnd = parsedEnd;
+                    else
+                        rangeEnd = totalLength - 1;
+
+                    if (rangeStart >= 0 && rangeStart <= rangeEnd && rangeEnd < totalLength)
+                        isRangeRequest = true;
+                    else
+                    {
+                        // Invalid range
+                        Response.StatusCode = 416; // Range Not Satisfiable
+                        Response.Headers.Append("Content-Range", $"bytes */{totalLength}");
+                        return;
+                    }
+                }
+            }
+
+            long serveLength = rangeEnd - rangeStart + 1;
+            Response.ContentLength = serveLength;
+
+            if (isRangeRequest)
+            {
+                Response.StatusCode = 206;
+                Response.Headers.Append("Content-Range", $"bytes {rangeStart}-{rangeEnd}/{totalLength}");
+            }
+
+            // Stream chunks, skipping bytes outside the requested range
+            try
+            {
+                long bytesWritten = 0;
+                long bytesSkipped = 0;
+                const int bufferSize = 1 << 17; // 128 KB
+
+                foreach (var chunkPath in chunkPaths)
+                {
+                    if (cancellationToken.IsCancellationRequested) break;
+
+                    var chunkFileInfo = new FileInfo(chunkPath);
+                    long chunkLen = chunkFileInfo.Length;
+
+                    long chunkAbsoluteStart = bytesSkipped;
+                    long chunkAbsoluteEnd   = bytesSkipped + chunkLen - 1;
+
+                    // Skip chunks entirely before the range start
+                    if (chunkAbsoluteEnd < rangeStart)
+                    {
+                        bytesSkipped += chunkLen;
+                        continue;
+                    }
+
+                    // Stop after we've written everything up to rangeEnd
+                    if (chunkAbsoluteStart > rangeEnd) break;
+
+                    // Determine slice of this chunk to write
+                    long offsetInChunk  = Math.Max(0, rangeStart - chunkAbsoluteStart);
+                    long bytesFromChunk = Math.Min(chunkLen - offsetInChunk,
+                                                   serveLength - bytesWritten);
+
+                    using var chunkStream = await _chunkStorage.GetChunkAsync(chunkPath);
+
+                    if (offsetInChunk > 0)
+                        chunkStream.Seek(offsetInChunk, SeekOrigin.Begin);
+
+                    var remaining = bytesFromChunk;
+                    var buffer = new byte[bufferSize];
+                    while (remaining > 0 && !cancellationToken.IsCancellationRequested)
+                    {
+                        int toRead = (int)Math.Min(buffer.Length, remaining);
+                        int read = await chunkStream.ReadAsync(buffer, 0, toRead, cancellationToken);
+                        if (read == 0) break;
+                        await Response.Body.WriteAsync(buffer, 0, read, cancellationToken);
+                        remaining -= read;
+                        bytesWritten += read;
+                    }
+
+                    bytesSkipped += chunkLen;
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // Client disconnected — expected, not an error
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] File Download Failed | FileId: {id} | UserId: {userId} | Error: {ex}");
+                if (!Response.HasStarted)
+                    Response.StatusCode = 500;
             }
         }
 

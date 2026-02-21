@@ -47,9 +47,9 @@ namespace CloudStorage.Infrastructure.Services
             return user;
         }
 
-        public async Task<LoginResponseDto?> LoginAsync(string username, string password)
+        public async Task<LoginResponseDto?> LoginAsync(string identifier, string password)
         {
-            var user = await _context.Users.SingleOrDefaultAsync(u => u.Username == username);
+            var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == identifier || u.Username == identifier);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                 return null;
@@ -69,7 +69,13 @@ namespace CloudStorage.Infrastructure.Services
                 AccessToken = accessToken,
                 RefreshToken = refreshToken.Token,
                 ExpiresIn = GetAccessTokenExpirationSeconds(),
-                TokenType = "Bearer"
+                TokenType = "Bearer",
+                User = new UserDto
+                {
+                    Id = user.Id.ToString(),
+                    Username = user.Username,
+                    Email = user.Email
+                }
             };
         }
 
@@ -95,7 +101,13 @@ namespace CloudStorage.Infrastructure.Services
                 AccessToken = accessToken,
                 RefreshToken = newRefreshToken.Token,
                 ExpiresIn = GetAccessTokenExpirationSeconds(),
-                TokenType = "Bearer"
+                TokenType = "Bearer",
+                User = new UserDto
+                {
+                    Id = user.Id.ToString(),
+                    Username = user.Username,
+                    Email = user.Email
+                }
             };
         }
 

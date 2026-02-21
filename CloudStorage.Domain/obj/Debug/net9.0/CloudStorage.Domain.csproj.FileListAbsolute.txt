@@ -9,3 +9,4 @@ D:\college\cloud-storage\CloudStorage.Domain\obj\Debug\net9.0\CloudStorage.Domai
 D:\college\cloud-storage\CloudStorage.Domain\obj\Debug\net9.0\refint\CloudStorage.Domain.dll
 D:\college\cloud-storage\CloudStorage.Domain\obj\Debug\net9.0\CloudStorage.Domain.pdb
 D:\college\cloud-storage\CloudStorage.Domain\obj\Debug\net9.0\ref\CloudStorage.Domain.dll
+d:\college\cloud-storage\CloudStorage.Domain\obj\Debug\net9.0\CloudStorage.Domain.sourcelink.json

@@ -52,4 +52,12 @@ namespace CloudStorage.Application.DTOs
         public DateTime CreatedAt { get; set; }
         public bool IsShared { get; set; }
     }
+
+    public class DashboardStatsDto
+    {
+        public long TotalStorageBytes { get; set; }
+        public long MaxStorageBytes { get; set; }
+        public int TotalFiles { get; set; }
+        public int RecentUploads { get; set; }
+    }
 }

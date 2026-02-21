@@ -230,3 +230,4 @@ D:\college\cloud-storage\CloudStorage.API\obj\Debug\net9.0\refint\CloudStorage.A
 D:\college\cloud-storage\CloudStorage.API\obj\Debug\net9.0\CloudStorage.API.pdb
 D:\college\cloud-storage\CloudStorage.API\obj\Debug\net9.0\CloudStorage.API.genruntimeconfig.cache
 D:\college\cloud-storage\CloudStorage.API\obj\Debug\net9.0\ref\CloudStorage.API.dll
+d:\college\cloud-storage\CloudStorage.API\obj\Debug\net9.0\CloudStorage.API.sourcelink.json

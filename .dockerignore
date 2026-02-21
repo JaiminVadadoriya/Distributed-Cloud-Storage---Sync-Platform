@@ -1,16 +1,21 @@
-**/.git
-**/.vs
-**/.vscode
-**/bin
-**/obj
-**/node_modules
-**/dist
-**/coverage
-**/tests
-**/TestResults
-docker-compose.yml
-docker-compose.override.yml
-README.md
-docs/
-masterplan.md
+# Common
+node_modules/
+.git/
 .gitignore
+.dockerignore
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.bak
+
+# Logs
+logs/
+*.log
+
+# Temp
+tmp/
+temp/

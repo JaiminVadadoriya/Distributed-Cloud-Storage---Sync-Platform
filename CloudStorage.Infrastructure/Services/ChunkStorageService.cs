@@ -45,26 +45,28 @@ namespace CloudStorage.Infrastructure.Services
             return Task.FromResult(false);
         }
 
-        public Task<Stream> GetChunkAsync(Guid fileId, int chunkIndex)
+        public Task<Stream> GetChunkAsync(string storagePath)
         {
-            var chunkPath = Path.Combine(_storageBasePath, fileId.ToString(), $"{chunkIndex}.chunk");
-            
-            if (!File.Exists(chunkPath))
+            if (!File.Exists(storagePath))
             {
-                throw new FileNotFoundException($"Chunk {chunkIndex} for file {fileId} not found");
+                throw new FileNotFoundException($"Chunk not found at path: {storagePath}");
             }
 
-            Stream stream = new FileStream(chunkPath, FileMode.Open, FileAccess.Read);
+            Stream stream = new FileStream(
+                storagePath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                bufferSize: 131072, // 128 KB OS read-ahead buffer
+                FileOptions.SequentialScan | FileOptions.Asynchronous);
             return Task.FromResult(stream);
         }
 
-        public Task DeleteChunkAsync(Guid fileId, int chunkIndex)
+        public Task DeleteChunkAsync(string storagePath)
         {
-            var chunkPath = Path.Combine(_storageBasePath, fileId.ToString(), $"{chunkIndex}.chunk");
-            
-            if (File.Exists(chunkPath))
+            if (File.Exists(storagePath))
             {
-                File.Delete(chunkPath);
+                File.Delete(storagePath);
             }
 
             return Task.CompletedTask;

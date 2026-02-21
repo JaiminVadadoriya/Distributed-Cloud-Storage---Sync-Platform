@@ -8,7 +8,7 @@ namespace CloudStorage.Application.Interfaces
     public interface IAuthService
     {
         Task<User> RegisterAsync(User user, string password);
-        Task<LoginResponseDto?> LoginAsync(string username, string password);
+        Task<LoginResponseDto?> LoginAsync(string identifier, string password);
         Task<LoginResponseDto?> RefreshTokenAsync(string refreshToken);
         Task LogoutAsync(string refreshToken);
         Task<string> RequestPasswordResetAsync(string email);

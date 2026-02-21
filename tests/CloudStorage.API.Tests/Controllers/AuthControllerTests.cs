@@ -43,10 +43,10 @@ namespace CloudStorage.API.Tests.Controllers
         public async Task Login_ValidCredentials_ReturnsOk()
         {
             // Arrange
-            var dto = new LoginDto { Username = "test", Password = "password" };
+            var dto = new LoginDto { Identifier = "test@example.com", Password = "password" };
             var response = new LoginResponseDto { AccessToken = "token", RefreshToken = "refresh" };
 
-            _mockAuthService.Setup(x => x.LoginAsync(dto.Username, dto.Password))
+            _mockAuthService.Setup(x => x.LoginAsync(dto.Identifier, dto.Password))
                 .ReturnsAsync(response);
 
             // Act
@@ -61,9 +61,9 @@ namespace CloudStorage.API.Tests.Controllers
         public async Task Login_InvalidCredentials_ReturnsUnauthorized()
         {
             // Arrange
-            var dto = new LoginDto { Username = "test", Password = "wrong" };
+            var dto = new LoginDto { Identifier = "test@example.com", Password = "wrong" };
             
-            _mockAuthService.Setup(x => x.LoginAsync(dto.Username, dto.Password))
+            _mockAuthService.Setup(x => x.LoginAsync(dto.Identifier, dto.Password))
                 .ReturnsAsync((LoginResponseDto?)null);
 
             // Act

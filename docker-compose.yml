@@ -13,6 +13,9 @@ services:
       - Jwt__Key=ThisIsASuperSecretKeyThatShouldBeLongEnoughForHS256Algorithm
       - Jwt__Issuer=CloudStorageApi
       - Jwt__Audience=CloudStorageClients
+      - Storage__ChunkPath=/app/storage/chunks
+    volumes:
+      - storage_data:/app/storage/chunks
     depends_on:
       postgres:
         condition: service_healthy
@@ -77,6 +80,8 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
+    driver: local
+  storage_data:
     driver: local
 
 networks:

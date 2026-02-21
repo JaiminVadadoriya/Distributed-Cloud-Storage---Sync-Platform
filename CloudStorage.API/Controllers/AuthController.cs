@@ -43,7 +43,7 @@ namespace CloudStorage.API.Controllers
         {
             try
             {
-                var response = await _authService.LoginAsync(dto.Username, dto.Password);
+                var response = await _authService.LoginAsync(dto.Identifier, dto.Password);
 
                 if (response == null)
                     return Unauthorized(new { message = "Invalid credentials" });

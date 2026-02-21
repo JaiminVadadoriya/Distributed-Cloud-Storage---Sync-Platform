@@ -135,3 +135,4 @@ D:\college\cloud-storage\tests\CloudStorage.API.Tests\obj\Debug\net9.0\ref\Cloud
 d:\college\cloud-storage\tests\CloudStorage.API.Tests\bin\Debug\net9.0\Castle.Core.dll
 d:\college\cloud-storage\tests\CloudStorage.API.Tests\bin\Debug\net9.0\Microsoft.EntityFrameworkCore.InMemory.dll
 d:\college\cloud-storage\tests\CloudStorage.API.Tests\bin\Debug\net9.0\Moq.dll
+d:\college\cloud-storage\tests\CloudStorage.API.Tests\obj\Debug\net9.0\CloudStorage.API.Tests.sourcelink.json

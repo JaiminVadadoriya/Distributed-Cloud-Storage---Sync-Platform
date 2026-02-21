@@ -13,3 +13,4 @@ D:\college\cloud-storage\CloudStorage.Application\obj\Debug\net9.0\CloudStorage.
 D:\college\cloud-storage\CloudStorage.Application\obj\Debug\net9.0\refint\CloudStorage.Application.dll
 D:\college\cloud-storage\CloudStorage.Application\obj\Debug\net9.0\CloudStorage.Application.pdb
 D:\college\cloud-storage\CloudStorage.Application\obj\Debug\net9.0\ref\CloudStorage.Application.dll
+d:\college\cloud-storage\CloudStorage.Application\obj\Debug\net9.0\CloudStorage.Application.sourcelink.json

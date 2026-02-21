@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "R0prl8wwrXY=",
+  "dgSpecHash": "Z75We0GIqYY=",
   "success": true,
-  "projectFilePath": "D:\\college\\cloud-storage\\tests\\CloudStorage.Application.Tests\\CloudStorage.Application.Tests.csproj",
+  "projectFilePath": "d:\\college\\cloud-storage\\tests\\CloudStorage.Application.Tests\\CloudStorage.Application.Tests.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Lenovo\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\castle.core\\5.1.1\\castle.core.5.1.1.nupkg.sha512",

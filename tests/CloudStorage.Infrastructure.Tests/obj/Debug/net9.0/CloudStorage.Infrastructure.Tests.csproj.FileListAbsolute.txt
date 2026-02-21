@@ -131,3 +131,4 @@ D:\college\cloud-storage\tests\CloudStorage.Infrastructure.Tests\obj\Debug\net9.
 D:\college\cloud-storage\tests\CloudStorage.Infrastructure.Tests\obj\Debug\net9.0\CloudStorage.Infrastructure.Tests.pdb
 D:\college\cloud-storage\tests\CloudStorage.Infrastructure.Tests\obj\Debug\net9.0\CloudStorage.Infrastructure.Tests.genruntimeconfig.cache
 D:\college\cloud-storage\tests\CloudStorage.Infrastructure.Tests\obj\Debug\net9.0\ref\CloudStorage.Infrastructure.Tests.dll
+d:\college\cloud-storage\tests\CloudStorage.Infrastructure.Tests\obj\Debug\net9.0\CloudStorage.Infrastructure.Tests.sourcelink.json
