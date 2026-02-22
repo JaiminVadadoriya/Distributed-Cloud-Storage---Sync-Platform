@@ -136,7 +136,7 @@ namespace CloudStorage.Infrastructure.Services
             return resetToken; // In production, don't return the token directly
         }
 
-        public async Task ResetPasswordAsync(string token, string newPassword)
+        public Task ResetPasswordAsync(string token, string newPassword)
         {
             // In a real application, you would:
             // 1. Validate the reset token from the database

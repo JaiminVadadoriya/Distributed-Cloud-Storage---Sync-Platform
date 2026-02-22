@@ -14,7 +14,7 @@ namespace CloudStorage.API.Extensions
             {
                 dbContext.Database.Migrate();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // In a real production app, you might want to log this or handle it more gracefully
                 // For now, rethrowing ensures the app doesn't start with a broken DB state
