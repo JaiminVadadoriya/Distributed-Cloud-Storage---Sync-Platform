@@ -50,7 +50,9 @@ namespace CloudStorage.Application.DTOs
         public string FileName { get; set; } = string.Empty;
         public long Size { get; set; }
         public DateTime CreatedAt { get; set; }
+        public DateTime LastModifiedAt { get; set; }
         public bool IsShared { get; set; }
+        public string? VersionVector { get; set; }
     }
 
     public class DashboardStatsDto

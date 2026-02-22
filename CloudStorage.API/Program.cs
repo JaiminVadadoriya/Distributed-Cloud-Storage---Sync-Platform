@@ -39,6 +39,7 @@ builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IDeduplicationService, DeduplicationService>();
 builder.Services.AddScoped<INotificationService, SignalRNotificationService>();
 builder.Services.AddScoped<IDeltaSyncService, DeltaSyncService>();
+builder.Services.AddScoped<IConflictDetectionService, ConflictDetectionService>();
 
 // SignalR
 builder.Services.AddSignalR();

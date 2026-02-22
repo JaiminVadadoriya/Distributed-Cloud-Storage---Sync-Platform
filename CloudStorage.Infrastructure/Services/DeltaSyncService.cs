@@ -29,7 +29,9 @@ namespace CloudStorage.Infrastructure.Services
                     FileName = f.FileName,
                     Size = f.Size,
                     CreatedAt = f.CreatedAt,
-                    IsShared = false // Modify if sharing logic is updated
+                    LastModifiedAt = f.LastModifiedAt,
+                    IsShared = false, // Modify if sharing logic is updated
+                    VersionVector = f.VersionVector
                 })
                 .ToListAsync();
 

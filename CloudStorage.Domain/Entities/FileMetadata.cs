@@ -30,6 +30,9 @@ namespace CloudStorage.Domain.Entities
         public bool IsDeleted { get; set; }
         public string StoragePath { get; set; } = string.Empty;
 
+        // Version vector for conflict detection (JSON-serialized Dictionary<string, int>)
+        public string? VersionVector { get; set; }
+
         // Upload session tracking
         public string UploadSessionId { get; set; } = string.Empty;
         public UploadStatus Status { get; set; } = UploadStatus.Pending;
