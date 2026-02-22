@@ -32,8 +32,8 @@ namespace CloudStorage.Application.Tests.Services
             var userId = 1;
             var files = new List<FileMetadata>
             {
-                new FileMetadata { Id = Guid.NewGuid(), FileName = "file1.txt", OwnerId = userId, Size = 100, CreatedAt = DateTime.UtcNow },
-                new FileMetadata { Id = Guid.NewGuid(), FileName = "file2.txt", OwnerId = userId, Size = 200, CreatedAt = DateTime.UtcNow }
+                new FileMetadata { Id = Guid.NewGuid(), FileName = "file1.txt", OwnerId = userId, Size = 100, CreatedAt = DateTime.UtcNow, Status = UploadStatus.Complete },
+                new FileMetadata { Id = Guid.NewGuid(), FileName = "file2.txt", OwnerId = userId, Size = 200, CreatedAt = DateTime.UtcNow, Status = UploadStatus.Complete }
             };
 
             _fileRepositoryMock.Setup(r => r.GetUserFilesAsync(userId, false))
@@ -63,7 +63,8 @@ namespace CloudStorage.Application.Tests.Services
                 Size = 100,
                 OwnerId = userId,
                 CreatedAt = DateTime.UtcNow,
-                LastModifiedAt = DateTime.UtcNow
+                LastModifiedAt = DateTime.UtcNow,
+                Status = UploadStatus.Complete
             };
             var owner = new User { Id = userId, Username = "owner" };
 
@@ -246,6 +247,28 @@ namespace CloudStorage.Application.Tests.Services
             // Assert
             Assert.True(result);
             _fileRepositoryMock.Verify(r => r.HasPermissionAsync(fileId, userId, PermissionType.Read), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteAllUserFilesAsync_ShouldMarkAllUserFilesAsDeleted()
+        {
+            // Arrange
+            var userId = 1;
+            var files = new List<FileMetadata>
+            {
+                new FileMetadata { Id = Guid.NewGuid(), FileName = "file1.txt", OwnerId = userId, IsDeleted = false },
+                new FileMetadata { Id = Guid.NewGuid(), FileName = "file2.txt", OwnerId = userId, IsDeleted = false }
+            };
+
+            _fileRepositoryMock.Setup(r => r.GetUserFilesAsync(userId, false))
+                .ReturnsAsync(files);
+
+            // Act
+            await _fileService.DeleteAllUserFilesAsync(userId);
+
+            // Assert
+            Assert.All(files, f => Assert.True(f.IsDeleted));
+            _fileRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<FileMetadata>()), Times.Exactly(2));
         }
     }
 }

@@ -230,9 +230,10 @@ npm test
 | Document                               | Description                                    |
 | -------------------------------------- | ---------------------------------------------- |
 | [Architecture](docs/ARCHITECTURE.md)   | System overview, layer details, data flows      |
-| [Design](docs/DESIGN.md)              | Design patterns, schema, API design, future plans |
+| [Design](docs/DESIGN.md)               | Design patterns, schema, API design, future plans |
 | [CI/CD](docs/CI-CD.md)                 | Pipeline architecture, secrets, deployment guide |
 | [Masterplan](masterplan.md)            | Project roadmap, phases, and objectives         |
+| [Azure Blob Int.](docs/azure-blob-integration.md) | Direct upload to Azure with SAS tokens          |
 
 ---
 
@@ -242,7 +243,7 @@ npm test
 - [x] **Phase 2:** Database refinement, JWT auth, file management
 - [x] **Phase 3:** Chunked uploads with deduplication
 - [ ] **Phase 4:** Real-time sync with SignalR
-- [ ] **Phase 5:** Azure Blob Storage integration
+- [x] **Phase 5:** Azure Blob Storage integration
 - [ ] **Phase 6:** Offline-first mode with conflict resolution
 - [ ] **Phase 7:** Client-side encryption & advanced security
 

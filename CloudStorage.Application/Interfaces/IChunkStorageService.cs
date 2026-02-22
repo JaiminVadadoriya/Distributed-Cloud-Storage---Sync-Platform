@@ -10,5 +10,6 @@ namespace CloudStorage.Application.Interfaces
         Task<bool> ChunkExistsAsync(string hash);
         Task<Stream> GetChunkAsync(string storagePath);
         Task DeleteChunkAsync(string storagePath);
+        Task<string> GenerateSasUploadUrlAsync(Guid fileId, int chunkIndex, TimeSpan expiry);
     }
 }

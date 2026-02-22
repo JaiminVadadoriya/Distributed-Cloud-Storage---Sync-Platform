@@ -136,3 +136,10 @@ d:\college\cloud-storage\tests\CloudStorage.API.Tests\bin\Debug\net9.0\Castle.Co
 d:\college\cloud-storage\tests\CloudStorage.API.Tests\bin\Debug\net9.0\Microsoft.EntityFrameworkCore.InMemory.dll
 d:\college\cloud-storage\tests\CloudStorage.API.Tests\bin\Debug\net9.0\Moq.dll
 d:\college\cloud-storage\tests\CloudStorage.API.Tests\obj\Debug\net9.0\CloudStorage.API.Tests.sourcelink.json
+D:\college\cloud-storage\tests\CloudStorage.API.Tests\bin\Debug\net9.0\Azure.Core.dll
+D:\college\cloud-storage\tests\CloudStorage.API.Tests\bin\Debug\net9.0\Azure.Storage.Blobs.dll
+D:\college\cloud-storage\tests\CloudStorage.API.Tests\bin\Debug\net9.0\Azure.Storage.Common.dll
+D:\college\cloud-storage\tests\CloudStorage.API.Tests\bin\Debug\net9.0\Microsoft.Bcl.AsyncInterfaces.dll
+D:\college\cloud-storage\tests\CloudStorage.API.Tests\bin\Debug\net9.0\System.ClientModel.dll
+D:\college\cloud-storage\tests\CloudStorage.API.Tests\bin\Debug\net9.0\System.IO.Hashing.dll
+D:\college\cloud-storage\tests\CloudStorage.API.Tests\bin\Debug\net9.0\System.Memory.Data.dll

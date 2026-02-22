@@ -65,7 +65,7 @@ namespace CloudStorage.Infrastructure.Services
             };
         }
 
-        public async Task<IEnumerable<string>> GetFileChunkPathsAsync(Guid fileId, int requestingUserId)
+        public async Task<IEnumerable<(string StoragePath, long Size)>> GetFileChunkPathsAsync(Guid fileId, int requestingUserId)
         {
             if (!await HasPermissionAsync(fileId, requestingUserId, PermissionType.Read))
                 throw new UnauthorizedAccessException("Access denied");
@@ -77,16 +77,19 @@ namespace CloudStorage.Infrastructure.Services
             if (file.Status != UploadStatus.Complete)
                 throw new Exception("File upload is not complete yet");
 
-            var chunkPaths = file.Chunks.OrderBy(c => c.ChunkIndex).Select(c => c.StoragePath).ToList();
+            var chunkData = file.Chunks.OrderBy(c => c.ChunkIndex).Select(c => (
+                StoragePath: !string.IsNullOrEmpty(c.BlobUrl) ? c.BlobUrl : c.StoragePath,
+                Size: c.Size
+            )).ToList();
 
-            // Verify all chunks exist on disk before proceeding
-            foreach (var path in chunkPaths)
+            // Verify local chunks exist on disk before proceeding (skips URL blob checks)
+            foreach (var chunk in chunkData)
             {
-                if (!System.IO.File.Exists(path))
-                    throw new System.IO.FileNotFoundException($"Chunk missing from storage: {System.IO.Path.GetFileName(path)}");
+                if (!chunk.StoragePath.StartsWith("http") && !System.IO.File.Exists(chunk.StoragePath))
+                    throw new System.IO.FileNotFoundException($"Chunk missing from storage: {System.IO.Path.GetFileName(chunk.StoragePath)}");
             }
 
-            return chunkPaths;
+            return chunkData;
         }
 
         public async Task<FileResponseDto> CreateFileMetadataAsync(FileUploadDto dto, int ownerId)
@@ -189,6 +192,19 @@ namespace CloudStorage.Infrastructure.Services
                 TotalFiles = files.Count(),
                 RecentUploads = files.Count(f => f.CreatedAt >= oneWeekAgo)
             };
+        }
+        
+        public async Task DeleteAllUserFilesAsync(int userId)
+        {
+            var files = await _fileRepository.GetUserFilesAsync(userId);
+            var nonDeletedFiles = files.Where(f => !f.IsDeleted).ToList();
+            
+            foreach (var file in nonDeletedFiles)
+            {
+                file.IsDeleted = true;
+                file.LastModifiedAt = DateTime.UtcNow;
+                await _fileRepository.UpdateAsync(file);
+            }
         }
     }
 }

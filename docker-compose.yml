@@ -14,11 +14,14 @@ services:
       - Jwt__Issuer=CloudStorageApi
       - Jwt__Audience=CloudStorageClients
       - Storage__ChunkPath=/app/storage/chunks
+      - AzureBlob__ConnectionString=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;
     volumes:
       - storage_data:/app/storage/chunks
     depends_on:
       postgres:
         condition: service_healthy
+      azurite:
+        condition: service_started
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/health" ]
       interval: 30s
@@ -76,12 +79,26 @@ services:
     networks:
       - cloudstorage-network
 
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+    volumes:
+      - azurite_data:/data
+    command: "azurite --loose --skipApiVersionCheck --blobHost 0.0.0.0 --queueHost 0.0.0.0 --tableHost 0.0.0.0 --location /data"
+    networks:
+      - cloudstorage-network
+
 volumes:
   postgres_data:
     driver: local
   redis_data:
     driver: local
   storage_data:
+    driver: local
+  azurite_data:
     driver: local
 
 networks:

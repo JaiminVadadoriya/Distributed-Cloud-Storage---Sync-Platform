@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "d:\\college\\cloud-storage\\tests\\CloudStorage.Infrastructure.Tests\\CloudStorage.Infrastructure.Tests.csproj": {}
+    "D:\\college\\cloud-storage\\tests\\CloudStorage.Infrastructure.Tests\\CloudStorage.Infrastructure.Tests.csproj": {}
   },
   "projects": {
-    "d:\\college\\cloud-storage\\CloudStorage.Application\\CloudStorage.Application.csproj": {
+    "D:\\college\\cloud-storage\\CloudStorage.Application\\CloudStorage.Application.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\college\\cloud-storage\\CloudStorage.Application\\CloudStorage.Application.csproj",
+        "projectUniqueName": "D:\\college\\cloud-storage\\CloudStorage.Application\\CloudStorage.Application.csproj",
         "projectName": "CloudStorage.Application",
-        "projectPath": "d:\\college\\cloud-storage\\CloudStorage.Application\\CloudStorage.Application.csproj",
+        "projectPath": "D:\\college\\cloud-storage\\CloudStorage.Application\\CloudStorage.Application.csproj",
         "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-        "outputPath": "d:\\college\\cloud-storage\\CloudStorage.Application\\obj\\",
+        "outputPath": "D:\\college\\cloud-storage\\CloudStorage.Application\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -32,8 +32,8 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "d:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj": {
-                "projectPath": "d:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj"
+              "D:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj": {
+                "projectPath": "D:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj"
               }
             }
           }
@@ -73,14 +73,14 @@
         }
       }
     },
-    "d:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj": {
+    "D:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj",
+        "projectUniqueName": "D:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj",
         "projectName": "CloudStorage.Domain",
-        "projectPath": "d:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj",
+        "projectPath": "D:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj",
         "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-        "outputPath": "d:\\college\\cloud-storage\\CloudStorage.Domain\\obj\\",
+        "outputPath": "D:\\college\\cloud-storage\\CloudStorage.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -138,14 +138,14 @@
         }
       }
     },
-    "d:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj": {
+    "D:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj",
+        "projectUniqueName": "D:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj",
         "projectName": "CloudStorage.Infrastructure",
-        "projectPath": "d:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj",
+        "projectPath": "D:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj",
         "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-        "outputPath": "d:\\college\\cloud-storage\\CloudStorage.Infrastructure\\obj\\",
+        "outputPath": "D:\\college\\cloud-storage\\CloudStorage.Infrastructure\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -166,8 +166,8 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "d:\\college\\cloud-storage\\CloudStorage.Application\\CloudStorage.Application.csproj": {
-                "projectPath": "d:\\college\\cloud-storage\\CloudStorage.Application\\CloudStorage.Application.csproj"
+              "D:\\college\\cloud-storage\\CloudStorage.Application\\CloudStorage.Application.csproj": {
+                "projectPath": "D:\\college\\cloud-storage\\CloudStorage.Application\\CloudStorage.Application.csproj"
               }
             }
           }
@@ -188,6 +188,10 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "dependencies": {
+            "Azure.Storage.Blobs": {
+              "target": "Package",
+              "version": "[12.27.0, )"
+            },
             "BCrypt.Net-Next": {
               "target": "Package",
               "version": "[4.0.3, )"
@@ -225,14 +229,14 @@
         }
       }
     },
-    "d:\\college\\cloud-storage\\tests\\CloudStorage.Infrastructure.Tests\\CloudStorage.Infrastructure.Tests.csproj": {
+    "D:\\college\\cloud-storage\\tests\\CloudStorage.Infrastructure.Tests\\CloudStorage.Infrastructure.Tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "d:\\college\\cloud-storage\\tests\\CloudStorage.Infrastructure.Tests\\CloudStorage.Infrastructure.Tests.csproj",
+        "projectUniqueName": "D:\\college\\cloud-storage\\tests\\CloudStorage.Infrastructure.Tests\\CloudStorage.Infrastructure.Tests.csproj",
         "projectName": "CloudStorage.Infrastructure.Tests",
-        "projectPath": "d:\\college\\cloud-storage\\tests\\CloudStorage.Infrastructure.Tests\\CloudStorage.Infrastructure.Tests.csproj",
+        "projectPath": "D:\\college\\cloud-storage\\tests\\CloudStorage.Infrastructure.Tests\\CloudStorage.Infrastructure.Tests.csproj",
         "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-        "outputPath": "d:\\college\\cloud-storage\\tests\\CloudStorage.Infrastructure.Tests\\obj\\",
+        "outputPath": "D:\\college\\cloud-storage\\tests\\CloudStorage.Infrastructure.Tests\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -253,8 +257,8 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "d:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj": {
-                "projectPath": "d:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj"
+              "D:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj": {
+                "projectPath": "D:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj"
               }
             }
           }
@@ -290,6 +294,10 @@
             "Microsoft.NET.Test.Sdk": {
               "target": "Package",
               "version": "[17.12.0, )"
+            },
+            "Moq": {
+              "target": "Package",
+              "version": "[4.20.72, )"
             },
             "coverlet.collector": {
               "target": "Package",

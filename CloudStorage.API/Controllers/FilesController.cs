@@ -20,11 +20,16 @@ namespace CloudStorage.API.Controllers
     {
         private readonly IFileService _fileService;
         private readonly IChunkStorageService _chunkStorage;
+        private readonly INotificationService _notificationService;
 
-        public FilesController(IFileService fileService, IChunkStorageService chunkStorage)
+        public FilesController(
+            IFileService fileService, 
+            IChunkStorageService chunkStorage,
+            INotificationService notificationService)
         {
             _fileService = fileService;
             _chunkStorage = chunkStorage;
+            _notificationService = notificationService;
         }
 
         private int GetUserId()
@@ -97,10 +102,10 @@ namespace CloudStorage.API.Controllers
                 return;
             }
 
-            IEnumerable<string> chunkPaths;
+            IEnumerable<(string StoragePath, long Size)> chunks;
             try
             {
-                chunkPaths = await _fileService.GetFileChunkPathsAsync(id, userId);
+                chunks = await _fileService.GetFileChunkPathsAsync(id, userId);
             }
             catch (Exception ex)
             {
@@ -171,12 +176,11 @@ namespace CloudStorage.API.Controllers
                 long bytesSkipped = 0;
                 const int bufferSize = 1 << 17; // 128 KB
 
-                foreach (var chunkPath in chunkPaths)
+                foreach (var chunk in chunks)
                 {
                     if (cancellationToken.IsCancellationRequested) break;
 
-                    var chunkFileInfo = new FileInfo(chunkPath);
-                    long chunkLen = chunkFileInfo.Length;
+                    long chunkLen = chunk.Size;
 
                     long chunkAbsoluteStart = bytesSkipped;
                     long chunkAbsoluteEnd   = bytesSkipped + chunkLen - 1;
@@ -196,7 +200,7 @@ namespace CloudStorage.API.Controllers
                     long bytesFromChunk = Math.Min(chunkLen - offsetInChunk,
                                                    serveLength - bytesWritten);
 
-                    using var chunkStream = await _chunkStorage.GetChunkAsync(chunkPath);
+                    using var chunkStream = await _chunkStorage.GetChunkAsync(chunk.StoragePath);
 
                     if (offsetInChunk > 0)
                         chunkStream.Seek(offsetInChunk, SeekOrigin.Begin);
@@ -250,11 +254,34 @@ namespace CloudStorage.API.Controllers
             {
                 var userId = GetUserId();
                 await _fileService.DeleteFileAsync(id, userId);
+
+                // Push real-time notification
+                await _notificationService.NotifyFileDeletedAsync(id, userId);
+
                 return Ok(new { message = "File deleted successfully" });
             }
             catch (UnauthorizedAccessException ex)
             {
                 return Forbid(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpDelete("all")]
+        public async Task<IActionResult> DeleteAllFiles()
+        {
+            try
+            {
+                var userId = GetUserId();
+                await _fileService.DeleteAllUserFilesAsync(userId);
+                
+                // Push real-time notification
+                await _notificationService.NotifyAllFilesDeletedAsync(userId);
+
+                return Ok(new { message = "All files deleted successfully" });
             }
             catch (Exception ex)
             {

@@ -37,4 +37,33 @@ namespace CloudStorage.Application.DTOs
         public int TotalChunks { get; set; }
         public string Status { get; set; } = string.Empty;
     }
+
+    public class SasUploadUrlRequestDto
+    {
+        public string SessionId { get; set; } = string.Empty;
+        public int ChunkIndex { get; set; }
+        public string Hash { get; set; } = string.Empty;
+    }
+
+    public class SasUploadUrlResponseDto
+    {
+        public string SasUrl { get; set; } = string.Empty;
+        public string BlobName { get; set; } = string.Empty;
+        public DateTime ExpiresAt { get; set; }
+    }
+
+    public class VerifyChunkUploadDto
+    {
+        public string SessionId { get; set; } = string.Empty;
+        public int ChunkIndex { get; set; }
+        public string Hash { get; set; } = string.Empty;
+        public string BlobName { get; set; } = string.Empty;
+        public long Size { get; set; }
+    }
+
+    public class BlobChunkVerificationResultDto
+    {
+        public bool IsValid { get; set; }
+        public int[] MissingChunkIndices { get; set; } = Array.Empty<int>();
+    }
 }

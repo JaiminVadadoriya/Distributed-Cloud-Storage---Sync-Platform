@@ -22,17 +22,26 @@ namespace CloudStorage.API.Controllers
         private readonly IRepository<FileChunk> _chunkRepository;
         private readonly IChunkStorageService _chunkStorage;
         private readonly IDeduplicationService _deduplication;
+        private readonly IBlobSasService _sasService;
+        private readonly IAzureChunkVerificationService _verificationService;
+        private readonly INotificationService _notificationService;
 
         public ChunkUploadController(
             IFileMetadataRepository fileRepository,
             IRepository<FileChunk> chunkRepository,
             IChunkStorageService chunkStorage,
-            IDeduplicationService deduplication)
+            IDeduplicationService deduplication,
+            IBlobSasService sasService,
+            IAzureChunkVerificationService verificationService,
+            INotificationService notificationService)
         {
             _fileRepository = fileRepository;
             _chunkRepository = chunkRepository;
             _chunkStorage = chunkStorage;
             _deduplication = deduplication;
+            _sasService = sasService;
+            _verificationService = verificationService;
+            _notificationService = notificationService;
         }
 
         private int GetUserId()
@@ -175,12 +184,13 @@ namespace CloudStorage.API.Controllers
                 if (fileMetadata.OwnerId != userId)
                     return Forbid("Unauthorized access to upload session");
 
-                // Validate all chunks uploaded
-                if (fileMetadata.Chunks.Count != fileMetadata.ChunkCount)
+                // Validate all chunks exist in Azure Blob Storage
+                var verificationResult = await _verificationService.VerifyAllChunksAsync(fileMetadata.Id, fileMetadata.ChunkCount);
+                if (!verificationResult.IsValid)
                 {
                     return BadRequest(new
                     {
-                        message = $"Incomplete upload: {fileMetadata.Chunks.Count}/{fileMetadata.ChunkCount} chunks uploaded"
+                        message = $"Incomplete upload: Missing chunk indices: {string.Join(", ", verificationResult.MissingChunkIndices)}"
                     });
                 }
 
@@ -188,6 +198,9 @@ namespace CloudStorage.API.Controllers
                 fileMetadata.Status = UploadStatus.Complete;
                 fileMetadata.LastModifiedAt = DateTime.UtcNow;
                 await _fileRepository.UpdateAsync(fileMetadata);
+
+                // Push real-time notification
+                await _notificationService.NotifyFileUploadedAsync(fileMetadata.Id, fileMetadata.FileName, fileMetadata.Size, fileMetadata.OwnerId);
 
                 return Ok(new
                 {
@@ -237,6 +250,84 @@ namespace CloudStorage.API.Controllers
                 };
 
                 return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("sas-url")]
+        public async Task<IActionResult> GenerateSasUrl([FromBody] SasUploadUrlRequestDto dto)
+        {
+            try
+            {
+                var userId = GetUserId();
+                var fileMetadata = await _fileRepository.GetBySessionIdAsync(dto.SessionId);
+                
+                if (fileMetadata == null)
+                    return NotFound(new { message = "Upload session not found" });
+
+                if (fileMetadata.OwnerId != userId)
+                    return Forbid("Unauthorized access to upload session");
+
+                var isDuplicate = await _deduplication.IsChunkDuplicateAsync(dto.Hash);
+                if (isDuplicate)
+                {
+                    // For duplicates, client doesn't need to upload to Azure
+                    return Ok(new { message = "Chunk deduplicated", isDuplicate = true });
+                }
+
+                var sasResponse = await _sasService.GenerateChunkUploadSasAsync(fileMetadata.Id, dto.ChunkIndex);
+                
+                return Ok(sasResponse);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        [HttpPost("verify-chunk")]
+        public async Task<IActionResult> VerifyChunk([FromBody] VerifyChunkUploadDto dto)
+        {
+            try
+            {
+                var userId = GetUserId();
+                var fileMetadata = await _fileRepository.GetBySessionIdAsync(dto.SessionId);
+                
+                if (fileMetadata == null)
+                    return NotFound(new { message = "Upload session not found" });
+
+                if (fileMetadata.OwnerId != userId)
+                    return Forbid("Unauthorized access to upload session");
+
+                // Verify the blob actually exists in Azure
+                var exists = await _sasService.ChunkBlobExistsAsync(dto.BlobName);
+                if (!exists)
+                {
+                    return BadRequest(new { message = "Chunk blob not found in storage" });
+                }
+
+                // Create chunk record
+                var fileChunk = new FileChunk
+                {
+                    Id = Guid.NewGuid(),
+                    FileMetadataId = fileMetadata.Id,
+                    ChunkIndex = dto.ChunkIndex,
+                    Size = dto.Size,
+                    Hash = dto.Hash,
+                    StoragePath = $"azure://{dto.BlobName}", 
+                    BlobUrl = dto.BlobName,
+                    IsDuplicate = false,
+                    CreatedAt = DateTime.UtcNow,
+                    UploadedAt = DateTime.UtcNow
+                };
+
+                await _chunkRepository.AddAsync(fileChunk);
+                await _deduplication.RegisterChunkAsync(dto.Hash, fileChunk.StoragePath, dto.Size);
+
+                return Ok(new { message = "Chunk verified and registered successfully" });
             }
             catch (Exception ex)
             {

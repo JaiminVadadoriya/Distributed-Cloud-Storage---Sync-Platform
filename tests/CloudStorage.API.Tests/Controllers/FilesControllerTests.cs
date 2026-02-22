@@ -16,13 +16,17 @@ namespace CloudStorage.API.Tests.Controllers
     public class FilesControllerTests
     {
         private readonly Mock<IFileService> _mockFileService;
+        private readonly Mock<IChunkStorageService> _mockChunkStorage;
+        private readonly Mock<INotificationService> _mockNotificationService;
         private readonly FilesController _controller;
         private readonly int _testUserId = 1;
 
         public FilesControllerTests()
         {
             _mockFileService = new Mock<IFileService>();
-            _controller = new FilesController(_mockFileService.Object);
+            _mockChunkStorage = new Mock<IChunkStorageService>();
+            _mockNotificationService = new Mock<INotificationService>();
+            _controller = new FilesController(_mockFileService.Object, _mockChunkStorage.Object, _mockNotificationService.Object);
 
             // Mock User context
             var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]

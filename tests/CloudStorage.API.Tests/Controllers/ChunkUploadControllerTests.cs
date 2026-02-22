@@ -16,17 +16,32 @@ namespace CloudStorage.API.Tests.Controllers
     public class ChunkUploadControllerTests
     {
         private readonly Mock<IFileMetadataRepository> _mockFileRepo;
+        private readonly Mock<IRepository<FileChunk>> _mockChunkRepo;
         private readonly Mock<IChunkStorageService> _mockChunkStorage;
         private readonly Mock<IDeduplicationService> _mockDeduplication;
+        private readonly Mock<IBlobSasService> _mockSasService;
+        private readonly Mock<IAzureChunkVerificationService> _mockVerificationService;
+        private readonly Mock<INotificationService> _mockNotificationService;
         private readonly ChunkUploadController _controller;
         private readonly int _testUserId = 1;
 
         public ChunkUploadControllerTests()
         {
             _mockFileRepo = new Mock<IFileMetadataRepository>();
+            _mockChunkRepo = new Mock<IRepository<FileChunk>>();
             _mockChunkStorage = new Mock<IChunkStorageService>();
             _mockDeduplication = new Mock<IDeduplicationService>();
-            _controller = new ChunkUploadController(_mockFileRepo.Object, _mockChunkStorage.Object, _mockDeduplication.Object);
+            _mockSasService = new Mock<IBlobSasService>();
+            _mockVerificationService = new Mock<IAzureChunkVerificationService>();
+            _mockNotificationService = new Mock<INotificationService>();
+            _controller = new ChunkUploadController(
+                _mockFileRepo.Object, 
+                _mockChunkRepo.Object,
+                _mockChunkStorage.Object, 
+                _mockDeduplication.Object,
+                _mockSasService.Object,
+                _mockVerificationService.Object,
+                _mockNotificationService.Object);
 
             // Mock User context
             var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
@@ -99,6 +114,8 @@ namespace CloudStorage.API.Tests.Controllers
             var dto = new CompleteUploadDto { SessionId = sessionId };
 
             _mockFileRepo.Setup(x => x.GetBySessionIdAsync(sessionId)).ReturnsAsync(file);
+            _mockVerificationService.Setup(x => x.VerifyAllChunksAsync(file.Id, file.ChunkCount))
+                .ReturnsAsync(new BlobChunkVerificationResultDto { IsValid = true });
 
             // Act
             var result = await _controller.CompleteUpload(dto);

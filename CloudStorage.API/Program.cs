@@ -1,3 +1,4 @@
+using Azure.Storage.Blobs;
 using CloudStorage.Application.Interfaces;
 using CloudStorage.Domain.Interfaces;
 using CloudStorage.Infrastructure.Data;
@@ -8,6 +9,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using CloudStorage.API.Extensions;
+using CloudStorage.API.Hubs;
+using CloudStorage.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,8 +36,22 @@ builder.Services.AddScoped<IFileMetadataRepository, FileMetadataRepository>();
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IFileService, FileService>();
-builder.Services.AddScoped<IChunkStorageService, ChunkStorageService>();
 builder.Services.AddScoped<IDeduplicationService, DeduplicationService>();
+builder.Services.AddScoped<INotificationService, SignalRNotificationService>();
+builder.Services.AddScoped<IDeltaSyncService, DeltaSyncService>();
+
+// SignalR
+builder.Services.AddSignalR();
+
+// Storage & Azure configuration
+var blobConnectionString = builder.Configuration["AzureBlob:ConnectionString"] 
+    ?? "UseDevelopmentStorage=true";
+builder.Services.AddSingleton(x => new BlobServiceClient(blobConnectionString));
+builder.Services.AddScoped<IBlobSasService, BlobSasService>();
+builder.Services.AddScoped<IAzureChunkVerificationService, AzureChunkVerificationService>();
+
+// We are now explicitly using BlobChunkStorageService instead of the local ChunkStorageService
+builder.Services.AddScoped<IChunkStorageService, BlobChunkStorageService>();
 
 // JWT Authentication
 builder.Services.AddAuthentication(options =>
@@ -55,6 +72,20 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(
             Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] 
                 ?? throw new InvalidOperationException("Jwt:Key is missing")))
+    };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
     };
 });
 
@@ -92,6 +123,7 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<FileStorageHub>("/hubs/storage");
 app.MapHealthChecks("/health");
 
 app.MapHealthChecks("/health");

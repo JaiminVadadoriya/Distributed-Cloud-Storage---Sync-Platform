@@ -11,6 +11,7 @@ namespace CloudStorage.Domain.Entities
         public long Size { get; set; }
         public string Hash { get; set; } = string.Empty;
         public string StoragePath { get; set; } = string.Empty;
+        public string? BlobUrl { get; set; }
         public DateTime CreatedAt { get; set; }
         
         // Deduplication support

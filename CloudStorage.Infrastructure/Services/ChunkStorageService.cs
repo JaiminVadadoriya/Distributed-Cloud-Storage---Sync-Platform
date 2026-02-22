@@ -71,5 +71,10 @@ namespace CloudStorage.Infrastructure.Services
 
             return Task.CompletedTask;
         }
+
+        public Task<string> GenerateSasUploadUrlAsync(Guid fileId, int chunkIndex, TimeSpan expiry)
+        {
+            throw new NotSupportedException("SAS URLs are only supported with Azure Blob Storage.");
+        }
     }
 }

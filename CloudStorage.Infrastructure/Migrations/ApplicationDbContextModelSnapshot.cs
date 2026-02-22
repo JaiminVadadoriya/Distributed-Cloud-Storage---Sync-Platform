@@ -88,6 +88,9 @@ namespace CloudStorage.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("BlobUrl")
+                        .HasColumnType("text");
+
                     b.Property<int>("ChunkIndex")
                         .HasColumnType("integer");
 
