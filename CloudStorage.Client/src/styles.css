@@ -1,0 +1,47 @@
+/* You can add global styles to this file, and also import other style files */
+
+@import "tailwindcss";
+
+:root {
+    --font-sans: 'Inter', system-ui, sans-serif;
+
+    /* Modern Palette */
+    --color-primary: oklch(0.6 0.18 250);
+    /* Vivid Blue */
+    --color-primary-content: oklch(0.98 0.02 250);
+
+    --color-secondary: oklch(0.65 0.22 320);
+    /* Vibrant Purple/Pink */
+
+    --color-surface-100: oklch(0.98 0 0);
+    --color-surface-200: oklch(0.95 0 0);
+    --color-surface-300: oklch(0.90 0 0);
+
+    --color-text-base: oklch(0.20 0.02 250);
+    --color-text-muted: oklch(0.55 0.02 250);
+}
+
+@theme {
+    --font-sans: var(--font-sans);
+
+    --color-primary: var(--color-primary);
+    --color-primary-content: var(--color-primary-content);
+
+    --color-secondary: var(--color-secondary);
+
+    --color-surface-100: var(--color-surface-100);
+    --color-surface-200: var(--color-surface-200);
+    --color-surface-300: var(--color-surface-300);
+
+    --color-text-base: var(--color-text-base);
+    --color-text-muted: var(--color-text-muted);
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    font-family: var(--font-sans);
+    background-color: var(--color-surface-100);
+    color: var(--color-text-base);
+}
