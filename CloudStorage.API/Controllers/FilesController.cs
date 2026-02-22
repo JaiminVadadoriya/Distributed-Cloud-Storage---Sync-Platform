@@ -10,12 +10,14 @@ using CloudStorage.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace CloudStorage.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
+    [EnableRateLimiting("global")]
     public class FilesController : ControllerBase
     {
         private readonly IFileService _fileService;

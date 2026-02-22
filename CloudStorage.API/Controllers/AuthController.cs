@@ -1,14 +1,17 @@
 using System.Threading.Tasks;
+using System.Threading.RateLimiting;
 using CloudStorage.Application.DTOs;
 using CloudStorage.Domain.Entities;
 using CloudStorage.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace CloudStorage.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [EnableRateLimiting("auth")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;

@@ -38,7 +38,7 @@ namespace CloudStorage.Infrastructure.Services
                 ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(_sasExpiryMinutes)
             };
             
-            sasBuilder.SetPermissions(BlobSasPermissions.Create | BlobSasPermissions.Write);
+            sasBuilder.SetPermissions(BlobSasPermissions.Write);
 
             var sasUri = blobClient.GenerateSasUri(sasBuilder);
 

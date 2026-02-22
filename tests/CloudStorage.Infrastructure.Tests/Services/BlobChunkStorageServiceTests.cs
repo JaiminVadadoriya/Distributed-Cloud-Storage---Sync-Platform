@@ -8,6 +8,7 @@ using CloudStorage.Application.DTOs;
 using CloudStorage.Application.Interfaces;
 using CloudStorage.Infrastructure.Services;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -20,6 +21,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
         private readonly Mock<BlobClient> _mockBlobClient;
         private readonly Mock<IBlobSasService> _mockSasService;
         private readonly Mock<IConfiguration> _mockConfig;
+        private readonly Mock<ILogger<BlobChunkStorageService>> _mockLogger;
         private readonly BlobChunkStorageService _service;
 
         public BlobChunkStorageServiceTests()
@@ -29,6 +31,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
             _mockBlobClient = new Mock<BlobClient>();
             _mockSasService = new Mock<IBlobSasService>();
             _mockConfig = new Mock<IConfiguration>();
+            _mockLogger = new Mock<ILogger<BlobChunkStorageService>>();
 
             _mockConfig.Setup(c => c["AzureBlob:ContainerName"]).Returns("test-container");
 
@@ -44,7 +47,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
                 .Setup(x => x.GetBlobClient(It.IsAny<string>()))
                 .Returns(_mockBlobClient.Object);
 
-            _service = new BlobChunkStorageService(_mockBlobServiceClient.Object, _mockSasService.Object, _mockConfig.Object);
+            _service = new BlobChunkStorageService(_mockBlobServiceClient.Object, _mockSasService.Object, _mockConfig.Object, _mockLogger.Object);
         }
 
         [Fact]
@@ -79,6 +82,11 @@ namespace CloudStorage.Infrastructure.Tests.Services
             
             _mockBlobClient.Setup(x => x.UploadAsync(stream, true, It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync(Response.FromValue((BlobContentInfo)null, null));
+
+            // Mock GetPropertiesAsync for SSE verification
+            var mockProperties = BlobsModelFactory.BlobProperties(isServerEncrypted: true);
+            _mockBlobClient.Setup(x => x.GetPropertiesAsync(It.IsAny<BlobRequestConditions>(), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(Response.FromValue(mockProperties, null));
 
             // Act
             var result = await _service.SaveChunkAsync(fileId, chunkIndex, stream);

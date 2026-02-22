@@ -10,12 +10,14 @@ using CloudStorage.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace CloudStorage.API.Controllers
 {
     [ApiController]
     [Route("api/files")]
     [Authorize]
+    [EnableRateLimiting("upload")]
     public class ChunkUploadController : ControllerBase
     {
         private readonly IFileMetadataRepository _fileRepository;
@@ -94,6 +96,7 @@ namespace CloudStorage.API.Controllers
         }
 
         [HttpPost("chunks")]
+        [RequestSizeLimit(115_343_360)] // 110 MB limit (chunk size + overhead)
         public async Task<IActionResult> UploadChunk(
             [FromForm] IFormFile chunk,
             [FromForm] string sessionId,
