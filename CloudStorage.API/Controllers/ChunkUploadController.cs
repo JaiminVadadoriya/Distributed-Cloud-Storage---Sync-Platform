@@ -95,23 +95,27 @@ namespace CloudStorage.API.Controllers
             }
         }
 
+        public class UploadChunkRequestDto
+        {
+            public IFormFile Chunk { get; set; }
+            public string SessionId { get; set; }
+            public int ChunkIndex { get; set; }
+            public string Hash { get; set; }
+        }
+
         [HttpPost("chunks")]
         [RequestSizeLimit(115_343_360)] // 110 MB limit (chunk size + overhead)
-        public async Task<IActionResult> UploadChunk(
-            [FromForm] IFormFile chunk,
-            [FromForm] string sessionId,
-            [FromForm] int chunkIndex,
-            [FromForm] string hash)
+        public async Task<IActionResult> UploadChunk([FromForm] UploadChunkRequestDto request)
         {
             try
             {
-                if (chunk == null || chunk.Length == 0)
+                if (request.Chunk == null || request.Chunk.Length == 0)
                     return BadRequest(new { message = "Chunk data is required" });
 
                 var userId = GetUserId();
 
                 // Find file by session ID
-                var fileMetadata = await _fileRepository.GetBySessionIdAsync(sessionId);
+                var fileMetadata = await _fileRepository.GetBySessionIdAsync(request.SessionId);
                 if (fileMetadata == null)
                     return NotFound(new { message = "Upload session not found" });
 
@@ -119,7 +123,7 @@ namespace CloudStorage.API.Controllers
                     return Forbid("Unauthorized access to upload session");
 
                 // Check for deduplication (avoid re-hashing/re-transmitting from network)
-                var isDuplicate = await _deduplication.IsChunkDuplicateAsync(hash);
+                var isDuplicate = await _deduplication.IsChunkDuplicateAsync(request.Hash);
                 string storagePath;
 
                 if (isDuplicate)
@@ -128,15 +132,15 @@ namespace CloudStorage.API.Controllers
                     // Reusing another file's StoragePath would cause cascading failures if
                     // that original file is ever deleted. The dedup benefit is that the
                     // client skips re-uploading identical bytes (server confirms via hash).
-                    using var stream = chunk.OpenReadStream();
-                    storagePath = await _chunkStorage.SaveChunkAsync(fileMetadata.Id, chunkIndex, stream);
+                    using var stream = request.Chunk.OpenReadStream();
+                    storagePath = await _chunkStorage.SaveChunkAsync(fileMetadata.Id, request.ChunkIndex, stream);
                 }
                 else
                 {
                     // Save new chunk and register in dedup registry
-                    using var stream = chunk.OpenReadStream();
-                    storagePath = await _chunkStorage.SaveChunkAsync(fileMetadata.Id, chunkIndex, stream);
-                    await _deduplication.RegisterChunkAsync(hash, storagePath, chunk.Length);
+                    using var stream = request.Chunk.OpenReadStream();
+                    storagePath = await _chunkStorage.SaveChunkAsync(fileMetadata.Id, request.ChunkIndex, stream);
+                    await _deduplication.RegisterChunkAsync(request.Hash, storagePath, request.Chunk.Length);
                 }
 
                 // Create chunk record
@@ -144,9 +148,9 @@ namespace CloudStorage.API.Controllers
                 {
                     Id = Guid.NewGuid(),
                     FileMetadataId = fileMetadata.Id,
-                    ChunkIndex = chunkIndex,
-                    Size = chunk.Length,
-                    Hash = hash,
+                    ChunkIndex = request.ChunkIndex,
+                    Size = request.Chunk.Length,
+                    Hash = request.Hash,
                     StoragePath = storagePath,
                     IsDuplicate = isDuplicate,
                     CreatedAt = DateTime.UtcNow,

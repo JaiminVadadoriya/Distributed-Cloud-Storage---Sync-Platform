@@ -1,6 +1,6 @@
 # ☁️ Distributed Cloud Storage & Sync Platform
 
-A scalable, distributed cloud storage and synchronization platform built with **.NET 9** and **Angular 21**, following **Clean Architecture** principles. Designed to handle large files (up to 50 GB), support offline operations, and provide real-time synchronization.
+A scalable, distributed cloud storage and synchronization platform built with **.NET 10** and **Angular 21**, following **Clean Architecture** principles. Designed to handle large files (up to 50 GB), support offline operations, and provide real-time synchronization.
 
 ---
 
@@ -45,7 +45,7 @@ This project follows **Clean Architecture** with strict layer separation:
 
 | Layer              | Technology                            |
 | ------------------ | ------------------------------------- |
-| **Backend**        | .NET 9 Web API (C#)                   |
+| **Backend**        | .NET 10 Web API (C#)                   |
 | **Frontend**       | Angular 21 (TypeScript, Standalone)   |
 | **Database**       | PostgreSQL 16 (EF Core)               |
 | **Cache**          | Redis 7 (provisioned)                 |
@@ -112,7 +112,7 @@ cloud-storage/
 
 ### Prerequisites
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Node.js 22+](https://nodejs.org/)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop)
 

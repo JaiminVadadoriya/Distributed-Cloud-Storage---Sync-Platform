@@ -239,8 +239,8 @@ Client                      API                      Infrastructure
 ### 5.2 API Dockerfile (Multi-stage)
 
 ```
-Stage 1 (base):    mcr.microsoft.com/dotnet/aspnet:9.0 → Exposes 8080, 8081
-Stage 2 (build):   mcr.microsoft.com/dotnet/sdk:9.0   → Restore, build
+Stage 1 (base):    mcr.microsoft.com/dotnet/aspnet:10.0 → Exposes 8080, 8081
+Stage 2 (build):   mcr.microsoft.com/dotnet/sdk:10.0   → Restore, build
 Stage 3 (publish): Publish with UseAppHost=false
 Stage 4 (final):   Copy publish output, ENTRYPOINT dotnet CloudStorage.API.dll
 ```
