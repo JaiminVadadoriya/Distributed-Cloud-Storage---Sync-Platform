@@ -10,22 +10,28 @@ The Distributed Cloud Storage Platform is a full-stack application built using *
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        Docker Compose Host                         │
+│                        Docker Compose Stack                         │
 │                                                                    │
-│  ┌───────────────┐   ┌──────────────────┐   ┌──────────────────┐  │
-│  │  Angular 21   │   │   .NET 9 API     │   │  PostgreSQL 16   │  │
-│  │  Client       │──>│   (REST)         │──>│  (Metadata DB)   │  │
-│  │  :4200        │   │   :5000 / :5001  │   │  :5432           │  │
-│  └───────────────┘   └──────────────────┘   └──────────────────┘  │
-│                              │                                     │
-│                              v                                     │
-│                      ┌──────────────────┐   ┌──────────────────┐  │
-│                      │  Local File      │   │  Redis 7         │  │
-│                      │  Storage         │   │  (Cache/Future)  │  │
-│                      │  /app/storage/   │   │  :6379           │  │
-│                      └──────────────────┘   └──────────────────┘  │
+│  ┌───────────────┐      ┌───────────────┐      ┌────────────────┐  │
+│  │  NGINX LB     │─────▶│ API Cluster   │◀────▶│  Redis (Cache)  │  │
+│  │  :5000        │      │ (3x Replicas) │      │  :6379         │  │
+│  └───────▲───────┘      └───────┬───────┘      └────────────────┘  │
+│          │                      │                       │          │
+│  ┌───────┴───────┐      ┌───────▼───────┐      ┌────────▼───────┐  │
+│  │  Angular 21   │      │  RabbitMQ     │      │  PostgreSQL 16 │  │
+│  │  Client       │      │  (Workers)    │◀─────▶  (Metadata DB) │  │
+│  │  :4200        │      │  :5672        │      │  :5433         │  │
+│  └───────────────┘      └───────────────┘      └────────────────┘  │
 └─────────────────────────────────────────────────────────────────────┘
 ```
+
+### 1.1 Distributed Scale-Out Components
+
+- **NGINX Load Balancer:** Entry point for all API/SignalR traffic. Performs round-robin distribution to API instances.
+- **API Cluster:** Horizontal scaling via Docker replicas. All instances share the same database and storage.
+- **Redis Service:** Used for **SignalR backplane** (real-time sync across nodes), distributed caching, and upload session locks.
+- **RabbitMQ Service:** Asynchronous message broker for offloading non-blocking heavy tasks (chunk validation, cleanup).
+- **Observability Stack:** Prometheus scrapes metrics from API instances; Grafana visualizes the system health.
 
 ---
 
@@ -229,12 +235,17 @@ Client                      API                      Infrastructure
 
 ### 5.1 Docker Compose Services
 
-| Service                | Image                  | Port Mapping   | Purpose                    |
-| ---------------------- | ---------------------- | -------------- | -------------------------- |
-| `cloudstorage.api`     | Custom (.NET 9 SDK)    | 5000:8080, 5001:8081 | REST API server      |
-| `cloudstorage.client`  | Custom (Node 22 → Nginx) | 4200:80     | Angular SPA                |
-| `postgres`             | postgres:16-alpine     | 5432:5432      | Metadata database          |
-| `redis`                | redis:7-alpine         | 6379:6379      | Cache (provisioned, not yet wired) |
+| Service                | Image                  | Port Mapping   | Purpose                        |
+| ---------------------- | ---------------------- | -------------- | ------------------------------ |
+| `nginx`                | nginx:alpine           | 5000:80        | **Load Balancer & Entry Point**|
+| `cloudstorage.api`     | Custom (.NET 10 SDK)   | Replicas (x3)  | REST API cluster (scaled)      |
+| `cloudstorage.client`  | Custom (Angular 21)    | 4200:80        | Frontend SPA                   |
+| `postgres`             | postgres:16-alpine     | 5433:5432      | Metadata database & Pools      |
+| `redis`                | redis:7-alpine         | 6379:6379      | Cache / SignalR Backplane      |
+| `rabbitmq`             | rabbitmq:3-management  | 5672, 15672    | Background Message Broker      |
+| `prometheus`           | prom/prometheus        | 9090:9090      | Scrapes telemetry from API     |
+| `grafana`              | grafana/grafana        | 3000:3000      | Visualization dashboard        |
+| `azurite`              | mcr.microsoft.com/...  | 10000-10002    | Local Azure Cloud Simulation   |
 
 ### 5.2 API Dockerfile (Multi-stage)
 

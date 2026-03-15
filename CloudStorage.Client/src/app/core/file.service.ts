@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { ApiService } from './api.service';
+import { ApiService, ApiResponse } from './api.service';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
@@ -39,8 +39,8 @@ export class FileService {
   private api = inject(ApiService);
 
   getFiles(): Observable<FileItem[]> {
-    return this.api.get<ApiFileResponse[]>('/files').pipe(
-      map(files => files.map(f => ({
+    return this.api.get<ApiResponse<ApiFileResponse[]>>('/files').pipe(
+      map(response => (response.data || []).map(f => ({
         id: f.id,
         name: f.fileName,
         size: f.size,
@@ -54,11 +54,11 @@ export class FileService {
   }
 
   deleteFile(fileId: string): Observable<void> {
-    return this.api.delete<void>(`/files/${fileId}`);
+    return this.api.delete<ApiResponse>(`/files/${fileId}`).pipe(map(() => void 0));
   }
 
   deleteAllFiles(): Observable<void> {
-    return this.api.delete<void>('/files/all');
+    return this.api.delete<ApiResponse>('/files/all').pipe(map(() => void 0));
   }
 
   /**
@@ -113,14 +113,18 @@ export class FileService {
   }
 
   shareFile(fileId: string, email: string): Observable<void> {
-    return this.api.post<void>(`/files/${fileId}/share`, { email });
+    return this.api.post<ApiResponse>(`/files/${fileId}/share`, { email }).pipe(map(() => void 0));
   }
 
   getStorageUsage(): Observable<{ used: number; total: number }> {
-    return this.api.get<{ used: number; total: number }>('/user/storage');
+    return this.api.get<ApiResponse<{ used: number; total: number }>>('/user/storage').pipe(
+      map(response => response.data)
+    );
   }
 
   getDashboardStats(): Observable<DashboardStats> {
-    return this.api.get<DashboardStats>('/files/stats');
+    return this.api.get<ApiResponse<DashboardStats>>('/files/stats').pipe(
+      map(response => response.data)
+    );
   }
 }

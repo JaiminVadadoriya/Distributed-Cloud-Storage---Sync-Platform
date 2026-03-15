@@ -14,7 +14,8 @@
 | **Interface Segregation** | Separate interfaces for Auth, Files, Chunks, Dedup, Tokens       |
 | **Offline-First**     | Resumable uploads, chunk-level state tracking on server              |
 | **Security by Design** | BCrypt, JWT rotation, CORS, HTTPS, owner-based permissions          |
-| **Scalability**       | Stateless API, containerized services, future-ready for Azure Blob   |
+| **Scalability**       | **Horizontal scaling (replicas)**, NGINX LB, Redis Backplane         |
+| **Observability**     | **Prometheus/Grafana** for metrics and health monitoring             |
 
 ---
 
@@ -78,6 +79,14 @@ For each chunk:
      └─ Not Found: Write chunk to disk, create registry entry
   4. Create FileChunk record linking to FileMetadata
 ```
+
+### 2.6 Distributed Systems Patterns
+
+**SignalR Backplane (Redis):** To support horizontal scaling, we use Redis as a backplane. When an instance broadcasts a message, it is published to Redis and picked up by all other API instances, ensuring all connected clients receive the notification regardless of the node they are connected to.
+
+**Worker Pattern (RabbitMQ):** Heavy operations like hash-verification and chunk cleanup are offloaded to a background queue. The API publishes a message, and a dedicated worker (running inside each API instance) consumes and processes it, keeping the request-response cycle fast.
+
+**Rate Limiting (NGINX):** Global rate limiting is applied at the entry point (NGINX) to protect against DDoS and brute-force attempts before they hit the API.
 
 **Reference Counting:** When a chunk is deleted, its `ChunkRegistry.ReferenceCount` is decremented. At zero, the physical file and registry entry are cleaned up.
 
@@ -325,6 +334,9 @@ Calculate SHA-256 hash  ──────────────────>�
 | **File Versioning UI**           | Expose `Version`, `ParentVersionId` in frontend         |
 | **Conflict Resolution**          | Use `VersionVector` in SyncEvents for CRDT-style merge  |
 | **Search Indexing**              | Elasticsearch integration for file content search       |
-| **Rate Limiting**                | ASP.NET Core rate limiting middleware                    |
-| **Redis Caching**                | Cache session state, hot file metadata (Redis already provisioned) |
+| **Rate Limiting**                | **NGINX** level (IP-based) + API level middleware        |
+| **Redis Caching**                | **Enabled** for sessions, metadata, and perms            |
+| **Observability**                | **Prometheus + Grafana** pre-provisioned                 |
+| **CDN Optimization**             | Cache-Control & HTTP Range headers implemented           |
+| **Mobile Clients**               | Flutter/React Native using same REST API                |
 | **Mobile Clients**               | Flutter/React Native using same REST API                |

@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, tap } from 'rxjs';
-import { ApiService } from './api.service';
+import { BehaviorSubject, Observable, map, tap } from 'rxjs';
+import { ApiService, ApiResponse } from './api.service';
 import { Router } from '@angular/router';
 
 export interface User {
@@ -14,6 +14,8 @@ export interface AuthResponse {
   refreshToken: string;
   user: User;
 }
+
+
 
 @Injectable({
   providedIn: 'root'
@@ -54,14 +56,22 @@ export class AuthService {
   }
 
   login(credentials: { identifier: string; password: string }): Observable<AuthResponse> {
-    return this.api.post<AuthResponse>('/auth/login', credentials).pipe(
-      tap(response => this.handleAuthResponse(response))
+    return this.api.post<ApiResponse<AuthResponse>>('/auth/login', credentials).pipe(
+      map(response => {
+        if (!response.success || !response.data) throw new Error(response.message || 'Login failed');
+        return response.data;
+      }),
+      tap(data => this.handleAuthResponse(data))
     );
   }
 
   register(userData: { username: string; email: string; password: string }): Observable<AuthResponse> {
-    return this.api.post<AuthResponse>('/auth/register', userData).pipe(
-      tap(response => this.handleAuthResponse(response))
+    return this.api.post<ApiResponse<AuthResponse>>('/auth/register', userData).pipe(
+      map(response => {
+        if (!response.success || !response.data) throw new Error(response.message || 'Registration failed');
+        return response.data;
+      }),
+      tap(data => this.handleAuthResponse(data))
     );
   }
 
@@ -82,5 +92,17 @@ export class AuthService {
 
   getToken(): string | null {
     return localStorage.getItem(this.TOKEN_KEY);
+  }
+
+  requestPasswordReset(email: string): Observable<{ message: string }> {
+    return this.api.post<ApiResponse>('/auth/password-reset-request', { email }).pipe(
+      map(response => ({ message: response.message }))
+    );
+  }
+
+  resetPassword(data: { token: string; newPassword: string }): Observable<{ message: string }> {
+    return this.api.post<ApiResponse>('/auth/password-reset', data).pipe(
+      map(response => ({ message: response.message }))
+    );
   }
 }

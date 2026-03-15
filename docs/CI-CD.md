@@ -200,6 +200,13 @@ Configure two environments in **GitHub → Settings → Environments**:
 ### Production
 
 - **URL:** Your production server URL
+- **Container Registry:** Azure Container Registry (ACR) or Docker Hub
+- **Database:** PostgreSQL (Azure Database for PostgreSQL)
+- **Cache & SignalR:** Redis (Azure Cache for Redis)
+- **Message Broker:** RabbitMQ
+- **Observability:** Prometheus + Grafana
+- **CDN:** Azure CDN or CloudFlare
+- **Infrastructure:** Kubernetes (AKS/EKS/GKE) with Ingress-NGINX
 - **Required reviewers:** Add team members who can approve
 - **Wait timer:** Optional cooldown (e.g., 5 minutes)
 - **Deployment branches:** `main` only

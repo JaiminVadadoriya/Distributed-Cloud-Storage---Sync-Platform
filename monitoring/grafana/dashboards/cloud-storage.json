@@ -1,0 +1,27 @@
+{
+  "title": "Cloud Storage API",
+  "panels": [
+    {
+      "type": "graph",
+      "title": "HTTP Requests Flow",
+      "targets": [
+        {
+          "expr": "rate(http_requests_received_total[5m])",
+          "legendFormat": "{{method}} {{code}}"
+        }
+      ]
+    },
+    {
+      "type": "graph",
+      "title": "HTTP Request Duration",
+      "targets": [
+        {
+          "expr": "rate(http_request_duration_seconds_sum[5m]) / rate(http_request_duration_seconds_count[5m])",
+          "legendFormat": "{{method}} {{action}}"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 16,
+  "timezone": "browser"
+}

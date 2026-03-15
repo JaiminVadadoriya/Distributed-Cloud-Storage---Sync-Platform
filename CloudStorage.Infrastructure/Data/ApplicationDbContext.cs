@@ -15,6 +15,7 @@ namespace CloudStorage.Infrastructure.Data
         public DbSet<FilePermission> FilePermissions { get; set; }
         public DbSet<SyncEvent> SyncEvents { get; set; }
         public DbSet<ChunkRegistry> ChunkRegistry { get; set; }
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -36,7 +37,9 @@ namespace CloudStorage.Infrastructure.Data
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasIndex(f => f.OwnerId);
+                entity.HasIndex(f => new { f.OwnerId, f.Status, f.IsDeleted });
                 entity.HasIndex(f => f.Hash);
+                entity.HasIndex(f => f.UploadSessionId);
                 entity.Property(f => f.FileName).IsRequired().HasMaxLength(255);
             });
 
@@ -76,6 +79,7 @@ namespace CloudStorage.Infrastructure.Data
 
                 entity.HasIndex(fc => fc.FileMetadataId);
                 entity.HasIndex(fc => fc.Hash);
+                entity.HasIndex(fc => new { fc.Hash, fc.FileMetadataId });
                 entity.HasIndex(fc => new { fc.FileMetadataId, fc.ChunkIndex }).IsUnique();
                 entity.Property(fc => fc.Hash).IsRequired();
                 entity.Property(fc => fc.StoragePath).IsRequired();
@@ -115,6 +119,7 @@ namespace CloudStorage.Infrastructure.Data
                 entity.HasIndex(se => se.FileMetadataId);
                 entity.HasIndex(se => se.DeviceId);
                 entity.HasIndex(se => se.Timestamp);
+                entity.HasIndex(se => new { se.DeviceId, se.Timestamp });
             });
 
             // ChunkRegistry configuration
@@ -124,6 +129,19 @@ namespace CloudStorage.Infrastructure.Data
                 entity.Property(cr => cr.Hash).IsRequired().HasMaxLength(64);
                 entity.Property(cr => cr.StoragePath).IsRequired().HasMaxLength(500);
                 entity.HasIndex(cr => cr.Hash).IsUnique();
+            });
+
+            // PasswordResetToken configuration
+            modelBuilder.Entity<PasswordResetToken>(entity =>
+            {
+                entity.HasOne(prt => prt.User)
+                    .WithMany()
+                    .HasForeignKey(prt => prt.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(prt => prt.TokenHash).IsUnique();
+                entity.HasIndex(prt => prt.UserId);
+                entity.Property(prt => prt.TokenHash).IsRequired().HasMaxLength(128);
             });
 
             base.OnModelCreating(modelBuilder);

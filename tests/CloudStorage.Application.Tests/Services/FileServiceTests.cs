@@ -16,13 +16,21 @@ namespace CloudStorage.Application.Tests.Services
     {
         private readonly Mock<IFileMetadataRepository> _fileRepositoryMock;
         private readonly Mock<IUserRepository> _userRepositoryMock;
+        private readonly Mock<ICacheService> _cacheServiceMock;
         private readonly FileService _fileService;
 
         public FileServiceTests()
         {
             _fileRepositoryMock = new Mock<IFileMetadataRepository>();
             _userRepositoryMock = new Mock<IUserRepository>();
-            _fileService = new FileService(_fileRepositoryMock.Object, _userRepositoryMock.Object);
+            _cacheServiceMock = new Mock<ICacheService>();
+            
+            // Set up default mock behavior for cache to return null so normal DB logic flows
+            _cacheServiceMock.Setup(c => c.GetAsync<FileResponseDto>(It.IsAny<string>())).ReturnsAsync((FileResponseDto)null);
+            _cacheServiceMock.Setup(c => c.GetAsync<bool?>(It.IsAny<string>())).ReturnsAsync((bool?)null);
+            _cacheServiceMock.Setup(c => c.GetAsync<DashboardStatsDto>(It.IsAny<string>())).ReturnsAsync((DashboardStatsDto)null);
+
+            _fileService = new FileService(_fileRepositoryMock.Object, _userRepositoryMock.Object, _cacheServiceMock.Object);
         }
 
         [Fact]

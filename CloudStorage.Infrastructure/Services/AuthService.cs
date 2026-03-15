@@ -20,12 +20,18 @@ namespace CloudStorage.Infrastructure.Services
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly IRefreshTokenService _refreshTokenService;
+        private readonly IEmailService _emailService;
 
-        public AuthService(ApplicationDbContext context, IConfiguration configuration, IRefreshTokenService refreshTokenService)
+        public AuthService(
+            ApplicationDbContext context,
+            IConfiguration configuration,
+            IRefreshTokenService refreshTokenService,
+            IEmailService emailService)
         {
             _context = context;
             _configuration = configuration;
             _refreshTokenService = refreshTokenService;
+            _emailService = emailService;
         }
 
         public async Task<User> RegisterAsync(User user, string password)
@@ -118,33 +124,67 @@ namespace CloudStorage.Infrastructure.Services
 
         public async Task<string> RequestPasswordResetAsync(string email)
         {
+            const string genericMessage = "If the email exists, a password reset link has been sent";
+
             var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == email);
             if (user == null)
             {
-                // Don't reveal that the email doesn't exist
-                return "If the email exists, a password reset link has been sent";
+                // Never reveal whether the email exists
+                return genericMessage;
             }
 
-            // Generate password reset token
-            var resetToken = GeneratePasswordResetToken();
-            
-            // In a real application, you would:
-            // 1. Store this token in the database with expiration
-            // 2. Send an email with the reset link
-            // For now, we'll just return a placeholder message
+            // Generate a cryptographically random token
+            var rawToken = GenerateSecureToken();
+            var tokenHash = HashToken(rawToken);
 
-            return resetToken; // In production, don't return the token directly
+            var resetToken = new PasswordResetToken
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                TokenHash = tokenHash,
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(GetPasswordResetTokenExpirationMinutes()),
+                IsUsed = false
+            };
+
+            _context.PasswordResetTokens.Add(resetToken);
+            await _context.SaveChangesAsync();
+
+            // Send the email with the raw (unhashed) token
+            await _emailService.SendPasswordResetEmailAsync(email, rawToken);
+
+            return genericMessage;
         }
 
-        public Task ResetPasswordAsync(string token, string newPassword)
+        public async Task ResetPasswordAsync(string token, string newPassword)
         {
-            // In a real application, you would:
-            // 1. Validate the reset token from the database
-            // 2. Check if it's expired
-            // 3. Update the password
-            // For now, this is a placeholder
+            var tokenHash = HashToken(token);
 
-            throw new NotImplementedException("Password reset functionality requires email integration");
+            var resetToken = await _context.PasswordResetTokens
+                .Include(prt => prt.User)
+                .FirstOrDefaultAsync(prt => prt.TokenHash == tokenHash);
+
+            if (resetToken == null)
+                throw new Exception("Invalid password reset token");
+
+            if (resetToken.ExpiresAt < DateTime.UtcNow)
+                throw new Exception("Password reset token has expired");
+
+            if (resetToken.IsUsed)
+                throw new Exception("Password reset token has already been used");
+
+            // Update user's password
+            var user = resetToken.User;
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            
+            // Mark token as used
+            resetToken.IsUsed = true;
+            resetToken.UsedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            // Revoke all active sessions for security
+            await _refreshTokenService.RevokeAllUserTokensAsync(user.Id);
         }
 
         public async Task<User?> GetUserByIdAsync(int userId)
@@ -179,14 +219,22 @@ namespace CloudStorage.Infrastructure.Services
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        private string GeneratePasswordResetToken()
+        private static string GenerateSecureToken()
         {
             var randomBytes = new byte[32];
             using (var rng = RandomNumberGenerator.Create())
             {
                 rng.GetBytes(randomBytes);
             }
-            return Convert.ToBase64String(randomBytes);
+            return Convert.ToHexString(randomBytes);
+        }
+
+        private static string HashToken(string token)
+        {
+            using var sha256 = SHA256.Create();
+            var bytes = Encoding.UTF8.GetBytes(token);
+            var hash = sha256.ComputeHash(bytes);
+            return Convert.ToHexString(hash);
         }
 
         private int GetAccessTokenExpirationMinutes()
@@ -198,6 +246,12 @@ namespace CloudStorage.Infrastructure.Services
         private int GetAccessTokenExpirationSeconds()
         {
             return GetAccessTokenExpirationMinutes() * 60;
+        }
+
+        private int GetPasswordResetTokenExpirationMinutes()
+        {
+            var configValue = _configuration["PasswordReset:TokenExpirationMinutes"];
+            return int.TryParse(configValue, out var minutes) ? minutes : 60;
         }
     }
 }

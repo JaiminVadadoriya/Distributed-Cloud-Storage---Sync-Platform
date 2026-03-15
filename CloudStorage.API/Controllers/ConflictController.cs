@@ -37,11 +37,20 @@ namespace CloudStorage.API.Controllers
             try
             {
                 var result = await _conflictService.CheckConflictAsync(request.FileId, request.ClientVersionVector);
-                return Ok(result);
+                return Ok(new ApiResponse<ConflictCheckResponseDto>
+                {
+                    Success = true,
+                    Message = "Conflict check completed",
+                    Data = result
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
             }
         }
 
@@ -60,15 +69,27 @@ namespace CloudStorage.API.Controllers
                     request.Resolution,
                     request.ClientVersionVector);
 
-                return Ok(new { message = "Conflict resolved successfully." });
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = "Conflict resolved successfully."
+                });
             }
             catch (InvalidOperationException ex)
             {
-                return NotFound(new { message = ex.Message });
+                return NotFound(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
             }
         }
     }

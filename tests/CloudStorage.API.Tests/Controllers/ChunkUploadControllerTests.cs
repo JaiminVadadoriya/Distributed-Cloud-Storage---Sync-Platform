@@ -22,6 +22,7 @@ namespace CloudStorage.API.Tests.Controllers
         private readonly Mock<IBlobSasService> _mockSasService;
         private readonly Mock<IAzureChunkVerificationService> _mockVerificationService;
         private readonly Mock<INotificationService> _mockNotificationService;
+        private readonly Mock<IMessageQueue> _mockMessageQueue;
         private readonly ChunkUploadController _controller;
         private readonly int _testUserId = 1;
 
@@ -34,6 +35,7 @@ namespace CloudStorage.API.Tests.Controllers
             _mockSasService = new Mock<IBlobSasService>();
             _mockVerificationService = new Mock<IAzureChunkVerificationService>();
             _mockNotificationService = new Mock<INotificationService>();
+            _mockMessageQueue = new Mock<IMessageQueue>();
             _controller = new ChunkUploadController(
                 _mockFileRepo.Object, 
                 _mockChunkRepo.Object,
@@ -41,7 +43,8 @@ namespace CloudStorage.API.Tests.Controllers
                 _mockDeduplication.Object,
                 _mockSasService.Object,
                 _mockVerificationService.Object,
-                _mockNotificationService.Object);
+                _mockNotificationService.Object,
+                _mockMessageQueue.Object);
 
             // Mock User context
             var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
@@ -89,7 +92,14 @@ namespace CloudStorage.API.Tests.Controllers
                 .ReturnsAsync(new ChunkRegistry());
 
             // Act
-            var result = await _controller.UploadChunk(chunkFile.Object, sessionId, 0, "hash");
+            var request = new ChunkUploadController.UploadChunkRequestDto 
+            {
+                Chunk = chunkFile.Object,
+                SessionId = sessionId,
+                ChunkIndex = 0,
+                Hash = "hash"
+            };
+            var result = await _controller.UploadChunk(request);
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);

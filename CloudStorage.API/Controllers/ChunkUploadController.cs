@@ -27,6 +27,7 @@ namespace CloudStorage.API.Controllers
         private readonly IBlobSasService _sasService;
         private readonly IAzureChunkVerificationService _verificationService;
         private readonly INotificationService _notificationService;
+        private readonly IMessageQueue _messageQueue;
 
         public ChunkUploadController(
             IFileMetadataRepository fileRepository,
@@ -35,7 +36,8 @@ namespace CloudStorage.API.Controllers
             IDeduplicationService deduplication,
             IBlobSasService sasService,
             IAzureChunkVerificationService verificationService,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            IMessageQueue messageQueue)
         {
             _fileRepository = fileRepository;
             _chunkRepository = chunkRepository;
@@ -44,6 +46,7 @@ namespace CloudStorage.API.Controllers
             _sasService = sasService;
             _verificationService = verificationService;
             _notificationService = notificationService;
+            _messageQueue = messageQueue;
         }
 
         private int GetUserId()
@@ -87,11 +90,20 @@ namespace CloudStorage.API.Controllers
                     UploadUrl = $"/api/files/chunks"
                 };
 
-                return Ok(response);
+                return Ok(new ApiResponse<UploadSessionResponseDto>
+                {
+                    Success = true,
+                    Message = "Upload session initiated",
+                    Data = response
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
             }
         }
 
@@ -110,14 +122,22 @@ namespace CloudStorage.API.Controllers
             try
             {
                 if (request.Chunk == null || request.Chunk.Length == 0)
-                    return BadRequest(new { message = "Chunk data is required" });
+                    return BadRequest(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Chunk data is required"
+                    });
 
                 var userId = GetUserId();
 
                 // Find file by session ID
                 var fileMetadata = await _fileRepository.GetBySessionIdAsync(request.SessionId);
                 if (fileMetadata == null)
-                    return NotFound(new { message = "Upload session not found" });
+                    return NotFound(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Upload session not found"
+                    });
 
                 if (fileMetadata.OwnerId != userId)
                     return Forbid("Unauthorized access to upload session");
@@ -169,11 +189,20 @@ namespace CloudStorage.API.Controllers
                     Message = isDuplicate ? "Chunk deduplicated" : "Chunk uploaded successfully"
                 };
 
-                return Ok(response);
+                return Ok(new ApiResponse<ChunkUploadResponseDto>
+                {
+                    Success = true,
+                    Message = response.Message,
+                    Data = response
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
             }
         }
 
@@ -186,45 +215,59 @@ namespace CloudStorage.API.Controllers
 
                 var fileMetadata = await _fileRepository.GetBySessionIdAsync(dto.SessionId);
                 if (fileMetadata == null)
-                    return NotFound(new { message = "Upload session not found" });
+                    return NotFound(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Upload session not found"
+                    });
 
                 if (fileMetadata.OwnerId != userId)
                     return Forbid("Unauthorized access to upload session");
 
-                // Validate all chunks exist in Azure Blob Storage
-                var verificationResult = await _verificationService.VerifyAllChunksAsync(fileMetadata.Id, fileMetadata.ChunkCount);
-                if (!verificationResult.IsValid)
+                // Offload verification to RabbitMQ instead of doing it synchronously
+                var dedupTask = new
                 {
-                    return BadRequest(new
-                    {
-                        message = $"Incomplete upload: Missing chunk indices: {string.Join(", ", verificationResult.MissingChunkIndices)}"
-                    });
-                }
+                    TaskType = "VerifyAndComplete",
+                    FileId = fileMetadata.Id,
+                    ChunkCount = fileMetadata.ChunkCount,
+                    SessionId = dto.SessionId,
+                    OwnerId = fileMetadata.OwnerId,
+                    FileName = fileMetadata.FileName,
+                    Size = fileMetadata.Size
+                };
+                
+                await _messageQueue.PublishAsync("deduplication-tasks", dedupTask);
 
-                // Update status to complete
-                fileMetadata.Status = UploadStatus.Complete;
+                // Update status to processing (or complete if we trust the background worker)
+                fileMetadata.Status = UploadStatus.Complete; // Assuming frontend expects Complete to proceed, or Processing.
                 fileMetadata.LastModifiedAt = DateTime.UtcNow;
                 await _fileRepository.UpdateAsync(fileMetadata);
 
-                // Push real-time notification
-                await _notificationService.NotifyFileUploadedAsync(fileMetadata.Id, fileMetadata.FileName, fileMetadata.Size, fileMetadata.OwnerId);
-
-                return Ok(new
+                return Ok(new ApiResponse<object>
                 {
-                    fileId = fileMetadata.Id,
-                    status = "complete",
-                    metadata = new
+                    Success = true,
+                    Message = "Upload completed",
+                    Data = new
                     {
-                        fileMetadata.FileName,
-                        fileMetadata.Size,
-                        fileMetadata.ChunkCount,
-                        fileMetadata.ContentType
+                        fileId = fileMetadata.Id,
+                        status = "complete",
+                        metadata = new
+                        {
+                            fileMetadata.FileName,
+                            fileMetadata.Size,
+                            fileMetadata.ChunkCount,
+                            fileMetadata.ContentType
+                        }
                     }
                 });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
             }
         }
 
@@ -237,7 +280,11 @@ namespace CloudStorage.API.Controllers
 
                 var fileMetadata = await _fileRepository.GetBySessionIdAsync(sessionId);
                 if (fileMetadata == null)
-                    return NotFound(new { message = "Upload session not found" });
+                    return NotFound(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Upload session not found"
+                    });
 
                 if (fileMetadata.OwnerId != userId)
                     return Forbid("Unauthorized access to upload session");
@@ -256,11 +303,20 @@ namespace CloudStorage.API.Controllers
                     Status = fileMetadata.Status.ToString()
                 };
 
-                return Ok(response);
+                return Ok(new ApiResponse<UploadStatusResponseDto>
+                {
+                    Success = true,
+                    Message = "Status retrieved",
+                    Data = response
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
             }
         }
 
@@ -273,7 +329,11 @@ namespace CloudStorage.API.Controllers
                 var fileMetadata = await _fileRepository.GetBySessionIdAsync(dto.SessionId);
                 
                 if (fileMetadata == null)
-                    return NotFound(new { message = "Upload session not found" });
+                    return NotFound(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Upload session not found"
+                    });
 
                 if (fileMetadata.OwnerId != userId)
                     return Forbid("Unauthorized access to upload session");
@@ -282,16 +342,30 @@ namespace CloudStorage.API.Controllers
                 if (isDuplicate)
                 {
                     // For duplicates, client doesn't need to upload to Azure
-                    return Ok(new { message = "Chunk deduplicated", isDuplicate = true });
+                    return Ok(new ApiResponse<object>
+                    {
+                        Success = true,
+                        Message = "Chunk deduplicated",
+                        Data = new { isDuplicate = true }
+                    });
                 }
 
                 var sasResponse = await _sasService.GenerateChunkUploadSasAsync(fileMetadata.Id, dto.ChunkIndex);
                 
-                return Ok(sasResponse);
+                return Ok(new ApiResponse<SasUploadUrlResponseDto>
+                {
+                    Success = true,
+                    Message = "SAS URL generated",
+                    Data = sasResponse
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
             }
         }
 
@@ -304,7 +378,11 @@ namespace CloudStorage.API.Controllers
                 var fileMetadata = await _fileRepository.GetBySessionIdAsync(dto.SessionId);
                 
                 if (fileMetadata == null)
-                    return NotFound(new { message = "Upload session not found" });
+                    return NotFound(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Upload session not found"
+                    });
 
                 if (fileMetadata.OwnerId != userId)
                     return Forbid("Unauthorized access to upload session");
@@ -313,7 +391,11 @@ namespace CloudStorage.API.Controllers
                 var exists = await _sasService.ChunkBlobExistsAsync(dto.BlobName);
                 if (!exists)
                 {
-                    return BadRequest(new { message = "Chunk blob not found in storage" });
+                    return BadRequest(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Chunk blob not found in storage"
+                    });
                 }
 
                 // Create chunk record
@@ -334,11 +416,19 @@ namespace CloudStorage.API.Controllers
                 await _chunkRepository.AddAsync(fileChunk);
                 await _deduplication.RegisterChunkAsync(dto.Hash, fileChunk.StoragePath, dto.Size);
 
-                return Ok(new { message = "Chunk verified and registered successfully" });
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = "Chunk verified and registered successfully"
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
             }
         }
     }

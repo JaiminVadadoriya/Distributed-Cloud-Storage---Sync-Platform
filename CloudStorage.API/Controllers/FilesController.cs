@@ -50,11 +50,20 @@ namespace CloudStorage.API.Controllers
             {
                 var userId = GetUserId();
                 var files = await _fileService.GetUserFilesAsync(userId);
-                return Ok(files);
+                return Ok(new ApiResponse<IEnumerable<FileListDto>>
+                {
+                    Success = true,
+                    Message = "Files retrieved successfully",
+                    Data = files
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
             }
         }
 
@@ -65,11 +74,20 @@ namespace CloudStorage.API.Controllers
             {
                 var userId = GetUserId();
                 var stats = await _fileService.GetDashboardStatsAsync(userId);
-                return Ok(stats);
+                return Ok(new ApiResponse<DashboardStatsDto>
+                {
+                    Success = true,
+                    Message = "Stats retrieved successfully",
+                    Data = stats
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
             }
         }
 
@@ -82,13 +100,26 @@ namespace CloudStorage.API.Controllers
                 var file = await _fileService.GetFileByIdAsync(id, userId);
 
                 if (file == null)
-                    return NotFound(new { message = "File not found or access denied" });
+                    return NotFound(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "File not found or access denied"
+                    });
 
-                return Ok(file);
+                return Ok(new ApiResponse<FileResponseDto>
+                {
+                    Success = true,
+                    Message = "File retrieved successfully",
+                    Data = file
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
             }
         }
 
@@ -122,6 +153,10 @@ namespace CloudStorage.API.Controllers
             long totalLength = file.Size;
             Response.Headers.Append("Accept-Ranges", "bytes");
             Response.Headers.Append("X-Accel-Buffering", "no");
+            
+            // Add Cache-Control for CDN edge caching
+            Response.Headers.Append("Cache-Control", "public, max-age=86400"); // 24 hours
+
             Response.ContentType = file.ContentType;
             Response.Headers.Append(
                 "Content-Disposition",
@@ -241,11 +276,21 @@ namespace CloudStorage.API.Controllers
             {
                 var userId = GetUserId();
                 var file = await _fileService.CreateFileMetadataAsync(dto, userId);
-                return CreatedAtAction(nameof(GetFileById), new { id = file.Id }, file);
+                var response = new ApiResponse<FileResponseDto>
+                {
+                    Success = true,
+                    Message = "File created successfully",
+                    Data = file
+                };
+                return CreatedAtAction(nameof(GetFileById), new { id = file.Id }, response);
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
             }
         }
 
@@ -260,7 +305,11 @@ namespace CloudStorage.API.Controllers
                 // Push real-time notification
                 await _notificationService.NotifyFileDeletedAsync(id, userId);
 
-                return Ok(new { message = "File deleted successfully" });
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = "File deleted successfully"
+                });
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -268,7 +317,11 @@ namespace CloudStorage.API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
             }
         }
 
@@ -283,11 +336,19 @@ namespace CloudStorage.API.Controllers
                 // Push real-time notification
                 await _notificationService.NotifyAllFilesDeletedAsync(userId);
 
-                return Ok(new { message = "All files deleted successfully" });
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = "All files deleted successfully"
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
             }
         }
 
@@ -301,11 +362,19 @@ namespace CloudStorage.API.Controllers
                 PermissionType permissionType;
                 if (!Enum.TryParse<PermissionType>(dto.PermissionType, true, out permissionType))
                 {
-                    return BadRequest(new { message = "Invalid permission type" });
+                    return BadRequest(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Invalid permission type"
+                    });
                 }
 
                 await _fileService.GrantPermissionAsync(id, dto.UserId, userId, permissionType);
-                return Ok(new { message = "Permission granted successfully" });
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = "Permission granted successfully"
+                });
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -313,7 +382,52 @@ namespace CloudStorage.API.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
+            }
+        }
+
+        [HttpGet("{id}/download-link")]
+        public async Task<IActionResult> GenerateDownloadLink(Guid id)
+        {
+            try
+            {
+                var userId = GetUserId();
+                var file = await _fileService.GetFileByIdAsync(id, userId);
+
+                if (file == null)
+                    return NotFound(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "File not found or access denied"
+                    });
+
+                // Generate a simple expiring token or use CDN signing logic
+                // For demonstration, returning a constructed URL
+                var baseUrl = Request.Scheme + "://" + Request.Host;
+                var downloadUrl = $"{baseUrl}/api/files/{id}/download?token=simulated_presigned_token_" + Guid.NewGuid().ToString("N");
+                
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "Link generated successfully",
+                    Data = new 
+                    { 
+                        url = downloadUrl,
+                        expiresIn = 86400 // 24 hours
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
             }
         }
     }

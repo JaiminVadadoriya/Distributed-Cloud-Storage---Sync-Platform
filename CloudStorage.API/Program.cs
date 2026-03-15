@@ -13,21 +13,55 @@ using System.Text;
 using CloudStorage.API.Extensions;
 using CloudStorage.API.Hubs;
 using CloudStorage.API.Services;
+using StackExchange.Redis;
+using Microsoft.AspNetCore.ResponseCompression;
+using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
+
+Console.WriteLine("CloudStorage API System Starting... Version: 2.0-Scalable");
+
 
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
+// Response compression
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+});
+
+// Configure Kestrel for HTTP/2 support
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ConfigureEndpointDefaults(listenOptions =>
+    {
+        listenOptions.Protocols = Microsoft.AspNetCore.Server.Kestrel.Core.HttpProtocols.Http1AndHttp2;
+    });
+});
 
 // Configure Swagger
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddResponseCaching();
 
 // Database configuration
+// Using Npgsql connection pooling for high concurrency
+var dbConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (!string.IsNullOrEmpty(dbConnectionString) && !dbConnectionString.Contains("Maximum Pool Size"))
+{
+    dbConnectionString += dbConnectionString.EndsWith(";") ? "" : ";";
+    dbConnectionString += "Maximum Pool Size=100;Minimum Pool Size=10;Connection Idle Lifetime=300;";
+}
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(dbConnectionString, npgsqlOptions => 
+    {
+        npgsqlOptions.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorCodesToAdd: null);
+    }));
 
 // Repository registration
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
@@ -37,14 +71,33 @@ builder.Services.AddScoped<IFileMetadataRepository, FileMetadataRepository>();
 // Service registration
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IDeduplicationService, DeduplicationService>();
 builder.Services.AddScoped<INotificationService, SignalRNotificationService>();
 builder.Services.AddScoped<IDeltaSyncService, DeltaSyncService>();
 builder.Services.AddScoped<IConflictDetectionService, ConflictDetectionService>();
 
-// SignalR
-builder.Services.AddSignalR();
+// RabbitMQ and Background processing
+builder.Services.AddSingleton<IMessageQueue, RabbitMqService>();
+builder.Services.AddHostedService<BackgroundWorkerService>();
+
+// Redis and Caching Configuration
+var redisConnectionString = builder.Configuration["Redis:ConnectionString"] ?? "redis:6379";
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp => 
+    ConnectionMultiplexer.Connect(redisConnectionString));
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisConnectionString;
+});
+
+builder.Services.AddScoped<ICacheService, RedisCacheService>();
+
+// SignalR with Redis Backplane
+builder.Services.AddSignalR()
+    .AddStackExchangeRedis(redisConnectionString);
 
 // Storage & Azure configuration
 var blobConnectionString = builder.Configuration["AzureBlob:ConnectionString"] 
@@ -183,13 +236,21 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors();
+app.UseResponseCompression();
+app.UseResponseCaching();
 app.UseRateLimiter();
+app.UseMiddleware<CloudStorage.API.Services.UploadThrottlingMiddleware>();
+
+// Enable Prometheus metrics
+app.UseHttpMetrics();
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapHub<FileStorageHub>("/hubs/storage");
+app.MapMetrics(); // Exposes /metrics
 app.MapHealthChecks("/health");
 
-app.ApplyMigrations();
+app.ApplyMigrations(); // Manual migration recommended for distributed setups
 
 app.Run();

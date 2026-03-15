@@ -142,4 +142,43 @@ erDiagram
         int ChunkIndex
         long Size
     }
+
+## 6. Distributed Scale-Out Infrastructure
+
+This diagram illustrates how the system handles ~12,000 concurrent users using a load-balanced cluster and background message processing.
+
+```mermaid
+graph LR
+    User([End User]) --> |HTTPS| LB[NGINX Load Balancer]
+    
+    subgraph "API Cluster"
+        API1[API Instance 1]
+        API2[API Instance 2]
+        API3[API Instance 3]
+    end
+
+    LB --> |Round Robin| API1
+    LB --> |Round Robin| API2
+    LB --> |Round Robin| API3
+
+    API1 & API2 & API3 <--> |SignalR Backplane| Redis[(Redis)]
+    API1 & API2 & API3 --> |Async Tasks| RMQ[[RabbitMQ]]
+    API1 & API2 & API3 <--> |Persistence| DB[(PostgreSQL)]
+
+    subgraph "Background Workers"
+        Worker[Worker Threads]
+    end
+
+    RMQ --> Worker
+    Worker --> DB
+    Worker --> Storage[(Local/Cloud Storage)]
+
+    subgraph "Monitoring"
+        Prom[Prometheus]
+        Graf[Grafana]
+    end
+
+    API1 & API2 & API3 -.-> |Metrics| Prom
+    Prom -.-> Graf
+```
 ```

@@ -13,11 +13,13 @@ namespace CloudStorage.Infrastructure.Services
     {
         private readonly IFileMetadataRepository _fileRepository;
         private readonly IUserRepository _userRepository;
+        private readonly ICacheService _cache;
 
-        public FileService(IFileMetadataRepository fileRepository, IUserRepository userRepository)
+        public FileService(IFileMetadataRepository fileRepository, IUserRepository userRepository, ICacheService cache)
         {
             _fileRepository = fileRepository;
             _userRepository = userRepository;
+            _cache = cache;
         }
 
         public async Task<IEnumerable<FileListDto>> GetUserFilesAsync(int userId)
@@ -41,6 +43,13 @@ namespace CloudStorage.Infrastructure.Services
 
         public async Task<FileResponseDto?> GetFileByIdAsync(Guid fileId, int requestingUserId)
         {
+            var cacheKey = $"file:{fileId}:{requestingUserId}";
+            var cachedResponse = await _cache.GetAsync<FileResponseDto>(cacheKey);
+            if (cachedResponse != null)
+            {
+                return cachedResponse;
+            }
+
             if (!await HasPermissionAsync(fileId, requestingUserId, PermissionType.Read))
                 return null;
 
@@ -50,7 +59,7 @@ namespace CloudStorage.Infrastructure.Services
 
             var owner = await _userRepository.GetByIdAsync(file.OwnerId);
 
-            return new FileResponseDto
+            var response = new FileResponseDto
             {
                 Id = file.Id,
                 FileName = file.FileName,
@@ -63,6 +72,9 @@ namespace CloudStorage.Infrastructure.Services
                 OwnerId = file.OwnerId,
                 OwnerUsername = owner?.Username ?? "Unknown"
             };
+
+            await _cache.SetAsync(cacheKey, response, TimeSpan.FromMinutes(10));
+            return response;
         }
 
         public async Task<IEnumerable<(string StoragePath, long Size)>> GetFileChunkPathsAsync(Guid fileId, int requestingUserId)
@@ -141,6 +153,10 @@ namespace CloudStorage.Infrastructure.Services
             file.IsDeleted = true;
             file.LastModifiedAt = DateTime.UtcNow;
             await _fileRepository.UpdateAsync(file);
+            
+            await _cache.RemoveByPrefixAsync($"file:{fileId}:");
+            await _cache.RemoveByPrefixAsync($"stats:{userId}");
+            await _cache.RemoveByPrefixAsync($"perm:{fileId}:");
         }
 
         public async Task GrantPermissionAsync(Guid fileId, int userId, int grantedByUserId, PermissionType permissionType)
@@ -173,25 +189,48 @@ namespace CloudStorage.Infrastructure.Services
             }
 
             await _fileRepository.UpdateAsync(file);
+            await _cache.RemoveByPrefixAsync($"perm:{fileId}:");
+            await _cache.RemoveByPrefixAsync($"file:{fileId}:");
         }
 
         public async Task<bool> HasPermissionAsync(Guid fileId, int userId, PermissionType minimumPermission)
         {
-            return await _fileRepository.HasPermissionAsync(fileId, userId, minimumPermission);
+            var cacheKey = $"perm:{fileId}:{userId}:{minimumPermission}";
+            var cachedPermission = await _cache.GetAsync<bool?>(cacheKey);
+            
+            if (cachedPermission.HasValue)
+            {
+                return cachedPermission.Value;
+            }
+
+            var hasPerm = await _fileRepository.HasPermissionAsync(fileId, userId, minimumPermission);
+            await _cache.SetAsync(cacheKey, hasPerm, TimeSpan.FromMinutes(15));
+            return hasPerm;
         }
 
         public async Task<DashboardStatsDto> GetDashboardStatsAsync(int userId)
         {
+            var cacheKey = $"stats:{userId}";
+            var cachedStats = await _cache.GetAsync<DashboardStatsDto>(cacheKey);
+            
+            if (cachedStats != null)
+            {
+                return cachedStats;
+            }
+
             var files = await _fileRepository.GetUserFilesAsync(userId);
             var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
             
-            return new DashboardStatsDto
+            var stats = new DashboardStatsDto
             {
                 TotalStorageBytes = files.Sum(f => f.Size),
                 MaxStorageBytes = 10L * 1024 * 1024 * 1024, // 10 GB limit placeholder
                 TotalFiles = files.Count(),
                 RecentUploads = files.Count(f => f.CreatedAt >= oneWeekAgo)
             };
+
+            await _cache.SetAsync(cacheKey, stats, TimeSpan.FromMinutes(5));
+            return stats;
         }
         
         public async Task DeleteAllUserFilesAsync(int userId)

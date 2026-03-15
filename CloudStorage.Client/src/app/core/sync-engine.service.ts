@@ -2,6 +2,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { ApiResponse } from './api.service';
 import { OfflineCacheService, CachedFileMetadata, PendingOperation } from './offline-cache.service';
 import { ConnectionStatusService } from './connection-status.service';
 import { NotificationService } from './notification.service';
@@ -150,19 +151,23 @@ export class SyncEngineService {
 
   private async pullServerChanges(sinceUtc: string): Promise<DeltaSyncResponse> {
     const params = new HttpParams().set('sinceUtc', sinceUtc);
-    return firstValueFrom(
-      this.http.get<DeltaSyncResponse>(`${environment.apiUrl}/sync/delta`, { params })
+    const response = await firstValueFrom(
+      this.http.get<ApiResponse<DeltaSyncResponse>>(`${environment.apiUrl}/sync/delta`, { params })
     );
+    if (!response.success || !response.data) throw new Error(response.message || 'Failed to pull changes');
+    return response.data;
   }
 
   private async checkConflict(fileId: string, clientVersionVector: string): Promise<ConflictCheckResponse> {
-    return firstValueFrom(
-      this.http.post<ConflictCheckResponse>(`${environment.apiUrl}/sync/check-conflicts`, {
+    const response = await firstValueFrom(
+      this.http.post<ApiResponse<ConflictCheckResponse>>(`${environment.apiUrl}/sync/check-conflicts`, {
         fileId,
         clientVersionVector,
         clientLastModifiedAt: new Date().toISOString()
       })
     );
+    if (!response.success || !response.data) throw new Error(response.message || 'Failed to check conflicts');
+    return response.data;
   }
 
   async resolveConflict(fileId: string, resolution: 'KeepLocal' | 'KeepServer'): Promise<void> {
@@ -171,7 +176,7 @@ export class SyncEngineService {
 
     try {
       await firstValueFrom(
-        this.http.post(`${environment.apiUrl}/sync/resolve`, {
+        this.http.post<ApiResponse>(`${environment.apiUrl}/sync/resolve`, {
           fileId,
           resolution: resolution === 'KeepLocal' ? 0 : 1,
           clientVersionVector: conflict.localVersionVector
@@ -233,7 +238,7 @@ export class SyncEngineService {
     switch (op.type) {
       case 'delete':
         await firstValueFrom(
-          this.http.delete(`${environment.apiUrl}/files/${op.fileId}`)
+          this.http.delete<ApiResponse>(`${environment.apiUrl}/files/${op.fileId}`)
         );
         break;
       case 'rename':

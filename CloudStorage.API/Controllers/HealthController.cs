@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using CloudStorage.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using CloudStorage.Application.DTOs;
 
 namespace CloudStorage.API.Controllers
 {
@@ -19,7 +20,12 @@ namespace CloudStorage.API.Controllers
         [HttpGet]
         public IActionResult GetHealth()
         {
-            return Ok(new { status = "healthy", timestamp = System.DateTime.UtcNow });
+            return Ok(new ApiResponse<object>
+            {
+                Success = true,
+                Message = "API is healthy",
+                Data = new { status = "healthy", timestamp = System.DateTime.UtcNow }
+            });
         }
 
         [HttpGet("ready")]
@@ -29,11 +35,21 @@ namespace CloudStorage.API.Controllers
             {
                 // Check database connectivity
                 await _context.Database.CanConnectAsync();
-                return Ok(new { status = "ready", database = "connected", timestamp = System.DateTime.UtcNow });
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "API is ready",
+                    Data = new { status = "ready", database = "connected", timestamp = System.DateTime.UtcNow }
+                });
             }
             catch (System.Exception ex)
             {
-                return StatusCode(503, new { status = "not ready", database = "disconnected", error = ex.Message });
+                return StatusCode(503, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = ex.Message,
+                    Data = new { status = "not ready", database = "disconnected" }
+                });
             }
         }
     }

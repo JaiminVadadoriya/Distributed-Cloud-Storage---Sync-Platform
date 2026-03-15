@@ -35,6 +35,34 @@
 
     --color-text-base: var(--color-text-base);
     --color-text-muted: var(--color-text-muted);
+
+    --animate-blob: blob 7s infinite;
+    --animate-shimmer: shimmer 2s infinite;
+    --animate-fade-in-up: fadeInUp 0.5s ease-out;
+
+    @keyframes blob {
+      0% { transform: translate(0px, 0px) scale(1); }
+      33% { transform: translate(30px, -50px) scale(1.1); }
+      66% { transform: translate(-20px, 20px) scale(0.9); }
+      100% { transform: translate(0px, 0px) scale(1); }
+    }
+
+    @keyframes shimmer {
+      100% { transform: translateX(100%); }
+    }
+    
+    @keyframes fadeInUp {
+      0% { opacity: 0; transform: translateY(10px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+}
+
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
 }
 
 html,

@@ -8,12 +8,13 @@ A scalable, distributed cloud storage and synchronization platform built with **
 
 - **Chunked Uploads** — Files are split into 5 MB chunks with SHA-256 hashing for integrity
 - **Deduplication** — Identical chunks are stored once and reference-counted
-- **Resumable Transfers** — Uploads can be paused, resumed, and track per-chunk progress
-- **JWT Authentication** — Secure access with refresh token rotation and BCrypt password hashing
-- **Permission System** — Owner-based file access with Read / Write / Owner granularity
-- **Health Monitoring** — Liveness and readiness endpoints with database connectivity checks
-- **Containerized** — Full Docker Compose setup for API, frontend, PostgreSQL, and Redis
-- **Comprehensive Tests** — Unit tests across all 4 backend layers + frontend with Vitest
+- **Horizontal Scaling** — API scaled to 3+ replicas with **NGINX** load balancing
+- **Distributed Caching** — **Redis** for metadata, permissions, and SignalR backplane
+- **Async Background Tasks** — **RabbitMQ** for offloading heavy dedup/integrity checks
+- **HTTP/2 & Compression** — Optimized network transfers with Brotli/Gzip and multiplexed connections
+- **Observability** — **Prometheus** and **Grafana** for real-time traffic monitoring
+- **Cloud-Ready** — Kubernetes manifests with HPA support and Docker Compose orchestration
+- **Comprehensive Tests** — Unit tests across all 4 backend layers + k6 load tests (12k CCU)
 
 ---
 
@@ -43,16 +44,16 @@ This project follows **Clean Architecture** with strict layer separation:
 
 ## 🛠️ Tech Stack
 
-| Layer              | Technology                            |
-| ------------------ | ------------------------------------- |
-| **Backend**        | .NET 10 Web API (C#)                   |
-| **Frontend**       | Angular 21 (TypeScript, Standalone)   |
-| **Database**       | PostgreSQL 16 (EF Core)               |
-| **Cache**          | Redis 7 (provisioned)                 |
-| **Auth**           | JWT (HS256) + BCrypt                  |
-| **Containers**     | Docker & Docker Compose               |
-| **Backend Tests**  | xUnit + Moq                           |
-| **Frontend Tests** | Vitest 4 + jsdom                      |
+| Layer              | Technology                                  |
+| ------------------ | ------------------------------------------- |
+| **Backend**        | .NET 10 Web API (C#)                        |
+| **Frontend**       | Angular 21 (TypeScript, Standalone)         |
+| **Database**       | PostgreSQL 16 (EF Core)                     |
+| **Cache**          | Redis 7 (Distributed Cache & Backplane)     |
+| **Message Queue**  | RabbitMQ 3 (Background Processing)          |
+| **Load Balancer**  | NGINX (Reverse Proxy, Compression)          |
+| **Observability**  | Prometheus + Grafana                        |
+| **Testing**        | xUnit, Moq, Vitest, **k6** (Load Testing)   |
 
 ---
 
@@ -91,19 +92,24 @@ cloud-storage/
 │   ├── Dockerfile                       #   Node 22 → Nginx SPA
 │   └── nginx.conf                       #   SPA routing config
 │
-├── tests/                               # Backend test projects
-│   ├── CloudStorage.Domain.Tests/       #   Entity & relationship tests
-│   ├── CloudStorage.Application.Tests/  #   Service logic tests
-│   ├── CloudStorage.Infrastructure.Tests/ # Repository & service tests
-│   └── CloudStorage.API.Tests/          #   Controller tests
+├── monitoring/                          # Observability Config
+│   ├── prometheus.yml                   #   Metric scrape config
+│   └── grafana/dashboards/              #   Pre-built API dashboards
 │
-├── docs/                                # Documentation
-│   ├── ARCHITECTURE.md                  #   System architecture reference
-│   └── DESIGN.md                        #   Design decisions & patterns
+├── k8s/                                 # Kubernetes Manifests
+│   ├── api-deployment.yaml              #   HPA, Replicas, Requests/Limits
+│   └── ingress-nginx.yaml               #   Ingress & WS annotations
 │
-├── docker-compose.yml                   #   Full orchestration
-├── masterplan.md                        #   Project roadmap & phases
-└── CloudStorage.sln                     #   .NET solution file
+├── nginx/                               # Load Balancer Config
+│   └── nginx.conf                       #   Load balancing & compression
+│
+├── tests/                               # Test Projects
+│   ├── ...                              #   Backend & Frontend projects
+│   └── load/                            #   **k6** Stress test scripts (12k CCU)
+│
+├── docker-compose.yml                   # Full orchestration (9+ services)
+├── masterplan.md                        # Project roadmap & phases
+└── CloudStorage.sln                     # .NET solution file
 ```
 
 ---
@@ -127,13 +133,16 @@ cd cloud-storage
 docker-compose up --build
 ```
 
-| Service    | URL                                  |
-| ---------- | ------------------------------------ |
-| API        | http://localhost:5000                 |
-| Swagger    | http://localhost:5000/swagger         |
-| Frontend   | http://localhost:4200                 |
-| PostgreSQL | localhost:5432                        |
-| Redis      | localhost:6379                        |
+| Service      | URL                                  |
+| ------------ | ------------------------------------ |
+| API (via LB) | http://localhost:5000                |
+| Frontend     | http://localhost:4200                |
+| Swagger      | http://localhost:5000/swagger        |
+| Grafana      | http://localhost:3000 (admin/admin)  |
+| Prometheus   | http://localhost:9090                |
+| RabbitMQ     | http://localhost:15672 (guest/guest) |
+| PostgreSQL   | localhost:5433                       |
+| Redis        | localhost:6379                       |
 
 ### Option 2: Manual Setup
 
@@ -242,10 +251,13 @@ npm test
 - [x] **Phase 1:** MVP — Backend API, PostgreSQL, Docker setup
 - [x] **Phase 2:** Database refinement, JWT auth, file management
 - [x] **Phase 3:** Chunked uploads with deduplication
-- [ ] **Phase 4:** Real-time sync with SignalR
-- [x] **Phase 5:** Azure Blob Storage integration
-- [ ] **Phase 6:** Offline-first mode with conflict resolution
-- [ ] **Phase 7:** Client-side encryption & advanced security
+- [x] **Phase 4:** Horizontal Scaling & NGINX Load Balancing
+- [x] **Phase 5:** Redis Caching & SignalR Backplane
+- [x] **Phase 6:** RabbitMQ Background Worker & Async processing
+- [x] **Phase 7:** Observability (Prometheus/Grafana)
+- [x] **Phase 8:** CDN Optimization & HTTP/2
+- [x] **Phase 9:** Kubernetes Manifests
+- [x] **Phase 10:** Load Testing with k6 (12k Users Target)
 
 ---
 

@@ -33,11 +33,20 @@ namespace CloudStorage.API.Controllers
                 };
 
                 var result = await _authService.RegisterAsync(user, dto.Password);
-                return Ok(new { result.Id, result.Username, result.Email });
+                return Ok(new ApiResponse<object> 
+                { 
+                    Success = true, 
+                    Message = "Registration successful", 
+                    Data = new { result.Id, result.Username, result.Email } 
+                });
             }
             catch (System.Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse 
+                { 
+                    Success = false, 
+                    Message = ex.Message 
+                });
             }
         }
 
@@ -49,13 +58,26 @@ namespace CloudStorage.API.Controllers
                 var response = await _authService.LoginAsync(dto.Identifier, dto.Password);
 
                 if (response == null)
-                    return Unauthorized(new { message = "Invalid credentials" });
+                    return Unauthorized(new ApiResponse 
+                    { 
+                        Success = false, 
+                        Message = "Invalid credentials" 
+                    });
 
-                return Ok(response);
+                return Ok(new ApiResponse<LoginResponseDto> 
+                { 
+                    Success = true, 
+                    Message = "Login successful", 
+                    Data = response 
+                });
             }
             catch (System.Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse 
+                { 
+                    Success = false, 
+                    Message = ex.Message 
+                });
             }
         }
 
@@ -65,9 +87,18 @@ namespace CloudStorage.API.Controllers
             var response = await _authService.RefreshTokenAsync(dto.RefreshToken);
 
             if (response == null)
-                return Unauthorized(new { message = "Invalid or expired refresh token" });
+                return Unauthorized(new ApiResponse 
+                { 
+                    Success = false, 
+                    Message = "Invalid or expired refresh token" 
+                });
 
-            return Ok(response);
+            return Ok(new ApiResponse<LoginResponseDto> 
+            { 
+                Success = true, 
+                Message = "Token refreshed successfully", 
+                Data = response 
+            });
         }
 
         [HttpPost("logout")]
@@ -75,14 +106,22 @@ namespace CloudStorage.API.Controllers
         public async Task<IActionResult> Logout(RefreshTokenDto dto)
         {
             await _authService.LogoutAsync(dto.RefreshToken);
-            return Ok(new { message = "Logged out successfully" });
+            return Ok(new ApiResponse 
+            { 
+                Success = true, 
+                Message = "Logged out successfully" 
+            });
         }
 
         [HttpPost("password-reset-request")]
         public async Task<IActionResult> RequestPasswordReset(PasswordResetRequestDto dto)
         {
             var result = await _authService.RequestPasswordResetAsync(dto.Email);
-            return Ok(new { message = result });
+            return Ok(new ApiResponse 
+            { 
+                Success = true, 
+                Message = result 
+            });
         }
 
         [HttpPost("password-reset")]
@@ -91,15 +130,19 @@ namespace CloudStorage.API.Controllers
             try
             {
                 await _authService.ResetPasswordAsync(dto.Token, dto.NewPassword);
-                return Ok(new { message = "Password reset successfully" });
-            }
-            catch (System.NotImplementedException ex)
-            {
-                return StatusCode(501, new { message = ex.Message });
+                return Ok(new ApiResponse 
+                { 
+                    Success = true, 
+                    Message = "Password reset successfully" 
+                });
             }
             catch (System.Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse 
+                { 
+                    Success = false, 
+                    Message = ex.Message 
+                });
             }
         }
     }

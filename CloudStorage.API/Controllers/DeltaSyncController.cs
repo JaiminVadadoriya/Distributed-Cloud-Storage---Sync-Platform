@@ -35,11 +35,20 @@ namespace CloudStorage.API.Controllers
             {
                 var userId = GetUserId();
                 var changes = await _deltaSyncService.GetChangesSinceAsync(userId, sinceUtc);
-                return Ok(changes);
+                return Ok(new ApiResponse<DeltaSyncResponseDto>
+                {
+                    Success = true,
+                    Message = "Changes retrieved successfully",
+                    Data = changes
+                });
             }
             catch (Exception ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
             }
         }
     }

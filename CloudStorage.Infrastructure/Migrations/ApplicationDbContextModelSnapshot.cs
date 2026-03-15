@@ -129,6 +129,8 @@ namespace CloudStorage.Infrastructure.Migrations
                     b.HasIndex("FileMetadataId", "ChunkIndex")
                         .IsUnique();
 
+                    b.HasIndex("Hash", "FileMetadataId");
+
                     b.ToTable("FileChunks");
                 });
 
@@ -201,6 +203,10 @@ namespace CloudStorage.Infrastructure.Migrations
 
                     b.HasIndex("OwnerId");
 
+                    b.HasIndex("UploadSessionId");
+
+                    b.HasIndex("OwnerId", "Status", "IsDeleted");
+
                     b.ToTable("FileMetadata");
                 });
 
@@ -235,6 +241,42 @@ namespace CloudStorage.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("FilePermissions");
+                });
+
+            modelBuilder.Entity("CloudStorage.Domain.Entities.PasswordResetToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTime?>("UsedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("PasswordResetTokens");
                 });
 
             modelBuilder.Entity("CloudStorage.Domain.Entities.RefreshToken", b =>
@@ -300,6 +342,8 @@ namespace CloudStorage.Infrastructure.Migrations
                     b.HasIndex("FileMetadataId");
 
                     b.HasIndex("Timestamp");
+
+                    b.HasIndex("DeviceId", "Timestamp");
 
                     b.ToTable("SyncEvents");
                 });
@@ -397,6 +441,17 @@ namespace CloudStorage.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("FileMetadata");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CloudStorage.Domain.Entities.PasswordResetToken", b =>
+                {
+                    b.HasOne("CloudStorage.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("User");
                 });

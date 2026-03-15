@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cloudstorage-ingress
+  namespace: cloud-storage
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/client-body-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-body-size: "110m"
+    # WebSockets
+    nginx.ingress.kubernetes.io/websocket-services: "cloudstorage-api-svc"
+spec:
+  rules:
+  - host: cloudstorage.local
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: cloudstorage-api-svc
+            port:
+              number: 80
