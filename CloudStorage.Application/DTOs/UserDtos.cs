@@ -64,4 +64,30 @@ namespace CloudStorage.Application.DTOs
         [StringLength(100, MinimumLength = 6)]
         public string NewPassword { get; set; } = string.Empty;
     }
+
+    public class UpdateProfileDto
+    {
+        [StringLength(50, MinimumLength = 3)]
+        public string? Username { get; set; }
+
+        [EmailAddress]
+        public string? Email { get; set; }
+    }
+
+    public class ChangePasswordDto
+    {
+        [Required]
+        public string CurrentPassword { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(100, MinimumLength = 6)]
+        public string NewPassword { get; set; } = string.Empty;
+    }
+
+    public class UserSearchResultDto
+    {
+        public int Id { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+    }
 }

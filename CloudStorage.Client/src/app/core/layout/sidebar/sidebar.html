@@ -1,0 +1,84 @@
+<div class="flex h-full flex-col justify-between py-6">
+  <!-- Logo Area -->
+  <div class="px-6 mb-10 flex items-center gap-3">
+    <div
+      class="w-8 h-8 rounded-none bg-editorial-text flex items-center justify-center text-editorial-bg font-bold text-lg">
+      C
+    </div>
+    <span class="text-lg font-bold tracking-tighter font-sans uppercase">CloudStorage</span>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="flex-1 space-y-1 px-3">
+    <a routerLink="/dashboard" routerLinkActive="text-white bg-editorial-text text-editorial-bg"
+      class="flex items-center gap-3 px-3 py-2 rounded-none text-editorial-text/70 hover:bg-editorial-text/10 hover:text-editorial-text transition-none group">
+      <div class="w-1.5 h-1.5 rounded-full bg-editorial-text/20 group-hover:bg-editorial-text/60 transition-none"></div>
+      <span class="font-mono uppercase tracking-[0.2em] text-[10px]">Dashboard</span>
+    </a>
+
+    <a routerLink="/files" routerLinkActive="text-white bg-editorial-text text-editorial-bg"
+      class="flex items-center gap-3 px-3 py-2 rounded-none text-editorial-text/70 hover:bg-editorial-text/10 hover:text-editorial-text transition-none group">
+      <div class="w-1.5 h-1.5 rounded-full bg-editorial-text/20 group-hover:bg-editorial-text/60 transition-none"></div>
+      <span class="font-mono uppercase tracking-[0.2em] text-[10px]">My Files</span>
+    </a>
+
+    <a routerLink="/shared" routerLinkActive="text-white bg-editorial-text text-editorial-bg"
+      class="flex items-center gap-3 px-3 py-2 rounded-none text-editorial-text/70 hover:bg-editorial-text/10 hover:text-editorial-text transition-none group">
+      <div class="w-1.5 h-1.5 rounded-full bg-editorial-text/20 group-hover:bg-editorial-text/60 transition-none"></div>
+      <span class="font-mono uppercase tracking-[0.2em] text-[10px]">Shared</span>
+    </a>
+
+    <a routerLink="/recent" routerLinkActive="text-white bg-editorial-text text-editorial-bg"
+      class="flex items-center gap-3 px-3 py-2 rounded-none text-editorial-text/70 hover:bg-editorial-text/10 hover:text-editorial-text transition-none group">
+      <div class="w-1.5 h-1.5 rounded-full bg-editorial-text/20 group-hover:bg-editorial-text/60 transition-none"></div>
+      <span class="font-mono uppercase tracking-[0.2em] text-[10px]">Recent</span>
+    </a>
+
+    <a routerLink="/devices" routerLinkActive="text-white bg-editorial-text text-editorial-bg"
+      class="flex items-center gap-3 px-3 py-2 rounded-none text-editorial-text/70 hover:bg-editorial-text/10 hover:text-editorial-text transition-none group">
+      <div class="w-1.5 h-1.5 rounded-full bg-editorial-text/20 group-hover:bg-editorial-text/60 transition-none"></div>
+      <span class="font-mono uppercase tracking-[0.2em] text-[10px]">Devices</span>
+    </a>
+
+    <a routerLink="/activity" routerLinkActive="text-white bg-editorial-text text-editorial-bg"
+      class="flex items-center gap-3 px-3 py-2 rounded-none text-editorial-text/70 hover:bg-editorial-text/10 hover:text-editorial-text transition-none group">
+      <div class="w-1.5 h-1.5 rounded-full bg-editorial-text/20 group-hover:bg-editorial-text/60 transition-none"></div>
+      <span class="font-mono uppercase tracking-[0.2em] text-[10px]">Activity</span>
+    </a>
+
+    <div class="border-t border-editorial-text/10 my-3"></div>
+
+    <a routerLink="/trash" routerLinkActive="text-white bg-editorial-text text-editorial-bg"
+      class="flex items-center gap-3 px-3 py-2 rounded-none text-editorial-text/70 hover:bg-editorial-text/10 hover:text-editorial-text transition-none group">
+      <div class="w-1.5 h-1.5 rounded-full bg-editorial-text/20 group-hover:bg-editorial-text/60 transition-none"></div>
+      <span class="font-mono uppercase tracking-[0.2em] text-[10px]">Trash</span>
+    </a>
+  </nav>
+
+  <!-- Storage Usage -->
+  <div class="px-3 mt-auto mb-6" *ngIf="stats() as currentStats">
+    <div class="p-4 rounded-none border border-editorial-text/20 bg-editorial-text/5">
+      <div
+        class="flex items-center justify-between font-mono uppercase tracking-widest text-[9px] text-editorial-text/60 mb-2">
+        <span>Storage</span>
+        <span>{{ getPercentage(currentStats.totalStorageBytes, currentStats.maxStorageBytes) }}%</span>
+      </div>
+      <div class="h-1 w-full bg-editorial-text/10 rounded-none overflow-hidden">
+        <div class="h-full bg-editorial-text rounded-none"
+          [style.width.%]="getPercentage(currentStats.totalStorageBytes, currentStats.maxStorageBytes)"></div>
+      </div>
+      <div class="mt-2 font-mono uppercase tracking-tight text-[9px] text-editorial-text/50">
+        {{ formatBytes(currentStats.totalStorageBytes) }} / {{ formatBytes(currentStats.maxStorageBytes) }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings -->
+  <div class="px-3 border-t border-editorial-text/10 pt-4">
+    <a routerLink="/settings" routerLinkActive="text-white bg-editorial-text text-editorial-bg"
+      class="flex items-center gap-3 px-3 py-2 rounded-none text-editorial-text/70 hover:bg-editorial-text/10 hover:text-editorial-text transition-none group">
+      <div class="w-1.5 h-1.5 rounded-full bg-editorial-text/20 group-hover:bg-editorial-text/60 transition-none"></div>
+      <span class="font-mono uppercase tracking-[0.2em] text-[10px]">Settings</span>
+    </a>
+  </div>
+</div>

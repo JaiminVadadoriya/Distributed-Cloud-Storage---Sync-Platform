@@ -1,0 +1,37 @@
+<div class="min-h-screen relative flex items-center justify-center p-4 overflow-hidden bg-editorial-bg selection:bg-editorial-text selection:text-editorial-bg transition-colors duration-500">
+  <!-- Theme Toggle (Brutalist Top-Right) -->
+  <div class="absolute top-8 right-8 z-50">
+    <button (click)="themeService.toggleTheme()" 
+            class="w-10 h-10 flex items-center justify-center text-editorial-text/70 hover:text-editorial-text transition-all border border-editorial-text/20 bg-editorial-bg/10 hover:bg-editorial-bg group relative overflow-hidden">
+      <div class="relative z-10">
+        @if (themeService.isDarkMode()) {
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+        } @else {
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        }
+      </div>
+      <div class="absolute inset-0 bg-editorial-text translate-y-full group-hover:translate-y-0 transition-transform duration-300 opacity-[0.02]"></div>
+    </button>
+  </div>
+
+  <!-- Animated Grain Overlay -->
+  <div class="grain-overlay opacity-[0.05]"></div>
+  
+  <!-- Moody Atmospheric Auras (Editorial Phase 2) -->
+  <div class="absolute top-[10%] left-[5%] w-[600px] h-[600px] bg-editorial-aura-rose/10 rounded-full blur-[120px] animate-pulse pointer-events-none"></div>
+  <div class="absolute bottom-[10%] right-[5%] w-[500px] h-[500px] bg-editorial-aura-deep/15 rounded-full blur-[100px] pointer-events-none"></div>
+  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-editorial-aura-deep/5 rounded-full blur-[150px] pointer-events-none"></div>
+
+  <div class="w-full max-w-[480px] p-8 relative z-10">
+    <!-- Brand Header: Editorial Refinement -->
+    <div class="text-center mb-16">
+         <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-editorial-text text-editorial-bg mb-8 shadow-2xl transition-transform hover:scale-110 duration-700">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+         </div>
+         <h1 class="text-5xl font-extrabold tracking-tighter mb-4 text-editorial-text font-sans">CloudStorage</h1>
+         <p class="text-editorial-text/70 font-mono text-xs tracking-[0.3em] uppercase">Secure . Fast . Distributed</p>
+    </div>
+    
+    <router-outlet></router-outlet>
+  </div>
+</div>

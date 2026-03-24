@@ -1,0 +1,16 @@
+<div class="file-preview">
+  @if (isImage) {
+    <img [src]="fileUrl()" [alt]="fileName()" class="preview-image" />
+  } @else if (isVideo) {
+    <video [src]="fileUrl()" controls class="preview-video"></video>
+  } @else if (isPdf) {
+    <iframe [src]="safeUrl" class="preview-pdf"></iframe>
+  } @else if (isAudio) {
+    <audio [src]="fileUrl()" controls class="preview-audio"></audio>
+  } @else {
+    <div class="unsupported">
+      <p>Preview not available for this file type</p>
+      <p class="file-type">{{ contentType() || 'Unknown' }}</p>
+    </div>
+  }
+</div>

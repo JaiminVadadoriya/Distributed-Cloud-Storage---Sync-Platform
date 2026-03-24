@@ -1,0 +1,27 @@
+<div class="version-history">
+  <h4 class="section-title">Version History</h4>
+  @if (isBusy()) {
+    <div class="loading-state"><div class="spinner"></div></div>
+  } @else if (versions().length === 0) {
+    <p class="empty">No version history available</p>
+  } @else {
+    <div class="version-list">
+      @for (version of versions(); track version.id; let first = $first) {
+        <div class="version-item" [class.current]="first">
+          <div class="version-header">
+            <span class="version-badge">v{{ version.version }}</span>
+            @if (first) { <span class="current-tag">Current</span> }
+          </div>
+          <div class="version-meta">
+            <span>{{ formatSize(version.size) }}</span>
+            <span>{{ version.createdAt | date:'short' }}</span>
+            <span>by {{ version.modifiedByUsername }}</span>
+          </div>
+          @if (!first) {
+            <button class="restore-btn" (click)="restore(version.id)">Restore</button>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

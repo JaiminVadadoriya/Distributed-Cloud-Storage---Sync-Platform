@@ -1,0 +1,7 @@
+<div class="toast-container">
+  @for (toast of toasts(); track toast.id) {
+    <div class="toast-item" [class]="'toast-' + toast.type" (click)="dismiss(toast.id)">
+      <span class="toast-message">{{ toast.message }}</span>
+    </div>
+  }
+</div>

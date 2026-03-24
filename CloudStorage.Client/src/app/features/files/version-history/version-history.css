@@ -1,0 +1,16 @@
+:host { display: block; }
+.version-history { padding: 1rem 0; }
+.section-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--color-text-muted, #888); margin-bottom: 1rem; }
+.version-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.version-item { padding: 0.75rem; border: 1px solid var(--color-border, rgba(255,255,255,0.08)); border-radius: 6px; background: var(--color-surface, #1a1a2e); }
+.version-item.current { border-color: var(--color-accent, #6366f1); }
+.version-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; }
+.version-badge { font-size: 0.75rem; font-weight: 700; color: var(--color-accent, #6366f1); }
+.current-tag { font-size: 0.65rem; background: var(--color-accent, #6366f1); color: #fff; padding: 0.1rem 0.4rem; border-radius: 3px; }
+.version-meta { font-size: 0.75rem; color: var(--color-text-muted, #888); display: flex; gap: 0.75rem; }
+.restore-btn { margin-top: 0.5rem; padding: 0.3rem 0.75rem; border: 1px solid var(--color-accent, #6366f1); background: transparent; color: var(--color-accent, #6366f1); border-radius: 4px; font-size: 0.75rem; cursor: pointer; }
+.restore-btn:hover { background: rgba(99,102,241,0.1); }
+.empty { color: var(--color-text-muted, #888); font-size: 0.85rem; }
+.loading-state { text-align: center; padding: 1rem; }
+.spinner { width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.1); border-top-color: var(--color-accent, #6366f1); border-radius: 50%; animation: spin 0.6s linear infinite; margin: 0 auto; }
+@keyframes spin { to { transform: rotate(360deg); } }

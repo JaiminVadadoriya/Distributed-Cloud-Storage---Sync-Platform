@@ -48,9 +48,16 @@ For SignalR hubs, pass the token as `?access_token=<token>` in the connection UR
 | GET | `/api/files/shared` | Yes | List files shared with the current user |
 | GET | `/api/files/search?q=` | Yes | Search files by name |
 | GET | `/api/files/{id}` | Yes | Get file details by ID |
+| GET | `/api/files/{id}/versions` | Yes | Get file version history |
+| POST | `/api/files/{id}/restore/{vId}` | Yes | Restore file to a previous version |
 | GET | `/api/files/{id}/download` | Yes | Stream file download (supports HTTP Range) |
 | GET | `/api/files/{id}/download-link` | Yes | Generate parallel download metadata with Azure SAS URLs per chunk |
 | POST | `/api/files` | Yes | Create file metadata record |
+| PATCH | `/api/files/{id}/rename` | Yes | Rename a file |
+| PATCH | `/api/files/{id}/move` | Yes | Move file to a specific folder |
+| POST | `/api/files/bulk-delete` | Yes | Delete multiple files at once |
+| POST | `/api/files/bulk-move` | Yes | Move multiple files at once |
+| POST | `/api/files/bulk-share` | Yes | Share multiple files with a user |
 | POST | `/api/files/{id}/permissions` | Yes | Grant file permissions to another user |
 | POST | `/api/files/{id}/share` | Yes | Alias for permissions (frontend compatibility) |
 | DELETE | `/api/files/{id}` | Yes | Soft-delete a file (owner only) |
@@ -96,11 +103,17 @@ For SignalR hubs, pass the token as `?access_token=<token>` in the connection UR
 
 ---
 
-### Activity Feed (`/api/activity`)
+### Notifications (`/api/notifications`)
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| GET | `/api/activity?limit=50` | Yes | Get recent activity log entries for the current user (default: 50) |
+| GET | `/api/notifications` | Yes | Get unread notifications for the current user |
+| PATCH | `/api/notifications/{id}/read` | Yes | Mark a specific notification as read |
+| POST | `/api/notifications/read-all` | Yes | Mark all notifications as read |
+
+---
+
+### Activity Feed (`/api/activity`)
 
 ---
 

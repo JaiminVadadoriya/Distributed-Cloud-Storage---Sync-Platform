@@ -1,0 +1,54 @@
+@if (hasItems()) {
+  <div class="upload-manager">
+    <div class="um-header">
+      <h4>Upload Manager</h4>
+      <div class="um-header-actions">
+        @if (globalSpeed() > 0) {
+          <span class="global-speed">↑ {{ formatSpeed(globalSpeed()) }}</span>
+        }
+        @if (completedUploads().length > 0 || failedUploads().length > 0) {
+          <button class="clear-btn" (click)="clearCompleted()">Clear History</button>
+        }
+      </div>
+    </div>
+
+    <div class="upload-list">
+      @for (task of queue(); track task.id) {
+        <div class="upload-item" [class]="'status-' + task.status">
+          <div class="upload-info">
+            <span class="upload-name">{{ task.fileName }}</span>
+            <span class="upload-size">{{ formatSize(task.fileSize) }}</span>
+          </div>
+
+          @if (task.status === 'uploading' || task.status === 'pending') {
+            <div class="progress-container">
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="getProgress(task)"></div>
+              </div>
+              <div class="progress-meta">
+                <span>{{ getProgress(task) }}%</span>
+                <span>{{ task.uploadedChunks }}/{{ task.totalChunks }} chunks</span>
+                @if (task.status === 'uploading') {
+                  <span>{{ formatSpeed(task.uploadSpeed) }} · ETA {{ getEta(task) }}</span>
+                }
+              </div>
+            </div>
+          }
+
+          <div class="status-badge">
+            @switch (task.status) {
+              @case ('pending') { <span class="badge pending">Queued</span> }
+              @case ('uploading') { <span class="badge uploading">Uploading</span> }
+              @case ('complete') { <span class="badge complete">✓ Complete</span> }
+              @case ('error') { <span class="badge error">✕ Failed</span> }
+            }
+          </div>
+
+          @if (task.error) {
+            <p class="error-msg">{{ task.error }}</p>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}

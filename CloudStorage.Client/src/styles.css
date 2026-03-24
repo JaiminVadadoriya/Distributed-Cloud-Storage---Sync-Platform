@@ -1,68 +1,28 @@
-/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:ital,wght@0,100..700;1,100..700&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
 
 @import "tailwindcss";
+@config "../tailwind.config.cjs";
 
 :root {
-    --font-sans: 'Inter', system-ui, sans-serif;
-
-    /* Modern Palette */
-    --color-primary: oklch(0.6 0.18 250);
-    /* Vivid Blue */
-    --color-primary-content: oklch(0.98 0.02 250);
-
-    --color-secondary: oklch(0.65 0.22 320);
-    /* Vibrant Purple/Pink */
-
-    --color-surface-100: oklch(0.98 0 0);
-    --color-surface-200: oklch(0.95 0 0);
-    --color-surface-300: oklch(0.90 0 0);
-
-    --color-text-base: oklch(0.20 0.02 250);
-    --color-text-muted: oklch(0.55 0.02 250);
+  --font-mono: 'Roboto Mono', monospace;
+  --font-sans: 'Roboto', sans-serif;
 }
 
-@theme {
-    --font-sans: var(--font-sans);
-
-    --color-primary: var(--color-primary);
-    --color-primary-content: var(--color-primary-content);
-
-    --color-secondary: var(--color-secondary);
-
-    --color-surface-100: var(--color-surface-100);
-    --color-surface-200: var(--color-surface-200);
-    --color-surface-300: var(--color-surface-300);
-
-    --color-text-base: var(--color-text-base);
-    --color-text-muted: var(--color-text-muted);
-
-    --animate-blob: blob 7s infinite;
-    --animate-shimmer: shimmer 2s infinite;
-    --animate-fade-in-up: fadeInUp 0.5s ease-out;
-
-    @keyframes blob {
-      0% { transform: translate(0px, 0px) scale(1); }
-      33% { transform: translate(30px, -50px) scale(1.1); }
-      66% { transform: translate(-20px, 20px) scale(0.9); }
-      100% { transform: translate(0px, 0px) scale(1); }
-    }
-
-    @keyframes shimmer {
-      100% { transform: translateX(100%); }
-    }
-    
-    @keyframes fadeInUp {
-      0% { opacity: 0; transform: translateY(10px); }
-      100% { opacity: 1; transform: translateY(0); }
-    }
+:root {
+  --editorial-bg: #F1EEE9;
+  --editorial-text: #1A1A1A;
 }
 
-.animation-delay-2000 {
-  animation-delay: 2s;
+.dark {
+  --editorial-bg: #1A1A1A;
+  --editorial-text: #F1EEE9;
 }
 
-.animation-delay-4000 {
-  animation-delay: 4s;
+@layer base {
+  body {
+    @apply bg-editorial-bg text-editorial-text selection:bg-editorial-text selection:text-editorial-bg transition-colors duration-300;
+    font-feature-settings: "ss01", "ss02", "cv01", "cv11";
+  }
 }
 
 html,
@@ -70,6 +30,32 @@ body {
     height: 100%;
     margin: 0;
     font-family: var(--font-sans);
-    background-color: var(--color-surface-100);
-    color: var(--color-text-base);
+}
+
+@layer components {
+    /* Grain Overlay - Animated Phase 2 */
+    .grain-overlay {
+        position: fixed;
+        inset: -100%;
+        width: 300%;
+        height: 300%;
+        z-index: 50;
+        pointer-events: none;
+        opacity: 0.05;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        animation: grain 8s steps(10) infinite;
+    }
+
+    @keyframes grain {
+        0%, 100% { transform:translate(0, 0); }
+        10% { transform:translate(-5%, -10%); }
+        20% { transform:translate(-15%, 5%); }
+        30% { transform:translate(7%, -25%); }
+        40% { transform:translate(-5%, 25%); }
+        50% { transform:translate(-15%, 10%); }
+        60% { transform:translate(15%, 0%); }
+        70% { transform:translate(0%, 15%); }
+        80% { transform:translate(3%, 35%); }
+        90% { transform:translate(-10%, 10%); }
+    }
 }

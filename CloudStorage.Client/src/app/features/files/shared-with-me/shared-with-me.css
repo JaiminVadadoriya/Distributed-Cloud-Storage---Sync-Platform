@@ -1,0 +1,17 @@
+:host { display: block; }
+.shared-with-me { padding: 1.5rem; }
+.page-title { font-size: 1.1rem; font-weight: 600; color: var(--color-text, #e0e0e0); margin: 0 0 1.5rem; }
+.file-grid { display: flex; flex-direction: column; gap: 0.5rem; }
+.file-card { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background: var(--color-surface, #1a1a2e); border: 1px solid var(--color-border, rgba(255,255,255,0.08)); border-radius: 8px; transition: border-color 0.15s; }
+.file-card:hover { border-color: var(--color-accent, #6366f1); }
+.file-info { display: flex; align-items: center; gap: 0.75rem; min-width: 0; }
+.file-icon { font-size: 1.25rem; }
+.file-meta { display: flex; flex-direction: column; min-width: 0; }
+.file-name { font-size: 0.85rem; color: var(--color-text, #e0e0e0); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-detail { font-size: 0.7rem; color: var(--color-text-muted, #888); }
+.download-btn { background: none; border: 1px solid var(--color-border, rgba(255,255,255,0.1)); color: var(--color-text, #e0e0e0); padding: 0.35rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
+.download-btn:hover { background: rgba(255,255,255,0.05); }
+.empty-state { text-align: center; padding: 3rem; color: var(--color-text-muted, #888); }
+.loading-state { text-align: center; padding: 3rem; color: var(--color-text-muted, #888); }
+.spinner { width: 24px; height: 24px; border: 2px solid rgba(255,255,255,0.1); border-top-color: var(--color-accent, #6366f1); border-radius: 50%; animation: spin 0.6s linear infinite; margin: 0 auto 0.5rem; }
+@keyframes spin { to { transform: rotate(360deg); } }

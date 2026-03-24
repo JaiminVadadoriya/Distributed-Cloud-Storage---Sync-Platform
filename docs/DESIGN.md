@@ -103,6 +103,7 @@ FileMetadata (Id PK GUID, FileName, Size, Version, OwnerId FK→Users, UploadSes
 FileChunks (Id PK GUID, FileMetadataId FK, ChunkIndex, Hash, StoragePath, IsDuplicate, ...)
 ChunkRegistry (Hash PK, StoragePath, Size, ReferenceCount, ...)
 Folders (Id PK GUID, Name, OwnerId FK→Users, ParentFolderId FK→Folders nullable, ...)
+Notifications (Id PK GUID, UserId FK, Title, Message, IsRead, Timestamp, Type, ...)
 
 -- Supporting tables
 RefreshTokens (Id PK GUID, Token UNIQUE, UserId FK→Users, ExpiresAt, IsRevoked, ...)
@@ -177,9 +178,16 @@ Device deleted:
 | GET    | `/shared`                  | Yes  | List files shared with the current user              |
 | GET    | `/search?q=`               | Yes  | Search files by name                                 |
 | GET    | `/{id}`                    | Yes  | Get file details by ID                               |
+| GET    | `/{id}/versions`           | Yes  | Get file version history                             |
+| POST   | `/{id}/restore/{vId}`      | Yes  | Restore file to a previous version                   |
 | GET    | `/{id}/download`           | Yes  | Stream file download (HTTP Range supported)          |
 | GET    | `/{id}/download-link`      | Yes  | Generate per-chunk SAS URLs for parallel download    |
 | POST   | `/`                        | Yes  | Create file metadata record                          |
+| PATCH  | `/{id}/rename`             | Yes  | Rename a file                                        |
+| PATCH  | `/{id}/move`               | Yes  | Move file to a specific folder                        |
+| POST   | `/bulk-delete`             | Yes  | Delete multiple files at once                        |
+| POST   | `/bulk-move`               | Yes  | Move multiple files at once                          |
+| POST   | `/bulk-share`              | Yes  | Share multiple files with a user                     |
 | POST   | `/{id}/permissions`        | Yes  | Grant file permission to another user                |
 | POST   | `/{id}/share`              | Yes  | Alias for `/permissions` (frontend compatibility)    |
 | DELETE | `/{id}`                    | Yes  | Soft delete file (owner only)                        |
@@ -221,6 +229,14 @@ Device deleted:
 | ------ | ---------------- | ---- | ------------------------------------------------- |
 | GET    | `/?limit=50`     | Yes  | Recent activity log for the current user (default: last 50 events) |
 
+#### Notifications (`/api/notifications`)
+
+| Method | Endpoint         | Auth | Description                                       |
+| ------ | ---------------- | ---- | ------------------------------------------------- |
+| GET    | `/`              | Yes  | Get unread notifications for the current user     |
+| PATCH  | `/{id}/read`     | Yes  | Mark a specific notification as read              |
+| POST   | `/read-all`      | Yes  | Mark all notifications as read                    |
+
 #### Sync — Delta (`/api/sync/delta`)
 
 | Method | Endpoint              | Auth | Description                                                      |
@@ -250,7 +266,7 @@ Device deleted:
 ```
 ┌──────────────────────────────────────────────────────┐
 │                  UploadManagerService                 │  ← Orchestrator
-│  - Queue management with BehaviorSubject             │
+│  - Queue management with **Angular Signals**         │
 │  - Concurrency control (max 3 parallel uploads)      │
 │  - Pause / Resume / Cancel operations                │
 │  - Progress tracking (speed, ETA, chunk count)       │

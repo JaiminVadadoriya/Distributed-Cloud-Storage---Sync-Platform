@@ -521,5 +521,215 @@ namespace CloudStorage.API.Controllers
                 });
             }
         }
+        // ─── Version History ──────────────────────────────────────────────
+
+        [HttpGet("{id}/versions")]
+        public async Task<IActionResult> GetFileVersions(Guid id)
+        {
+            try
+            {
+                var userId = GetUserId();
+                var versions = await _fileService.GetFileVersionsAsync(id, userId);
+                return Ok(new ApiResponse<IEnumerable<FileVersionDto>>
+                {
+                    Success = true,
+                    Message = "Version history retrieved successfully",
+                    Data = versions
+                });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
+            }
+        }
+
+        [HttpPost("{id}/restore/{versionId}")]
+        public async Task<IActionResult> RestoreVersion(Guid id, Guid versionId)
+        {
+            try
+            {
+                var userId = GetUserId();
+                var file = await _fileService.RestoreFileVersionAsync(id, versionId, userId);
+                return Ok(new ApiResponse<FileResponseDto>
+                {
+                    Success = true,
+                    Message = "File version restored successfully",
+                    Data = file
+                });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
+            }
+        }
+
+        // ─── File Operations ──────────────────────────────────────────────
+
+        [HttpPatch("{id}/rename")]
+        public async Task<IActionResult> RenameFile(Guid id, FileRenameDto dto)
+        {
+            try
+            {
+                var userId = GetUserId();
+                await _fileService.RenameFileAsync(id, dto.NewName, userId);
+                return Ok(new ApiResponse { Success = true, Message = "File renamed successfully" });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
+            }
+        }
+
+        [HttpPatch("{id}/move")]
+        public async Task<IActionResult> MoveFile(Guid id, FileMoveDto dto)
+        {
+            try
+            {
+                var userId = GetUserId();
+                await _fileService.MoveFileAsync(id, dto.TargetFolderId, userId);
+                return Ok(new ApiResponse { Success = true, Message = "File moved successfully" });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
+            }
+        }
+
+        // ─── Bulk Operations ──────────────────────────────────────────────
+
+        [HttpPost("bulk-delete")]
+        public async Task<IActionResult> BulkDelete(BulkDeleteDto dto)
+        {
+            try
+            {
+                var userId = GetUserId();
+                await _fileService.BulkDeleteAsync(dto.FileIds, userId);
+                return Ok(new ApiResponse { Success = true, Message = $"{dto.FileIds.Count} files deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
+            }
+        }
+
+        [HttpPost("bulk-move")]
+        public async Task<IActionResult> BulkMove(BulkMoveDto dto)
+        {
+            try
+            {
+                var userId = GetUserId();
+                await _fileService.BulkMoveAsync(dto.FileIds, dto.TargetFolderId, userId);
+                return Ok(new ApiResponse { Success = true, Message = $"{dto.FileIds.Count} files moved successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
+            }
+        }
+
+        [HttpPost("bulk-share")]
+        public async Task<IActionResult> BulkShare(BulkShareDto dto)
+        {
+            try
+            {
+                var userId = GetUserId();
+
+                PermissionType permissionType;
+                if (!Enum.TryParse<PermissionType>(dto.PermissionType, true, out permissionType))
+                    return BadRequest(new ApiResponse { Success = false, Message = "Invalid permission type" });
+
+                await _fileService.BulkShareAsync(dto.FileIds, dto.UserId, userId, permissionType);
+                return Ok(new ApiResponse { Success = true, Message = $"{dto.FileIds.Count} files shared successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
+            }
+        }
+
+        // ─── Permission Management ───────────────────────────────────────
+
+        [HttpGet("{id}/permissions")]
+        public async Task<IActionResult> GetPermissions(Guid id)
+        {
+            try
+            {
+                var userId = GetUserId();
+                var permissions = await _fileService.GetFilePermissionsAsync(id, userId);
+                return Ok(new ApiResponse<IEnumerable<FilePermissionListDto>>
+                {
+                    Success = true,
+                    Message = "Permissions retrieved successfully",
+                    Data = permissions
+                });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
+            }
+        }
+
+        [HttpDelete("{id}/permissions/{targetUserId}")]
+        public async Task<IActionResult> RemovePermission(Guid id, int targetUserId)
+        {
+            try
+            {
+                var userId = GetUserId();
+                await _fileService.RemovePermissionAsync(id, targetUserId, userId);
+                return Ok(new ApiResponse { Success = true, Message = "Permission removed successfully" });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
+            }
+        }
+
+        [HttpPatch("{id}/permissions/{targetUserId}")]
+        public async Task<IActionResult> UpdatePermission(Guid id, int targetUserId, FilePermissionDto dto)
+        {
+            try
+            {
+                var userId = GetUserId();
+
+                PermissionType permissionType;
+                if (!Enum.TryParse<PermissionType>(dto.PermissionType, true, out permissionType))
+                    return BadRequest(new ApiResponse { Success = false, Message = "Invalid permission type" });
+
+                await _fileService.UpdatePermissionAsync(id, targetUserId, permissionType, userId);
+                return Ok(new ApiResponse { Success = true, Message = "Permission updated successfully" });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
+            }
+        }
     }
 }

@@ -1,0 +1,26 @@
+<div class="manage-permissions">
+  <h4 class="section-title">Access Control</h4>
+  @if (isBusy()) {
+    <div class="loading-state"><div class="spinner"></div></div>
+  } @else if (permissions().length === 0) {
+    <p class="empty">No users have access to this file</p>
+  } @else {
+    <div class="permission-list">
+      @for (perm of permissions(); track perm.userId) {
+        <div class="permission-item">
+          <div class="user-info">
+            <span class="username">{{ perm.username }}</span>
+            <span class="email">{{ perm.email }}</span>
+          </div>
+          <div class="permission-actions">
+            <select [value]="perm.permissionType" (change)="changeRole(perm.userId, $any($event.target).value)" class="role-select">
+              <option value="Read">Read</option>
+              <option value="Write">Write</option>
+            </select>
+            <button class="remove-btn" (click)="removeAccess(perm.userId)">✕</button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

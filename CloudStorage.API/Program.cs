@@ -82,6 +82,10 @@ builder.Services.AddScoped<IDeduplicationService, DeduplicationService>();
 builder.Services.AddScoped<INotificationService, SignalRNotificationService>();
 builder.Services.AddScoped<IDeltaSyncService, DeltaSyncService>();
 builder.Services.AddScoped<IConflictDetectionService, ConflictDetectionService>();
+builder.Services.AddScoped<INotificationPersistenceService, NotificationPersistenceService>();
+
+// Notification repository
+builder.Services.AddScoped<CloudStorage.Domain.Interfaces.INotificationRepository, CloudStorage.Infrastructure.Repositories.NotificationRepository>();
 
 // RabbitMQ and Background processing
 builder.Services.AddSingleton<IMessageQueue, RabbitMqService>();

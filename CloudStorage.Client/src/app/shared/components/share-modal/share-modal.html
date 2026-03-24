@@ -1,0 +1,47 @@
+<div class="modal-backdrop" (click)="close()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Share File</h3>
+      <button class="close-btn" (click)="close()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="search-group">
+        <label>Find user by email or username</label>
+        <input type="text" [ngModel]="searchQuery()" (ngModelChange)="onSearchChange($event)"
+               placeholder="Search users..." class="search-input" />
+        @if (searchResults().length > 0) {
+          <div class="search-dropdown">
+            @for (user of searchResults(); track user.id) {
+              <div class="search-item" (click)="selectUser(user)">
+                <span class="user-name">{{ user.username }}</span>
+                <span class="user-email">{{ user.email }}</span>
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      @if (selectedUser()) {
+        <div class="selected-user">
+          <span>Sharing with: <strong>{{ selectedUser()!.username }}</strong></span>
+        </div>
+
+        <div class="permission-group">
+          <label>Permission</label>
+          <select [ngModel]="permission()" (ngModelChange)="permission.set($event)" class="permission-select">
+            <option value="Read">Read Only</option>
+            <option value="Write">Read & Write</option>
+          </select>
+        </div>
+      }
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn secondary" (click)="close()">Cancel</button>
+      <button class="btn primary" (click)="share()" [disabled]="!selectedUser() || isSharing()">
+        {{ isSharing() ? 'Sharing...' : 'Share' }}
+      </button>
+    </div>
+  </div>
+</div>

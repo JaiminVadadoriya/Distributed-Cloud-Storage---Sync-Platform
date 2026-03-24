@@ -1,0 +1,128 @@
+<div class="flex h-full w-full items-center justify-between px-6 lg:px-8 bg-editorial-bg">
+  
+  <!-- Left Side: Search Bar -->
+  <div class="flex items-center max-w-xl w-full">
+    <div class="relative w-full">
+      <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-0 text-editorial-text/40">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.3-4.3"/>
+        </svg>
+      </div>
+      <input type="text"
+             placeholder="SEARCH_FILES..."
+             (input)="onSearch(searchInput.value)"
+             (keydown.enter)="navigateToSearch(searchInput.value)"
+             #searchInput
+             class="block w-full rounded-none border-b border-editorial-text/20 bg-transparent py-2.5 pl-8 pr-4 font-mono uppercase text-[11px] text-editorial-text placeholder-editorial-text/50 focus:border-editorial-text focus:outline-none transition-all">
+      
+      <!-- Search Suggestions Dropdown -->
+      @if (searchService.suggestions().length > 0 && searchInput.value.length > 1) {
+        <div class="absolute top-full left-0 w-full mt-1 bg-editorial-bg border border-editorial-text/20 z-50 shadow-lg">
+          @for (suggestion of searchService.suggestions(); track suggestion) {
+            <button (click)="navigateToSearch(suggestion); searchInput.value = suggestion"
+              class="w-full text-left px-4 py-2 font-mono text-[10px] uppercase tracking-widest text-editorial-text/70 hover:bg-editorial-text/5 transition-none">
+              {{ suggestion }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Right Side: Actions -->
+  <div class="flex items-center justify-end gap-4 ml-8">
+    
+    <!-- Upload Button -->
+    <button (click)="openUpload()" class="flex items-center gap-2 rounded-none bg-editorial-text px-4 py-2 font-mono uppercase tracking-widest text-[10px] text-editorial-bg hover:opacity-90 transition-all focus:outline-none">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" x2="12" y1="3" y2="15"/>
+      </svg>
+      Upload
+    </button>
+
+    <!-- Notifications Button -->
+    <div class="relative">
+      <button (click)="layoutService.toggleNotificationDropdown()" 
+        class="relative rounded-none p-2 text-editorial-text/40 hover:text-editorial-text transition-colors group">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/>
+          <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+        </svg>
+        @if (notificationService.unreadCount() > 0) {
+          <span class="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-none bg-rose-600 text-[8px] font-mono text-white font-bold">
+            {{ notificationService.unreadCount() > 9 ? '9+' : notificationService.unreadCount() }}
+          </span>
+        }
+      </button>
+
+      <!-- Notification Dropdown -->
+      @if (layoutService.isNotificationDropdownOpen()) {
+        <div class="absolute right-0 top-full mt-2 w-80 bg-editorial-bg border border-editorial-text/20 shadow-lg z-50 max-h-96 overflow-hidden">
+          <div class="flex items-center justify-between px-4 py-3 border-b border-editorial-text/10">
+            <span class="text-[9px] font-mono font-bold uppercase tracking-[0.3em] text-editorial-text">Notifications</span>
+            <button (click)="notificationService.markAllAsRead()" class="text-[8px] font-mono uppercase tracking-widest text-editorial-text/50 hover:text-editorial-text">
+              Mark_All_Read
+            </button>
+          </div>
+          <div class="overflow-y-auto max-h-72">
+            @for (n of notificationService.notifications(); track n.id) {
+              <div class="px-4 py-3 border-b border-editorial-text/5 hover:bg-editorial-text/[0.02] cursor-pointer"
+                   [class.bg-editorial-text/[0.03]]="!n.read"
+                   (click)="notificationService.markAsRead(n.id)">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="w-1.5 h-1.5 rounded-full"
+                    [class]="n.type === 'error' ? 'bg-rose-500' : n.type === 'success' ? 'bg-emerald-500' : n.type === 'warning' ? 'bg-amber-500' : 'bg-editorial-text/30'"></span>
+                  <span class="text-[8px] font-mono uppercase tracking-widest text-editorial-text/50">{{ n.title }}</span>
+                </div>
+                <p class="text-[10px] font-mono text-editorial-text/80 tracking-wide truncate">{{ n.message }}</p>
+              </div>
+            } @empty {
+              <div class="px-4 py-8 text-center text-[9px] font-mono uppercase tracking-widest text-editorial-text/30">
+                No_Notifications
+              </div>
+            }
+          </div>
+          @if (notificationService.notifications().length > 0) {
+            <div class="px-4 py-2 border-t border-editorial-text/10">
+              <button (click)="notificationService.clearAll(); layoutService.closeNotificationDropdown()" 
+                class="w-full text-center text-[8px] font-mono uppercase tracking-widest text-editorial-text/40 hover:text-editorial-text py-1">
+                Clear_All
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Profile Menu -->
+    <div class="relative">
+      <button (click)="layoutService.toggleProfileMenu()" class="flex items-center gap-3 rounded-none hover:bg-editorial-text/5 px-2 py-1.5 transition-colors group border border-transparent hover:border-editorial-text/20">
+        <div class="w-7 h-7 bg-editorial-text text-editorial-bg flex items-center justify-center font-bold text-xs rounded-none">
+          {{ getUserInitial() }}
+        </div>
+        <span class="hidden md:block font-mono uppercase tracking-wider text-[11px] text-editorial-text">{{  getUserName() }}</span>
+      </button>
+
+      @if (layoutService.isProfileMenuOpen()) {
+        <div class="absolute right-0 top-full mt-2 w-52 bg-editorial-bg border border-editorial-text/20 shadow-lg z-50 py-1">
+          <a routerLink="/settings" (click)="layoutService.closeProfileMenu()"
+            class="flex items-center gap-3 px-4 py-2.5 font-mono text-[10px] uppercase tracking-widest text-editorial-text/70 hover:bg-editorial-text/5 hover:text-editorial-text">
+            Profile_Settings
+          </a>
+          <a routerLink="/activity" (click)="layoutService.closeProfileMenu()"
+            class="flex items-center gap-3 px-4 py-2.5 font-mono text-[10px] uppercase tracking-widest text-editorial-text/70 hover:bg-editorial-text/5 hover:text-editorial-text">
+            Activity_Log
+          </a>
+          <div class="border-t border-editorial-text/10 my-1"></div>
+          <button (click)="logout()"
+            class="w-full flex items-center gap-3 px-4 py-2.5 font-mono text-[10px] uppercase tracking-widest text-rose-500 hover:bg-rose-500/5">
+            Terminate_Session
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</div>

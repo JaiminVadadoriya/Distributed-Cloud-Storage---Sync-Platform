@@ -145,5 +145,70 @@ namespace CloudStorage.API.Controllers
                 });
             }
         }
+
+        private int GetUserId()
+        {
+            var userIdClaim = User.FindFirst("id")?.Value;
+            if (string.IsNullOrEmpty(userIdClaim))
+                throw new UnauthorizedAccessException("User ID not found in token");
+            return int.Parse(userIdClaim);
+        }
+
+        [HttpPut("profile")]
+        [Authorize]
+        public async Task<IActionResult> UpdateProfile(UpdateProfileDto dto)
+        {
+            try
+            {
+                var userId = GetUserId();
+                var user = await _authService.UpdateProfileAsync(userId, dto);
+                return Ok(new ApiResponse<UserDto>
+                {
+                    Success = true,
+                    Message = "Profile updated successfully",
+                    Data = user
+                });
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
+            }
+        }
+
+        [HttpPut("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword(ChangePasswordDto dto)
+        {
+            try
+            {
+                var userId = GetUserId();
+                await _authService.ChangePasswordAsync(userId, dto);
+                return Ok(new ApiResponse { Success = true, Message = "Password changed successfully" });
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
+            }
+        }
+
+        [HttpGet("users/search")]
+        [Authorize]
+        public async Task<IActionResult> SearchUsers([FromQuery] string q)
+        {
+            try
+            {
+                var results = await _authService.SearchUsersAsync(q);
+                return Ok(new ApiResponse<IEnumerable<UserSearchResultDto>>
+                {
+                    Success = true,
+                    Message = "Search results retrieved",
+                    Data = results
+                });
+            }
+            catch (System.Exception ex)
+            {
+                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
+            }
+        }
     }
 }

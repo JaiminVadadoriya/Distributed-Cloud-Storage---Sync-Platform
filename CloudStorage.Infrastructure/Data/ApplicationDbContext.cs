@@ -19,6 +19,7 @@ namespace CloudStorage.Infrastructure.Data
         public DbSet<Folder> Folders { get; set; } = null!;
         public DbSet<ActivityLog> ActivityLogs { get; set; } = null!;
         public DbSet<FolderPermission> FolderPermissions { get; set; } = null!;
+        public DbSet<Notification> Notifications { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -203,6 +204,23 @@ namespace CloudStorage.Infrastructure.Data
 
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => e.Timestamp);
+            });
+
+            // Notification configuration
+            modelBuilder.Entity<Notification>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+                entity.Property(e => e.Message).HasMaxLength(500);
+
+                entity.HasOne(n => n.User)
+                    .WithMany(u => u.Notifications)
+                    .HasForeignKey(n => n.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(n => n.UserId);
+                entity.HasIndex(n => n.CreatedAt);
+                entity.HasIndex(n => new { n.UserId, n.IsRead });
             });
 
             base.OnModelCreating(modelBuilder);

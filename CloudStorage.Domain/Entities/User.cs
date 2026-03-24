@@ -18,5 +18,6 @@ namespace CloudStorage.Domain.Entities
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
         public ICollection<Device> Devices { get; set; } = new List<Device>();
         public ICollection<FilePermission> FilePermissions { get; set; } = new List<FilePermission>();
+        public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
     }
 }

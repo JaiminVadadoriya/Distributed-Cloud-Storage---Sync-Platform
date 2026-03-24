@@ -291,5 +291,223 @@ namespace CloudStorage.Infrastructure.Services
                 await _fileRepository.UpdateAsync(file);
             }
         }
+
+        // ─── Version History ──────────────────────────────────────────────
+
+        public async Task<IEnumerable<FileVersionDto>> GetFileVersionsAsync(Guid fileId, int userId)
+        {
+            if (!await HasPermissionAsync(fileId, userId, PermissionType.Read))
+                throw new UnauthorizedAccessException("Access denied");
+
+            var file = await _fileRepository.GetByIdAsync(fileId);
+            if (file == null || file.IsDeleted)
+                throw new Exception("File not found");
+
+            // Collect all versions by walking the ParentVersionId chain
+            var versions = new List<FileMetadata> { file };
+            var current = file;
+            while (current.ParentVersionId.HasValue)
+            {
+                var parent = await _fileRepository.GetByIdAsync(current.ParentVersionId.Value);
+                if (parent == null) break;
+                versions.Add(parent);
+                current = parent;
+            }
+
+            var result = new List<FileVersionDto>();
+            foreach (var v in versions.OrderByDescending(v => v.Version))
+            {
+                var owner = await _userRepository.GetByIdAsync(v.OwnerId);
+                result.Add(new FileVersionDto
+                {
+                    Id = v.Id,
+                    Version = v.Version,
+                    Size = v.Size,
+                    Hash = v.Hash,
+                    CreatedAt = v.CreatedAt,
+                    LastModifiedAt = v.LastModifiedAt,
+                    ModifiedByUsername = owner?.Username ?? "Unknown"
+                });
+            }
+
+            return result;
+        }
+
+        public async Task<FileResponseDto> RestoreFileVersionAsync(Guid fileId, Guid versionId, int userId)
+        {
+            if (!await HasPermissionAsync(fileId, userId, PermissionType.Write))
+                throw new UnauthorizedAccessException("Access denied");
+
+            var currentFile = await _fileRepository.GetByIdAsync(fileId);
+            if (currentFile == null || currentFile.IsDeleted)
+                throw new Exception("File not found");
+
+            var versionFile = await _fileRepository.GetByIdAsync(versionId);
+            if (versionFile == null)
+                throw new Exception("Version not found");
+
+            // Create a new version that copies from the old one
+            currentFile.FileName = versionFile.FileName;
+            currentFile.Size = versionFile.Size;
+            currentFile.Hash = versionFile.Hash;
+            currentFile.ContentType = versionFile.ContentType;
+            currentFile.Version = currentFile.Version + 1;
+            currentFile.ParentVersionId = versionId;
+            currentFile.LastModifiedAt = DateTime.UtcNow;
+
+            await _fileRepository.UpdateAsync(currentFile);
+            await _activityService.LogActivityAsync(userId, "RESTORE", "FILE", fileId.ToString(),
+                $"File '{currentFile.FileName}' restored to version {versionFile.Version}.");
+
+            await _cache.RemoveByPrefixAsync($"file:{fileId}:");
+
+            var owner = await _userRepository.GetByIdAsync(currentFile.OwnerId);
+            return new FileResponseDto
+            {
+                Id = currentFile.Id,
+                FileName = currentFile.FileName,
+                ContentType = currentFile.ContentType,
+                Size = currentFile.Size,
+                Version = currentFile.Version,
+                ChunkCount = currentFile.ChunkCount,
+                CreatedAt = currentFile.CreatedAt,
+                LastModifiedAt = currentFile.LastModifiedAt,
+                OwnerId = currentFile.OwnerId,
+                OwnerUsername = owner?.Username ?? "Unknown",
+                FolderId = currentFile.FolderId
+            };
+        }
+
+        // ─── File Operations ──────────────────────────────────────────────
+
+        public async Task RenameFileAsync(Guid fileId, string newName, int userId)
+        {
+            var file = await _fileRepository.GetByIdAsync(fileId);
+            if (file == null || file.IsDeleted)
+                throw new Exception("File not found");
+
+            if (file.OwnerId != userId)
+                throw new UnauthorizedAccessException("Only the owner can rename this file");
+
+            var oldName = file.FileName;
+            file.FileName = newName;
+            file.LastModifiedAt = DateTime.UtcNow;
+            await _fileRepository.UpdateAsync(file);
+
+            await _activityService.LogActivityAsync(userId, "RENAME", "FILE", fileId.ToString(),
+                $"File renamed from '{oldName}' to '{newName}'.");
+            await _cache.RemoveByPrefixAsync($"file:{fileId}:");
+        }
+
+        public async Task MoveFileAsync(Guid fileId, Guid? targetFolderId, int userId)
+        {
+            var file = await _fileRepository.GetByIdAsync(fileId);
+            if (file == null || file.IsDeleted)
+                throw new Exception("File not found");
+
+            if (file.OwnerId != userId)
+                throw new UnauthorizedAccessException("Only the owner can move this file");
+
+            file.FolderId = targetFolderId;
+            file.LastModifiedAt = DateTime.UtcNow;
+            await _fileRepository.UpdateAsync(file);
+
+            await _activityService.LogActivityAsync(userId, "MOVE", "FILE", fileId.ToString(),
+                $"File '{file.FileName}' moved to folder {targetFolderId?.ToString() ?? "root"}.");
+            await _cache.RemoveByPrefixAsync($"file:{fileId}:");
+        }
+
+        // ─── Bulk Operations ──────────────────────────────────────────────
+
+        public async Task BulkDeleteAsync(IEnumerable<Guid> fileIds, int userId)
+        {
+            foreach (var fileId in fileIds)
+            {
+                await DeleteFileAsync(fileId, userId);
+            }
+        }
+
+        public async Task BulkMoveAsync(IEnumerable<Guid> fileIds, Guid? targetFolderId, int userId)
+        {
+            foreach (var fileId in fileIds)
+            {
+                await MoveFileAsync(fileId, targetFolderId, userId);
+            }
+        }
+
+        public async Task BulkShareAsync(IEnumerable<Guid> fileIds, int targetUserId, int grantedByUserId, PermissionType permission)
+        {
+            foreach (var fileId in fileIds)
+            {
+                await GrantPermissionAsync(fileId, targetUserId, grantedByUserId, permission);
+            }
+        }
+
+        // ─── Permission Management ───────────────────────────────────────
+
+        public async Task<IEnumerable<FilePermissionListDto>> GetFilePermissionsAsync(Guid fileId, int userId)
+        {
+            if (!await HasPermissionAsync(fileId, userId, PermissionType.Read))
+                throw new UnauthorizedAccessException("Access denied");
+
+            var file = await _fileRepository.GetWithPermissionsAsync(fileId);
+            if (file == null)
+                throw new Exception("File not found");
+
+            var result = new List<FilePermissionListDto>();
+            foreach (var perm in file.Permissions)
+            {
+                var user = await _userRepository.GetByIdAsync(perm.UserId);
+                result.Add(new FilePermissionListDto
+                {
+                    UserId = perm.UserId,
+                    Username = user?.Username ?? "Unknown",
+                    Email = user?.Email ?? "Unknown",
+                    PermissionType = perm.PermissionType.ToString(),
+                    GrantedAt = perm.GrantedAt
+                });
+            }
+
+            return result;
+        }
+
+        public async Task RemovePermissionAsync(Guid fileId, int targetUserId, int requestingUserId)
+        {
+            var file = await _fileRepository.GetWithPermissionsAsync(fileId);
+            if (file == null)
+                throw new Exception("File not found");
+
+            if (file.OwnerId != requestingUserId)
+                throw new UnauthorizedAccessException("Only the owner can remove permissions");
+
+            var permission = file.Permissions.FirstOrDefault(p => p.UserId == targetUserId);
+            if (permission == null)
+                throw new Exception("Permission not found");
+
+            file.Permissions.Remove(permission);
+            await _fileRepository.UpdateAsync(file);
+            await _cache.RemoveByPrefixAsync($"perm:{fileId}:");
+            await _cache.RemoveByPrefixAsync($"file:{fileId}:");
+        }
+
+        public async Task UpdatePermissionAsync(Guid fileId, int targetUserId, PermissionType newPermission, int requestingUserId)
+        {
+            var file = await _fileRepository.GetWithPermissionsAsync(fileId);
+            if (file == null)
+                throw new Exception("File not found");
+
+            if (file.OwnerId != requestingUserId)
+                throw new UnauthorizedAccessException("Only the owner can update permissions");
+
+            var permission = file.Permissions.FirstOrDefault(p => p.UserId == targetUserId);
+            if (permission == null)
+                throw new Exception("Permission not found");
+
+            permission.PermissionType = newPermission;
+            permission.GrantedAt = DateTime.UtcNow;
+            await _fileRepository.UpdateAsync(file);
+            await _cache.RemoveByPrefixAsync($"perm:{fileId}:");
+            await _cache.RemoveByPrefixAsync($"file:{fileId}:");
+        }
     }
 }

@@ -192,6 +192,74 @@ namespace CloudStorage.Infrastructure.Services
             return await _context.Users.FindAsync(userId);
         }
 
+        public async Task<UserDto> UpdateProfileAsync(int userId, UpdateProfileDto dto)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+                throw new Exception("User not found");
+
+            if (!string.IsNullOrEmpty(dto.Username) && dto.Username != user.Username)
+            {
+                if (await _context.Users.AnyAsync(u => u.Username == dto.Username && u.Id != userId))
+                    throw new Exception("Username already taken");
+                user.Username = dto.Username;
+            }
+
+            if (!string.IsNullOrEmpty(dto.Email) && dto.Email != user.Email)
+            {
+                if (await _context.Users.AnyAsync(u => u.Email == dto.Email && u.Id != userId))
+                    throw new Exception("Email already in use");
+                user.Email = dto.Email;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return new UserDto
+            {
+                Id = user.Id.ToString(),
+                Username = user.Username,
+                Email = user.Email
+            };
+        }
+
+        public async Task ChangePasswordAsync(int userId, ChangePasswordDto dto)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+                throw new Exception("User not found");
+
+            if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.PasswordHash))
+                throw new Exception("Current password is incorrect");
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            await _context.SaveChangesAsync();
+
+            // Revoke all refresh tokens for security
+            await _refreshTokenService.RevokeAllUserTokensAsync(user.Id);
+        }
+
+        public async Task<IEnumerable<UserSearchResultDto>> SearchUsersAsync(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+                return Enumerable.Empty<UserSearchResultDto>();
+
+            var normalizedQuery = query.ToLower();
+            var users = await _context.Users
+                .Where(u => u.IsActive && (
+                    u.Email.ToLower().Contains(normalizedQuery) ||
+                    u.Username.ToLower().Contains(normalizedQuery)))
+                .Take(10)
+                .Select(u => new UserSearchResultDto
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    Email = u.Email
+                })
+                .ToListAsync();
+
+            return users;
+        }
+
         private string GenerateJwtToken(User user)
         {
             var jwtKey = _configuration["Jwt:Key"];

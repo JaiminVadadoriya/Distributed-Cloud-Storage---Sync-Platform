@@ -8,6 +8,12 @@ A scalable, distributed cloud storage and synchronization platform built with **
 
 - **Chunked Uploads** — Files are split into 5 MB chunks with SHA-256 hashing for integrity
 - **Deduplication** — Identical chunks are stored once and reference-counted
+- **Version History** — Maintain multiple versions of files with restore capabilities
+- **Bulk Operations** — Delete, move, and share multiple files/folders at once
+- **Notification Persistence** — Database-backed activity log and real-time toast alerts
+- **Comprehensive File System UI** — Trash, Recent files, multi-select operations, and File Preview (Image/Video/PDF/Text)
+- **Advanced Sync & Conflict Resolution** — Dedicated Sync History timeline and Conflict Center for resolving Version Vector mismatches
+- **Admin & Analytics** — System metrics and comprehensive storage usage analytics
 - **Horizontal Scaling** — API scaled to 3+ replicas with **NGINX** load balancing
 - **Distributed Caching** — **Redis** for metadata, permissions, and SignalR backplane
 - **Async Background Tasks** — **RabbitMQ** for offloading heavy dedup/integrity checks
@@ -47,7 +53,7 @@ This project follows **Clean Architecture** with strict layer separation:
 | Layer              | Technology                                  |
 | ------------------ | ------------------------------------------- |
 | **Backend**        | .NET 10 Web API (C#)                        |
-| **Frontend**       | Angular 21 (TypeScript, Standalone)         |
+| **Frontend**       | Angular 21, **Tailwind CSS v4**, **Material v20** |
 | **Database**       | PostgreSQL 16 (EF Core)                     |
 | **Cache**          | Redis 7 (Distributed Cache & Backplane)     |
 | **Message Queue**  | RabbitMQ 3 (Background Processing)          |
@@ -99,12 +105,25 @@ cloud-storage/
 │
 ├── CloudStorage.Client/                 # Angular 21 frontend
 │   ├── src/app/
-│   │   ├── core/                        #   file.service, folder.service, device.service,
-│   │   │                                #   activity.service, sync-engine.service,
-│   │   │                                #   signalr.service, offline-cache.service, etc.
-│   │   ├── services/                    #   chunking.service, upload.service, upload-manager
-│   │   ├── components/                  #   FileUpload, UploadProgress, ConflictDialog
-│   │   └── features/                    #   auth/, dashboard/, settings/
+│   │   ├── core/                        #   Auth, API, SignalR, Sync-Engine, Services
+│   │   │   ├── services/
+│   │   │   ├── guards/
+│   │   │   ├── interceptors/
+│   │   │   ├── layout/                  #   Sidebar, Topbar, AppShell, AuthLayout
+│   │   │   └── models/                  #   BaseComponent, BaseService, Data Models
+│   │   ├── shared/                      #   Common components (Toast, Modal, Dialogs, ContextMenu)
+│   │   ├── features/                    #   16+ Feature Modules
+│   │   │   ├── admin/                   #   System Metrics, Usage Analytics
+│   │   │   ├── auth/                    #   Login, Register, Session Expired
+│   │   │   ├── dashboard/               #   Dashboard, FileList
+│   │   │   ├── files/                   #   FileExplorer, Preview, Trash, Recent, VersionCompare
+│   │   │   ├── search/                  #   Enhanced Search Results w/ Filters
+│   │   │   ├── sync/                    #   Conflict Center, Sync History
+│   │   │   ├── settings/                #   Profile, Security, Storage, Encryption, Danger Zone
+│   │   │   └── activity/                #   Activity Log, Audit Log
+│   │   ├── app.config.ts                #   Application providers
+│   │   ├── app.routes.ts                #   Route definitions (16+ routes)
+│   │   └── app.component.ts             #   Root component
 │   ├── Dockerfile                       #   Node 22 → Nginx SPA
 │   └── nginx.conf                       #   SPA routing config
 │
@@ -207,6 +226,13 @@ npm start
 | `POST /api/files`                      | POST   | Yes  | Create file metadata           |
 | `POST /api/files/{id}/permissions`     | POST   | Yes  | Grant file permissions         |
 | `POST /api/files/{id}/share`           | POST   | Yes  | Share file (alias for permissions) |
+| `GET /api/files/{id}/versions`         | GET    | Yes  | Get file version history       |
+| `POST /api/files/{id}/restore/{vId}`   | POST   | Yes  | Restore specific file version  |
+| `PATCH /api/files/{id}/rename`         | PATCH  | Yes  | Rename a file                  |
+| `PATCH /api/files/{id}/move`           | PATCH  | Yes  | Move file to folder            |
+| `POST /api/files/bulk-delete`          | POST   | Yes  | Delete multiple files          |
+| `POST /api/files/bulk-move`            | POST   | Yes  | Move multiple files            |
+| `POST /api/files/bulk-share`           | POST   | Yes  | Share multiple files           |
 | `DELETE /api/files/{id}`               | DELETE | Yes  | Soft delete a file             |
 | `DELETE /api/files/all`                | DELETE | Yes  | Delete all owned files         |
 
@@ -240,10 +266,12 @@ npm start
 | `PATCH /api/devices/{id}/sync`    | PATCH  | Yes  | Update last-sync timestamp          |
 | `DELETE /api/devices/{id}`        | DELETE | Yes  | Remove a device                     |
 
-### Activity Feed
-
+### Notifications & Activity
 | Endpoint                          | Method | Auth | Description                         |
 | --------------------------------- | ------ | ---- | ----------------------------------- |
+| `GET /api/notifications`          | GET    | Yes  | Get unread notifications            |
+| `PATCH /api/notifications/{id}/read` | PATCH | Yes | Mark single notification as read    |
+| `POST /api/notifications/read-all` | POST   | Yes  | Mark all as read                    |
 | `GET /api/activity?limit=50`      | GET    | Yes  | Recent activity log (default: 50)   |
 
 ### Sync

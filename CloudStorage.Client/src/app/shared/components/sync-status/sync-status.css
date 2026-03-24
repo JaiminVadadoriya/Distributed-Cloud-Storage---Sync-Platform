@@ -1,0 +1,9 @@
+:host { display: inline-flex; }
+.sync-status { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 4px; background: rgba(255,255,255,0.03); }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; }
+.synced .status-dot { background: #22c55e; box-shadow: 0 0 4px rgba(34,197,94,0.4); }
+.syncing .status-dot { background: var(--color-accent, #6366f1); animation: pulse 1s infinite; }
+.offline .status-dot { background: #ef4444; }
+.status-text { color: var(--color-text-muted, #888); }
+.last-sync { color: var(--color-text-muted, #666); font-size: 0.65rem; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }

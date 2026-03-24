@@ -1,13 +1,13 @@
 import { vi } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { DashboardComponent } from './dashboard.component';
-import { UploadManagerService } from '../../services/upload-manager.service';
-import { FileService } from '../../core/file.service';
-import { SignalRService } from '../../core/signalr.service';
-import { NotificationService } from '../../core/notification.service';
-import { ConnectionStatusService } from '../../core/connection-status.service';
-import { SyncEngineService } from '../../core/sync-engine.service';
-import { OfflineCacheService } from '../../core/offline-cache.service';
+import { UploadManagerService } from '../../core/services/upload-manager.service';
+import { FileService } from '../../core/services/file.service';
+import { SignalRService } from '../../core/services/signalr.service';
+import { NotificationService } from '../../core/services/notification.service';
+import { ConnectionStatusService } from '../../core/services/connection-status.service';
+import { SyncEngineService } from '../../core/services/sync-engine.service';
+import { OfflineCacheService } from '../../core/services/offline-cache.service';
 import { of, EMPTY, Subject } from 'rxjs';
 import { signal } from '@angular/core';
 

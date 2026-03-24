@@ -70,6 +70,19 @@ namespace CloudStorage.Infrastructure.Services
             await _context.SaveChangesAsync();
         }
 
+        public async Task ForceSyncAsync(Guid deviceId, int userId)
+        {
+            var device = await _context.Devices
+                .FirstOrDefaultAsync(d => d.Id == deviceId && d.UserId == userId);
+
+            if (device == null)
+                throw new Exception("Device not found or access denied");
+
+            // Mark as synced — actual sync is triggered client-side via SignalR
+            device.LastSyncAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+
         private static DeviceDto MapToDto(Device d) => new DeviceDto
         {
             Id = d.Id,

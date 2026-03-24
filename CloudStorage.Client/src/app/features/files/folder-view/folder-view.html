@@ -1,0 +1,56 @@
+<div class="folder-view">
+  <!-- Breadcrumbs -->
+  <nav class="breadcrumbs">
+    @for (crumb of breadcrumbs(); track crumb.id; let last = $last) {
+      @if (!last) {
+        <button class="crumb-btn" (click)="navigateTo(crumb.id)">{{ crumb.name }}</button>
+        <span class="crumb-sep">/</span>
+      } @else {
+        <span class="crumb-current">{{ crumb.name }}</span>
+      }
+    }
+  </nav>
+
+  @if (isBusy()) {
+    <div class="loading-state"><div class="spinner"></div><p>Loading folder...</p></div>
+  } @else {
+    <!-- Sub-Folders -->
+    @if (subFolders().length > 0) {
+      <section class="section">
+        <h4 class="section-title">Folders</h4>
+        <div class="grid">
+          @for (folder of subFolders(); track folder.id) {
+            <div class="folder-card" (click)="navigateTo(folder.id)">
+              <span class="folder-icon">📁</span>
+              <span class="folder-name">{{ folder.name }}</span>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <!-- Files -->
+    @if (files().length > 0) {
+      <section class="section">
+        <h4 class="section-title">Files</h4>
+        <div class="grid">
+          @for (file of files(); track file.id) {
+            <div class="file-card" (click)="openFile(file.id)">
+              <span class="file-icon">📄</span>
+              <div class="file-info">
+                <span class="file-name">{{ file.fileName }}</span>
+                <span class="file-size">{{ formatSize(file.size) }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    @if (subFolders().length === 0 && files().length === 0) {
+      <div class="empty-state">
+        <p>This folder is empty</p>
+      </div>
+    }
+  }
+</div>

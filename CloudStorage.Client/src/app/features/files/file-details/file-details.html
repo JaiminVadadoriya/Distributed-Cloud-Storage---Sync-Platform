@@ -1,0 +1,68 @@
+<div class="file-details-drawer" [class.open]="!!fileId()">
+  <div class="drawer-header">
+    <h3>File Details</h3>
+    <button class="close-btn" (click)="close()">✕</button>
+  </div>
+
+  @if (isBusy()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading...</p>
+    </div>
+  } @else if (file()) {
+    <div class="drawer-body">
+      <div class="file-icon-section">
+        <div class="file-type-badge">{{ file().contentType?.split('/')[1] || 'FILE' }}</div>
+      </div>
+
+      <div class="info-group">
+        <label>Name</label>
+        @if (isRenaming()) {
+          <div class="rename-row">
+            <input type="text" [ngModel]="newName()" (ngModelChange)="newName.set($event)" class="rename-input" />
+            <button class="action-btn confirm" (click)="confirmRename()">✓</button>
+            <button class="action-btn cancel" (click)="cancelRename()">✕</button>
+          </div>
+        } @else {
+          <p class="info-value clickable" (click)="startRename()">{{ file().fileName }}</p>
+        }
+      </div>
+
+      <div class="info-group">
+        <label>Size</label>
+        <p class="info-value">{{ formatSize(file().size) }}</p>
+      </div>
+
+      <div class="info-group">
+        <label>Type</label>
+        <p class="info-value">{{ file().contentType }}</p>
+      </div>
+
+      <div class="info-group">
+        <label>Version</label>
+        <p class="info-value">v{{ file().version }}</p>
+      </div>
+
+      <div class="info-group">
+        <label>Owner</label>
+        <p class="info-value">{{ file().ownerUsername }}</p>
+      </div>
+
+      <div class="info-group">
+        <label>Created</label>
+        <p class="info-value">{{ file().createdAt | date:'medium' }}</p>
+      </div>
+
+      <div class="info-group">
+        <label>Modified</label>
+        <p class="info-value">{{ file().lastModifiedAt | date:'medium' }}</p>
+      </div>
+
+      <div class="actions-section">
+        <button class="action-btn primary" (click)="downloadFile()">⬇ Download</button>
+        <button class="action-btn" (click)="startRename()">✏ Rename</button>
+        <button class="action-btn danger" (click)="deleteFile()">🗑 Delete</button>
+      </div>
+    </div>
+  }
+</div>

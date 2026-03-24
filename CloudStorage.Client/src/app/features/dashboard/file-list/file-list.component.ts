@@ -1,77 +1,133 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FileService, FileItem } from '../../../core/file.service';
-import { ConnectionStatusService } from '../../../core/connection-status.service';
-import { OfflineCacheService } from '../../../core/offline-cache.service';
-import { SyncEngineService } from '../../../core/sync-engine.service';
-import { catchError, of, tap } from 'rxjs';
+import { FileService } from '../../../core/services/file.service';
+import { ConnectionStatusService } from '../../../core/services/connection-status.service';
+import { OfflineCacheService } from '../../../core/services/offline-cache.service';
+import { SyncEngineService } from '../../../core/services/sync-engine.service';
+import { SearchService } from '../../../core/services/search.service';
+import { BaseComponent } from '../../../core/models/base-component';
+import { FileItem } from '../../../core/models/file.model';
+import { catchError, of, tap, takeUntil } from 'rxjs';
+import { computed } from '@angular/core';
 
 @Component({
   selector: 'app-file-list',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="bg-white dark:bg-white/5 rounded-2xl border border-gray-100 dark:border-white/10 overflow-hidden">
-      <div class="p-4 border-b border-gray-100 dark:border-white/10 flex items-center justify-between">
-        <h3 class="font-bold text-lg">Your Files</h3>
-        <div class="flex gap-2">
-           <button class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-text-muted transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+    <div class="space-y-8 selection:bg-editorial-text selection:text-editorial-bg">
+      <div class="flex items-end justify-between border-b border-editorial-text/20 pb-4">
+        <h3 class="text-lg font-mono font-bold uppercase tracking-[1em] text-editorial-text">R O O T _ D I R E C T O R Y</h3>
+        <div class="flex gap-4">
+           <button (click)="viewMode.set('grid')" [class.text-editorial-text]="viewMode() === 'grid'" [class.text-editorial-text/20]="viewMode() !== 'grid'" class="hover:text-editorial-text transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
            </button>
-           <button class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-white/5 text-primary bg-primary/10 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
+           <button (click)="viewMode.set('list')" [class.text-editorial-text]="viewMode() === 'list'" [class.text-editorial-text/20]="viewMode() !== 'list'" class="hover:text-editorial-text transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>
            </button>
         </div>
       </div>
       
-      <div class="divide-y divide-gray-100 dark:divide-white/5">
-        @for (file of files(); track file.id) {
-          <div class="p-4 flex items-center gap-4 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group cursor-pointer">
-             <div class="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
-             </div>
-             
-              <div class="flex-1 min-w-0">
-                <h4 class="font-medium text-sm truncate">{{ file.name }}</h4>
-                <div class="flex items-center gap-2 text-xs text-text-muted mt-0.5">
-                  <span>{{ formatSize(file.size) }}</span>
-                  <span>•</span>
-                  <span>{{ file.modified | date:'mediumDate' }}</span>
-                </div>
-                
+      <div class="divide-y divide-editorial-text/20">
+        <!-- Table Header -->
+        @if (viewMode() === 'list') {
+          <div class="px-4 py-3 grid grid-cols-[40px_1fr_100px_150px] gap-6 text-[9px] font-mono font-bold uppercase tracking-[0.3em] text-editorial-text/70 border-b border-editorial-text/20">
+            <div class="flex justify-center">Typ</div>
+            <div class="flex-1">Entity_Name</div>
+            <div class="text-right">Size</div>
+            <div class="text-right">Sequence_Date</div>
+          </div>
+        }
 
-              </div>
-              
-              <div class="flex items-center gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                 <button (click)="downloadFile(file, $event)"
-                         class="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 text-text-muted transition-colors" title="Download">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                 </button>
-                <button (click)="deleteFile(file, $event)" class="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 text-text-muted hover:text-red-500 transition-colors" title="Delete">
-                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                </button>
-             </div>
+        @if (isLoading()) {
+          @for (i of [1,2,3,4,5]; track i) {
+            <div class="px-4 py-5 grid grid-cols-[40px_1fr_100px_150px] gap-6 border-b border-editorial-text/20 animate-pulse">
+               <div class="h-4 w-4 bg-editorial-text/20 mx-auto"></div>
+               <div class="font-mono text-[10px] text-editorial-text/60 uppercase tracking-widest">ENUMERATING_OBJECT_{{i}}...</div>
+               <div class="text-right font-mono text-[9px] text-editorial-text/20">--- KB</div>
+               <div class="text-right font-mono text-[9px] text-editorial-text/20">--.--.----</div>
+            </div>
+          }
+        } @else {
+          <div [class]="containerClass()">
+            @for (file of filteredFiles(); track file.id) {
+              <div [class]="itemClass()" class="hover:bg-editorial-text/[0.02] border-l-2 border-transparent hover:border-editorial-text/20 transition-all group cursor-pointer relative overflow-hidden">
+                 <div class="flex items-center justify-center text-editorial-text/20 group-hover:text-editorial-text transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" [attr.width]="viewMode() === 'grid' ? 24 : 14" [attr.height]="viewMode() === 'grid' ? 24 : 14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                 </div>
+               
+                <div class="min-w-0">
+                  <div class="flex items-center gap-3">
+                    <h4 class="font-sans text-[11px] font-bold text-editorial-text truncate tracking-tight">{{ file.name }}</h4>
+                    <div class="w-1.5 h-1.5 rounded-full bg-editorial-text/20 group-hover:bg-editorial-text/60 transition-none"></div>
+                  </div>
+                </div>
+  
+                 <div [class.hidden]="viewMode() === 'grid'" class="text-right font-mono text-[9px] uppercase tracking-tighter text-editorial-text/60">
+                   {{ formatSize(file.size) }}
+                 </div>
+   
+                 <div [class.hidden]="viewMode() === 'grid'" class="text-right font-mono text-[9px] uppercase tracking-tighter text-editorial-text/60">
+                   {{ file.modified | date:'dd.MM.yyyy' }}
+                 </div>
+                 
+                 <!-- Hover Actions Overlay -->
+                 <div class="absolute inset-y-0 right-0 flex items-center pr-4 gap-1 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-l from-editorial-bg via-editorial-bg to-transparent pl-12 pointer-events-none group-hover:pointer-events-auto">
+                   <button (click)="downloadFile(file, $event)"
+                           class="p-2 text-editorial-text/60 hover:text-editorial-text transition-colors" title="Download Sequence">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                   </button>
+                  <button (click)="deleteFile(file, $event)" class="p-2 text-editorial-text/60 hover:text-rose-600 transition-colors" title="Purge Record">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                   </button>
+                </div>
+            </div>
+          }
           </div>
         }
         
-        @if (files().length === 0) {
-          <div class="p-12 text-center text-text-muted">
-             <div class="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-white/5 mx-auto mb-4 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="opacity-50"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+        @if (!isLoading() && filteredFiles().length === 0) {
+          <div class="p-24 text-center">
+             <div class="w-12 h-12 border border-editorial-text/10 mx-auto mb-8 flex items-center justify-center opacity-20">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
              </div>
-             <p>No files yet. Upload one to get started!</p>
+             <p class="font-mono text-[9px] uppercase tracking-[0.4em] text-editorial-text/20">Null_Directory: No entities detected</p>
           </div>
         }
       </div>
     </div>
   `
 })
-export class FileListComponent implements OnInit {
+export class FileListComponent extends BaseComponent implements OnInit {
   fileService = inject(FileService);
   connectionStatus = inject(ConnectionStatusService);
   offlineCache = inject(OfflineCacheService);
   syncEngine = inject(SyncEngineService);
+  searchService = inject(SearchService);
+  
   files = signal<FileItem[]>([]);
+  isLoading = signal<boolean>(true);
+  viewMode = signal<'list' | 'grid'>('list');
+
+  filteredFiles = computed(() => {
+    const query = this.searchService.query();
+    if (!query) {
+      return this.files();
+    }
+    return this.files().filter(f => f.name.toLowerCase().includes(query));
+  });
+
+  containerClass = computed(() => {
+    return this.viewMode() === 'grid' 
+      ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-4'
+      : '';
+  });
+
+  itemClass = computed(() => {
+    return this.viewMode() === 'list'
+      ? 'px-4 py-5 grid grid-cols-[40px_1fr_100px_150px] items-center gap-6'
+      : 'p-6 border border-editorial-text/10 flex flex-col items-start gap-4';
+  });
 
   ngOnInit() {
     this.loadFiles();
@@ -96,6 +152,7 @@ export class FileListComponent implements OnInit {
     }
 
     this.fileService.getFiles().pipe(
+      takeUntil(this.destroy$),
       tap(files => {
         // Cache files for offline use
         this.offlineCache.cacheFiles(files.map(f => ({
@@ -125,7 +182,10 @@ export class FileListComponent implements OnInit {
         });
         return of([]);
       })
-    ).subscribe(files => this.files.set(files));
+    ).subscribe(files => {
+      this.files.set(files);
+      this.isLoading.set(false);
+    });
   }
 
   isConflicted(fileId: string): boolean {

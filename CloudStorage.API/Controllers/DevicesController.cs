@@ -105,5 +105,22 @@ namespace CloudStorage.API.Controllers
                 return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
             }
         }
+
+        /// <summary>
+        /// Force a sync cycle for a specific device.
+        /// </summary>
+        [HttpPost("{id}/force-sync")]
+        public async Task<IActionResult> ForceSync(Guid id)
+        {
+            try
+            {
+                await _deviceService.ForceSyncAsync(id, GetUserId());
+                return Ok(new ApiResponse { Success = true, Message = "Sync triggered successfully" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
+            }
+        }
     }
 }
