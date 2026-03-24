@@ -53,8 +53,9 @@ namespace CloudStorage.API.Tests.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            var returnValue = Assert.IsType<DeltaSyncResponseDto>(okResult.Value);
-            Assert.Equal(expectedResponse.ServerTimestampUtc, returnValue.ServerTimestampUtc);
+            var response = Assert.IsType<ApiResponse<DeltaSyncResponseDto>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(expectedResponse.ServerTimestampUtc, response.Data!.ServerTimestampUtc);
         }
 
         [Fact]

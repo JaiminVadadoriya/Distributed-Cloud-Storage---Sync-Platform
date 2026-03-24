@@ -3,6 +3,7 @@ using CloudStorage.API.Controllers;
 using CloudStorage.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using CloudStorage.Application.DTOs;
 using Xunit;
 
 namespace CloudStorage.API.Tests.Controllers
@@ -29,7 +30,9 @@ namespace CloudStorage.API.Tests.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.NotNull(okResult.Value);
+            var response = Assert.IsType<ApiResponse<object>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.NotNull(response.Data);
         }
 
         [Fact]
@@ -40,7 +43,9 @@ namespace CloudStorage.API.Tests.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.NotNull(okResult.Value);
+            var response = Assert.IsType<ApiResponse<object>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.NotNull(response.Data);
         }
     }
 }

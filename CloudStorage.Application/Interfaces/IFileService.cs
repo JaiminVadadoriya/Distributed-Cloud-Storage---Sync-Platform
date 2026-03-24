@@ -9,6 +9,8 @@ namespace CloudStorage.Application.Interfaces
     public interface IFileService
     {
         Task<IEnumerable<FileListDto>> GetUserFilesAsync(int userId);
+        Task<IEnumerable<FileListDto>> GetSharedFilesAsync(int userId);
+        Task<IEnumerable<FileListDto>> SearchFilesAsync(int userId, string query);
         Task<FileResponseDto?> GetFileByIdAsync(Guid fileId, int requestingUserId);
         Task<IEnumerable<(string StoragePath, long Size)>> GetFileChunkPathsAsync(Guid fileId, int requestingUserId);
         Task<FileResponseDto> CreateFileMetadataAsync(FileUploadDto dto, int ownerId);

@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { SyncEngineService } from './sync-engine.service';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -53,5 +53,31 @@ describe('SyncEngineService', () => {
     await service.performSync();
     expect(service.isSyncing()).toBe(false);
     expect(offlineCacheMock.getLastSyncTimestamp).not.toHaveBeenCalled();
+    expect(service.syncLog()[0].message).toContain('Sync skipped — offline');
+  });
+
+  it('should log messages and clear log', () => {
+    // Accessing private log via any for testing if needed, or trigger via public methods
+    (service as any).log('info', 'Test message');
+    expect(service.syncLog().length).toBe(1);
+    expect(service.syncLog()[0].message).toBe('Test message');
+
+    service.clearLog();
+    expect(service.syncLog().length).toBe(0);
+  });
+
+  it('should simulate local edit', async () => {
+    const fileId = 'file1';
+    const fileName = 'test.txt';
+    offlineCacheMock.getCachedFile.mockResolvedValue({ id: fileId, size: 100 });
+
+    await service.simulateLocalEdit(fileId, fileName);
+
+    expect(offlineCacheMock.updateCachedFile).toHaveBeenCalledWith(expect.objectContaining({
+      id: fileId,
+      fileName: fileName,
+      versionVector: expect.stringContaining(fileId.substring(0, 8))
+    }));
+    expect(service.syncLog()[0].message).toContain('Simulated local edit');
   });
 });

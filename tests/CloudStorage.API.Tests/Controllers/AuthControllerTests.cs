@@ -36,7 +36,9 @@ namespace CloudStorage.API.Tests.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.NotNull(okResult.Value);
+            var response = Assert.IsType<ApiResponse<object>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.NotNull(response.Data);
         }
 
         [Fact]
@@ -54,7 +56,9 @@ namespace CloudStorage.API.Tests.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(response, okResult.Value);
+            var apiResponse = Assert.IsType<ApiResponse<LoginResponseDto>>(okResult.Value);
+            Assert.True(apiResponse.Success);
+            Assert.Equal(response, apiResponse.Data);
         }
 
         [Fact]
@@ -86,9 +90,10 @@ namespace CloudStorage.API.Tests.Controllers
             // Act
             var result = await _controller.Refresh(dto);
 
-            // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(response, okResult.Value);
+            var apiResponse = Assert.IsType<ApiResponse<LoginResponseDto>>(okResult.Value);
+            Assert.True(apiResponse.Success);
+            Assert.Equal(response, apiResponse.Data);
         }
 
         [Fact]
@@ -118,6 +123,8 @@ namespace CloudStorage.API.Tests.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
+            var apiResponse = Assert.IsType<ApiResponse>(okResult.Value);
+            Assert.True(apiResponse.Success);
             _mockAuthService.Verify(x => x.LogoutAsync(dto.RefreshToken), Times.Once);
         }
     }

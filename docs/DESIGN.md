@@ -1,6 +1,6 @@
 # Design Document — Distributed Cloud Storage Platform
 
-> **Version:** 1.0 &nbsp;|&nbsp; **Last Updated:** February 2026
+> **Version:** 2.0 &nbsp;|&nbsp; **Last Updated:** March 2026
 
 ---
 
@@ -102,12 +102,15 @@ Users (Id PK, Username UNIQUE, Email UNIQUE, PasswordHash, ...)
 FileMetadata (Id PK GUID, FileName, Size, Version, OwnerId FK→Users, UploadSessionId, Status, ...)
 FileChunks (Id PK GUID, FileMetadataId FK, ChunkIndex, Hash, StoragePath, IsDuplicate, ...)
 ChunkRegistry (Hash PK, StoragePath, Size, ReferenceCount, ...)
+Folders (Id PK GUID, Name, OwnerId FK→Users, ParentFolderId FK→Folders nullable, ...)
 
 -- Supporting tables
 RefreshTokens (Id PK GUID, Token UNIQUE, UserId FK→Users, ExpiresAt, IsRevoked, ...)
-Devices (Id PK GUID, UserId FK→Users, DeviceName, DeviceType, ...)
+Devices (Id PK GUID, UserId FK→Users, DeviceName, DeviceType, LastSyncAt, ...)
 FilePermissions (Id PK GUID, FileMetadataId FK, UserId FK→Users, PermissionType, ...)
+FolderPermissions (Id PK GUID, FolderId FK→Folders, UserId FK→Users, PermissionType, ...)
 SyncEvents (Id PK GUID, FileMetadataId FK, DeviceId FK→Devices, EventType, VersionVector, ...)
+ActivityLogs (Id PK GUID, UserId FK→Users, EventType, TargetId, TargetName, Timestamp, ...)
 ```
 
 ### 3.2 Indexing Strategy
@@ -156,33 +159,80 @@ Device deleted:
 
 #### Authentication (`/api/auth`)
 
-| Method | Endpoint              | Auth | Request Body         | Response                         |
-| ------ | --------------------- | ---- | -------------------- | -------------------------------- |
-| POST   | `/register`           | No   | `RegisterDto`        | `{ id, username, email }`        |
-| POST   | `/login`              | No   | `LoginDto`           | `LoginResponseDto`               |
-| POST   | `/refresh`            | No   | `RefreshTokenDto`    | `LoginResponseDto`               |
-| POST   | `/logout`             | Yes  | `RefreshTokenDto`    | `{ message }`                    |
-| POST   | `/password-reset-request` | No | `PasswordResetRequestDto` | `{ message }`             |
-| POST   | `/password-reset`     | No   | `PasswordResetDto`   | `{ message }`                    |
+| Method | Endpoint                   | Auth | Request Body                | Response              |
+| ------ | -------------------------- | ---- | --------------------------- | --------------------- |
+| POST   | `/register`                | No   | `RegisterDto`               | `{ id, username, email }` |
+| POST   | `/login`                   | No   | `LoginDto`                  | `LoginResponseDto`    |
+| POST   | `/refresh`                 | No   | `RefreshTokenDto`           | `LoginResponseDto`    |
+| POST   | `/logout`                  | Yes  | `RefreshTokenDto`           | `{ message }`         |
+| POST   | `/password-reset-request`  | No   | `PasswordResetRequestDto`   | `{ message }`         |
+| POST   | `/password-reset`          | No   | `PasswordResetDto`          | `{ message }`         |
 
 #### Files (`/api/files`)
 
-| Method | Endpoint                          | Auth | Description                       |
-| ------ | --------------------------------- | ---- | --------------------------------- |
-| GET    | `/`                               | Yes  | List user's files (owned + shared) |
-| GET    | `/{id}`                           | Yes  | Get file details by ID            |
-| POST   | `/`                               | Yes  | Create file metadata              |
-| DELETE | `/{id}`                           | Yes  | Soft delete file (owner only)     |
-| POST   | `/{id}/permissions`               | Yes  | Grant file permissions            |
+| Method | Endpoint                   | Auth | Description                                          |
+| ------ | -------------------------- | ---- | ---------------------------------------------------- |
+| GET    | `/`                        | Yes  | List user's files (owned + shared)                   |
+| GET    | `/stats`                   | Yes  | Dashboard stats (storage used, count, recent uploads) |
+| GET    | `/shared`                  | Yes  | List files shared with the current user              |
+| GET    | `/search?q=`               | Yes  | Search files by name                                 |
+| GET    | `/{id}`                    | Yes  | Get file details by ID                               |
+| GET    | `/{id}/download`           | Yes  | Stream file download (HTTP Range supported)          |
+| GET    | `/{id}/download-link`      | Yes  | Generate per-chunk SAS URLs for parallel download    |
+| POST   | `/`                        | Yes  | Create file metadata record                          |
+| POST   | `/{id}/permissions`        | Yes  | Grant file permission to another user                |
+| POST   | `/{id}/share`              | Yes  | Alias for `/permissions` (frontend compatibility)    |
+| DELETE | `/{id}`                    | Yes  | Soft delete file (owner only)                        |
+| DELETE | `/all`                     | Yes  | Delete all files owned by the current user           |
 
 #### Chunked Upload (`/api/files`)
 
-| Method | Endpoint                    | Auth | Description                         |
-| ------ | --------------------------- | ---- | ----------------------------------- |
-| POST   | `/initiate`                 | Yes  | Start upload session                |
-| POST   | `/chunks`                   | Yes  | Upload single chunk (multipart)     |
-| POST   | `/complete`                 | Yes  | Finalize upload session             |
-| GET    | `/session/{id}/status`      | Yes  | Get upload progress (for resume)    |
+| Method | Endpoint              | Auth | Description                         |
+| ------ | --------------------- | ---- | ----------------------------------- |
+| POST   | `/initiate`           | Yes  | Start upload session                |
+| POST   | `/chunks`             | Yes  | Upload single chunk (multipart, max 5 MB) — throttled: max 5 concurrent per user |
+| POST   | `/complete`           | Yes  | Finalize upload session             |
+| GET    | `/session/{id}/status`| Yes  | Get upload progress (for resume)    |
+
+#### Folders (`/api/folders`)
+
+| Method | Endpoint           | Auth | Description                                               |
+| ------ | ------------------ | ---- | --------------------------------------------------------- |
+| GET    | `/root`            | Yes  | List all root-level folders for the current user          |
+| GET    | `/{id}`            | Yes  | Get folder details by ID                                  |
+| POST   | `/`                | Yes  | Create a folder (`name`, optional `parentFolderId`)       |
+| PATCH  | `/{id}/rename`     | Yes  | Rename a folder (`newName`)                               |
+| PATCH  | `/{id}/move`       | Yes  | Move folder to a new parent (`newParentFolderId`)         |
+| DELETE | `/{id}`            | Yes  | Delete folder; cascades to nested files                   |
+| POST   | `/{id}/share`      | Yes  | Share folder with a user; propagates to all nested files  |
+
+#### Devices (`/api/devices`)
+
+| Method | Endpoint        | Auth | Description                                          |
+| ------ | --------------- | ---- | ---------------------------------------------------- |
+| GET    | `/`             | Yes  | List devices registered by the current user          |
+| POST   | `/`             | Yes  | Register a new device for sync tracking              |
+| PATCH  | `/{id}/sync`    | Yes  | Update last-sync timestamp (call after each cycle)   |
+| DELETE | `/{id}`         | Yes  | Remove a registered device                           |
+
+#### Activity Feed (`/api/activity`)
+
+| Method | Endpoint         | Auth | Description                                       |
+| ------ | ---------------- | ---- | ------------------------------------------------- |
+| GET    | `/?limit=50`     | Yes  | Recent activity log for the current user (default: last 50 events) |
+
+#### Sync — Delta (`/api/sync/delta`)
+
+| Method | Endpoint              | Auth | Description                                                      |
+| ------ | --------------------- | ---- | ---------------------------------------------------------------- |
+| GET    | `/?sinceUtc=`         | Yes  | Get all file changes since the given UTC timestamp. Returns `serverTimestampUtc`, `changedFiles[]`, `deletedFileIds[]` |
+
+#### Sync — Conflicts (`/api/sync`)
+
+| Method | Endpoint              | Auth | Description                                                          |
+| ------ | --------------------- | ---- | -------------------------------------------------------------------- |
+| POST   | `/check-conflicts`    | Yes  | Compare client version vector with server. Returns `hasConflict`, server metadata |
+| POST   | `/resolve`            | Yes  | Resolve conflict: `resolution = 0 (KeepLocal)` or `1 (KeepServer)` |
 
 #### Health (`/health`)
 
@@ -325,18 +375,22 @@ Calculate SHA-256 hash  ──────────────────>�
 
 ## 9. Future Design Considerations
 
-| Feature                          | Design Approach                                         |
-| -------------------------------- | ------------------------------------------------------- |
-| **Real-Time Sync (SignalR)**     | Add SignalR hub, push SyncEvents to connected devices   |
-| **Azure Blob Storage**           | New `IChunkStorageService` implementation, swap via DI  |
-| **Delta Sync**                   | Binary diff on chunk level, send only changed bytes     |
-| **Client-Side Encryption**       | Encrypt chunks before upload, store key client-side     |
-| **File Versioning UI**           | Expose `Version`, `ParentVersionId` in frontend         |
-| **Conflict Resolution**          | Use `VersionVector` in SyncEvents for CRDT-style merge  |
-| **Search Indexing**              | Elasticsearch integration for file content search       |
-| **Rate Limiting**                | **NGINX** level (IP-based) + API level middleware        |
-| **Redis Caching**                | **Enabled** for sessions, metadata, and perms            |
-| **Observability**                | **Prometheus + Grafana** pre-provisioned                 |
-| **CDN Optimization**             | Cache-Control & HTTP Range headers implemented           |
-| **Mobile Clients**               | Flutter/React Native using same REST API                |
-| **Mobile Clients**               | Flutter/React Native using same REST API                |
+| Feature                          | Status | Design Approach                                         |
+| -------------------------------- | ------ | ------------------------------------------------------- |
+| **Real-Time Sync (SignalR)**     | ✅ Done | Redis-backplaned SignalR hub pushes `FileUploaded`, `FileDeleted` events |
+| **Azure Blob Storage**           | ✅ Done | `AzureBlobChunkStorageService` implements `IChunkStorageService`; SAS token generation via `IBlobSasService` |
+| **Delta Sync**                   | ✅ Done | `GET /api/sync/delta?sinceUtc=` returns changed/deleted file IDs since timestamp |
+| **Conflict Resolution**          | ✅ Done | Version-vector comparison via `POST /api/sync/check-conflicts` + `POST /api/sync/resolve` |
+| **Folder Management**            | ✅ Done | Full CRUD + share via `/api/folders` |
+| **Device Tracking**              | ✅ Done | Register/remove devices + last-sync timestamp via `/api/devices` |
+| **Activity Feed**                | ✅ Done | `GET /api/activity` returns `ActivityLog` entries |
+| **Upload Throttling**            | ✅ Done | `UploadThrottlingMiddleware` caps concurrent chunk uploads at 5 per user (Redis-backed) |
+| **File Search**                  | ✅ Done | `GET /api/files/search?q=` for name-based search |
+| **Client-Side Encryption**       | ⬜ Future | Encrypt chunks before upload, store key client-side |
+| **File Versioning UI**           | ⬜ Future | Expose `Version`, `ParentVersionId` in frontend |
+| **Search Indexing**              | ⬜ Future | Elasticsearch integration for file content search |
+| **Rate Limiting**                | ✅ Done | **NGINX** level (IP-based) + `[EnableRateLimiting]` on controllers |
+| **Redis Caching**                | ✅ Done | Sessions, metadata, permissions, and upload throttle |
+| **Observability**                | ✅ Done | **Prometheus + Grafana** pre-provisioned |
+| **CDN Optimization**             | ✅ Done | Cache-Control & HTTP Range headers + `X-Accel-Buffering` |
+| **Mobile Clients**               | ⬜ Future | Flutter/React Native using same REST API |

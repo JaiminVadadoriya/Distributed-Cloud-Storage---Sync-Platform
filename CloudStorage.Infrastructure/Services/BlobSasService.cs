@@ -50,6 +50,32 @@ namespace CloudStorage.Infrastructure.Services
             };
         }
 
+        public async Task<string> GenerateDownloadSasUrlAsync(string blobName, string fileName)
+        {
+            var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
+            var blobClient = containerClient.GetBlobClient(blobName);
+
+            var sasBuilder = new BlobSasBuilder
+            {
+                BlobContainerName = _containerName,
+                BlobName = blobName,
+                Resource = "b",
+                StartsOn = DateTimeOffset.UtcNow.AddMinutes(-5),
+                ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(_sasExpiryMinutes)
+            };
+
+            sasBuilder.SetPermissions(BlobSasPermissions.Read);
+            
+            // Helpful for browser download filename if the user navigates directly
+            if (!string.IsNullOrEmpty(fileName))
+            {
+                sasBuilder.ContentDisposition = $"attachment; filename=\"{Uri.EscapeDataString(fileName)}\"";
+            }
+
+            var sasUri = blobClient.GenerateSasUri(sasBuilder);
+            return await Task.FromResult(sasUri.ToString());
+        }
+
         public async Task<bool> ChunkBlobExistsAsync(string blobName)
         {
             var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);

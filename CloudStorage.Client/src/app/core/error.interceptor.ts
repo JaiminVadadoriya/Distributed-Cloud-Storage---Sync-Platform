@@ -1,8 +1,12 @@
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpErrorResponse, HttpInterceptorFn, HttpRequest, HttpHandlerFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, throwError } from 'rxjs';
+import { catchError, throwError, BehaviorSubject, switchMap, filter, take } from 'rxjs';
 import { NotificationService } from './notification.service';
 import { Router } from '@angular/router';
+import { AuthService } from './auth.service';
+
+let isRefreshing = false;
+let refreshTokenSubject = new BehaviorSubject<any>(null);
 
 function extractErrorMessage(err: HttpErrorResponse): string | null {
   if (!err || !err.error) return null;
@@ -32,6 +36,7 @@ function extractErrorMessage(err: HttpErrorResponse): string | null {
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
   const notificationService = inject(NotificationService);
   const router = inject(Router);
+  const authService = inject(AuthService);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
@@ -45,11 +50,45 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
             errorMessage = extractErrorMessage(error) || 'Bad Request. Please check your input.';
             break;
           case 401:
-            if (req.url.includes('/auth/login')) {
-              errorMessage = 'Wrong username or password. Please check your credentials.';
+            if (req.url.includes('/auth/login') || req.url.includes('/auth/refresh')) {
+              if (req.url.includes('/auth/login')) {
+                errorMessage = 'Wrong username or password. Please check your credentials.';
+              } else {
+                errorMessage = 'Session expired. Please log in again.';
+                authService.logout();
+              }
             } else {
-              errorMessage = 'Session expired or unauthorized. Please log in again.';
-              router.navigate(['/auth/login']);
+              if (!isRefreshing) {
+                isRefreshing = true;
+                refreshTokenSubject.next(null);
+
+                return authService.refreshToken().pipe(
+                  switchMap((token: any) => {
+                    isRefreshing = false;
+                    refreshTokenSubject.next(token.accessToken);
+                    const authReq = req.clone({
+                      headers: req.headers.set('Authorization', `Bearer ${token.accessToken}`)
+                    });
+                    return next(authReq);
+                  }),
+                  catchError((err) => {
+                    isRefreshing = false;
+                    authService.logout();
+                    return throwError(() => err);
+                  })
+                );
+              } else {
+                return refreshTokenSubject.pipe(
+                  filter(token => token != null),
+                  take(1),
+                  switchMap(jwt => {
+                    const authReq = req.clone({
+                      headers: req.headers.set('Authorization', `Bearer ${jwt}`)
+                    });
+                    return next(authReq);
+                  })
+                );
+              }
             }
             break;
           case 403:

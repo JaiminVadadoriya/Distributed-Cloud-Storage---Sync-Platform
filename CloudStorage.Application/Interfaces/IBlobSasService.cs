@@ -7,6 +7,7 @@ namespace CloudStorage.Application.Interfaces
     public interface IBlobSasService
     {
         Task<SasUploadUrlResponseDto> GenerateChunkUploadSasAsync(Guid fileId, int chunkIndex);
+        Task<string> GenerateDownloadSasUrlAsync(string blobName, string fileName);
         Task<bool> ChunkBlobExistsAsync(string blobName);
     }
 }

@@ -22,7 +22,8 @@ namespace CloudStorage.Application.DTOs
     public enum ConflictResolution
     {
         KeepLocal = 0,
-        KeepServer = 1
+        KeepServer = 1,
+        ConflictCopy = 2   // Creates a new "conflicted copy" file (for binary files)
     }
 
     public class ConflictResolutionDto

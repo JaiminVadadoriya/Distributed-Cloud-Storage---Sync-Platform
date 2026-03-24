@@ -63,32 +63,48 @@ This project follows **Clean Architecture** with strict layer separation:
 cloud-storage/
 ├── CloudStorage.API/                    # Entry point & controllers
 │   ├── Controllers/
-│   │   ├── AuthController.cs            #   Registration, login, token refresh
-│   │   ├── FilesController.cs           #   File CRUD & permissions
+│   │   ├── AuthController.cs            #   Registration, login, token refresh, password reset
+│   │   ├── FilesController.cs           #   File CRUD, search, download, permissions, stats
 │   │   ├── ChunkUploadController.cs     #   Chunked upload workflow
+│   │   ├── FoldersController.cs         #   Folder CRUD, rename, move, share
+│   │   ├── DevicesController.cs         #   Device registration & sync tracking
+│   │   ├── ActivityController.cs        #   Activity feed
+│   │   ├── DeltaSyncController.cs       #   Delta sync (changes since timestamp)
+│   │   ├── ConflictController.cs        #   Conflict check & resolution
 │   │   └── HealthController.cs          #   Liveness & readiness probes
+│   ├── Services/
+│   │   └── UploadThrottlingMiddleware.cs #  Max 5 concurrent chunk uploads per user (Redis)
 │   ├── Program.cs                       #   DI, middleware, pipeline config
 │   ├── Dockerfile                       #   Multi-stage .NET build
 │   └── appsettings.json                 #   Configuration (JWT, DB, CORS)
 │
 ├── CloudStorage.Application/            # Business contracts
-│   ├── DTOs/                            #   UserDtos, FileDtos, ChunkUploadDtos
-│   └── Interfaces/                      #   IAuthService, IFileService, etc.
+│   ├── DTOs/                            #   UserDtos, FileDtos, ChunkUploadDtos, FolderDtos,
+│   │                                    #   DeviceDtos, ConflictDtos, DeltaSyncDtos
+│   └── Interfaces/                      #   IAuthService, IFileService, IFolderService,
+│                                        #   IDeviceService, IActivityService,
+│                                        #   IConflictDetectionService, IDeltaSyncService, etc.
 │
 ├── CloudStorage.Domain/                 # Core entities (zero dependencies)
-│   ├── Entities/                        #   User, FileMetadata, FileChunk, etc.
+│   ├── Entities/                        #   User, FileMetadata, FileChunk, Folder, Device,
+│   │                                    #   SyncEvent, ActivityLog, FilePermission, etc.
 │   └── Interfaces/                      #   IRepository<T>, IUserRepository, etc.
 │
 ├── CloudStorage.Infrastructure/         # Implementations
 │   ├── Data/ApplicationDbContext.cs      #   EF Core with Fluent API
 │   ├── Repositories/                    #   Generic & specialized repos
-│   ├── Services/                        #   Auth, File, Chunk, Dedup, Token
-│   └── Migrations/                      #   3 EF Core migrations
+│   ├── Services/                        #   Auth, File, Chunk, Dedup, Token, Folder,
+│   │                                    #   Device, Activity, DeltaSync, Conflict, etc.
+│   └── Migrations/                      #   EF Core migrations
 │
 ├── CloudStorage.Client/                 # Angular 21 frontend
 │   ├── src/app/
-│   │   ├── services/                    #   Chunking, Upload, UploadManager
-│   │   └── components/                  #   FileUpload, UploadProgress
+│   │   ├── core/                        #   file.service, folder.service, device.service,
+│   │   │                                #   activity.service, sync-engine.service,
+│   │   │                                #   signalr.service, offline-cache.service, etc.
+│   │   ├── services/                    #   chunking.service, upload.service, upload-manager
+│   │   ├── components/                  #   FileUpload, UploadProgress, ConflictDialog
+│   │   └── features/                    #   auth/, dashboard/, settings/
 │   ├── Dockerfile                       #   Node 22 → Nginx SPA
 │   └── nginx.conf                       #   SPA routing config
 │
@@ -98,7 +114,7 @@ cloud-storage/
 │
 ├── k8s/                                 # Kubernetes Manifests
 │   ├── api-deployment.yaml              #   HPA, Replicas, Requests/Limits
-│   └── ingress-nginx.yaml               #   Ingress & WS annotations
+│   └── ingress-nginx.yaml               #   Ingress & WebSocket annotations
 │
 ├── nginx/                               # Load Balancer Config
 │   └── nginx.conf                       #   Load balancing & compression
@@ -168,38 +184,82 @@ npm start
 
 ### Authentication
 
-| Endpoint                       | Method | Auth | Description                    |
-| ------------------------------ | ------ | ---- | ------------------------------ |
-| `POST /api/auth/register`      | POST   | No   | Create a new user account      |
-| `POST /api/auth/login`         | POST   | No   | Login and receive JWT tokens   |
-| `POST /api/auth/refresh`       | POST   | No   | Refresh expired access token   |
-| `POST /api/auth/logout`        | POST   | Yes  | Revoke refresh token           |
+| Endpoint                              | Method | Auth | Description                    |
+| ------------------------------------- | ------ | ---- | ------------------------------ |
+| `POST /api/auth/register`             | POST   | No   | Create a new user account      |
+| `POST /api/auth/login`                | POST   | No   | Login and receive JWT tokens   |
+| `POST /api/auth/refresh`              | POST   | No   | Refresh expired access token   |
+| `POST /api/auth/logout`               | POST   | Yes  | Revoke refresh token           |
+| `POST /api/auth/password-reset-request` | POST | No  | Request password reset email   |
+| `POST /api/auth/password-reset`       | POST   | No   | Reset password with token      |
 
 ### File Management
 
-| Endpoint                        | Method | Auth | Description                    |
-| ------------------------------- | ------ | ---- | ------------------------------ |
-| `GET /api/files`                | GET    | Yes  | List user's files              |
-| `GET /api/files/{id}`           | GET    | Yes  | Get file details               |
-| `POST /api/files`               | POST   | Yes  | Create file metadata           |
-| `DELETE /api/files/{id}`        | DELETE | Yes  | Soft delete a file             |
-| `POST /api/files/{id}/permissions` | POST | Yes | Grant file permissions        |
+| Endpoint                               | Method | Auth | Description                    |
+| -------------------------------------- | ------ | ---- | ------------------------------ |
+| `GET /api/files`                       | GET    | Yes  | List owned + shared files      |
+| `GET /api/files/stats`                 | GET    | Yes  | Dashboard stats                |
+| `GET /api/files/shared`                | GET    | Yes  | Files shared with current user |
+| `GET /api/files/search?q=`             | GET    | Yes  | Search files by name           |
+| `GET /api/files/{id}`                  | GET    | Yes  | Get file details               |
+| `GET /api/files/{id}/download`         | GET    | Yes  | Stream file (HTTP Range supported) |
+| `GET /api/files/{id}/download-link`    | GET    | Yes  | SAS URLs for parallel download |
+| `POST /api/files`                      | POST   | Yes  | Create file metadata           |
+| `POST /api/files/{id}/permissions`     | POST   | Yes  | Grant file permissions         |
+| `POST /api/files/{id}/share`           | POST   | Yes  | Share file (alias for permissions) |
+| `DELETE /api/files/{id}`               | DELETE | Yes  | Soft delete a file             |
+| `DELETE /api/files/all`                | DELETE | Yes  | Delete all owned files         |
 
 ### Chunked Upload
 
 | Endpoint                             | Method | Auth | Description                 |
 | ------------------------------------ | ------ | ---- | --------------------------- |
 | `POST /api/files/initiate`           | POST   | Yes  | Start upload session        |
-| `POST /api/files/chunks`             | POST   | Yes  | Upload a single chunk       |
+| `POST /api/files/chunks`             | POST   | Yes  | Upload a single chunk (throttled, max 5 concurrent) |
 | `POST /api/files/complete`           | POST   | Yes  | Finalize upload             |
 | `GET /api/files/session/{id}/status` | GET    | Yes  | Check upload progress       |
 
+### Folders
+
+| Endpoint                          | Method | Auth | Description                         |
+| --------------------------------- | ------ | ---- | ----------------------------------- |
+| `GET /api/folders/root`           | GET    | Yes  | List root-level folders             |
+| `GET /api/folders/{id}`           | GET    | Yes  | Get folder by ID                    |
+| `POST /api/folders`               | POST   | Yes  | Create folder                       |
+| `PATCH /api/folders/{id}/rename`  | PATCH  | Yes  | Rename folder                       |
+| `PATCH /api/folders/{id}/move`    | PATCH  | Yes  | Move folder to new parent           |
+| `DELETE /api/folders/{id}`        | DELETE | Yes  | Delete folder (cascades)            |
+| `POST /api/folders/{id}/share`    | POST   | Yes  | Share folder with user              |
+
+### Devices
+
+| Endpoint                          | Method | Auth | Description                         |
+| --------------------------------- | ------ | ---- | ----------------------------------- |
+| `GET /api/devices`                | GET    | Yes  | List registered devices             |
+| `POST /api/devices`               | POST   | Yes  | Register a new device               |
+| `PATCH /api/devices/{id}/sync`    | PATCH  | Yes  | Update last-sync timestamp          |
+| `DELETE /api/devices/{id}`        | DELETE | Yes  | Remove a device                     |
+
+### Activity Feed
+
+| Endpoint                          | Method | Auth | Description                         |
+| --------------------------------- | ------ | ---- | ----------------------------------- |
+| `GET /api/activity?limit=50`      | GET    | Yes  | Recent activity log (default: 50)   |
+
+### Sync
+
+| Endpoint                            | Method | Auth | Description                         |
+| ----------------------------------- | ------ | ---- | ----------------------------------- |
+| `GET /api/sync/delta?sinceUtc=`     | GET    | Yes  | Changes since UTC timestamp         |
+| `POST /api/sync/check-conflicts`    | POST   | Yes  | Check version vector conflict       |
+| `POST /api/sync/resolve`            | POST   | Yes  | Resolve conflict (KeepLocal/Server) |
+
 ### Health
 
-| Endpoint        | Method | Auth | Description                        |
-| --------------- | ------ | ---- | ---------------------------------- |
-| `GET /health`   | GET    | No   | Liveness check                     |
-| `GET /health/ready` | GET | No  | Readiness check (DB connectivity)  |
+| Endpoint             | Method | Auth | Description                        |
+| -------------------- | ------ | ---- | ---------------------------------- |
+| `GET /health`        | GET    | No   | Liveness check                     |
+| `GET /health/ready`  | GET    | No   | Readiness check (DB connectivity)  |
 
 ---
 

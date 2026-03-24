@@ -29,6 +29,8 @@ namespace CloudStorage.Domain.Entities
         public User Owner { get; set; } = null!;
         public bool IsDeleted { get; set; }
         public string StoragePath { get; set; } = string.Empty;
+        public Guid? FolderId { get; set; }
+        public Folder? Folder { get; set; }
 
         // Version vector for conflict detection (JSON-serialized Dictionary<string, int>)
         public string? VersionVector { get; set; }

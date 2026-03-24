@@ -70,8 +70,9 @@ namespace CloudStorage.API.Tests.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            var response = Assert.IsType<UploadSessionResponseDto>(okResult.Value);
-            Assert.NotEmpty(response.SessionId);
+            var response = Assert.IsType<ApiResponse<UploadSessionResponseDto>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.NotEmpty(response.Data!.SessionId);
         }
 
         [Fact]
@@ -103,8 +104,9 @@ namespace CloudStorage.API.Tests.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            var response = Assert.IsType<ChunkUploadResponseDto>(okResult.Value);
-            Assert.Equal("uploaded", response.Status);
+            var response = Assert.IsType<ApiResponse<ChunkUploadResponseDto>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal("uploaded", response.Data!.Status);
         }
 
         [Fact]
@@ -158,8 +160,9 @@ namespace CloudStorage.API.Tests.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            var response = Assert.IsType<UploadStatusResponseDto>(okResult.Value);
-            Assert.Equal(2, response.UploadedChunks.Length);
+            var response = Assert.IsType<ApiResponse<UploadStatusResponseDto>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(2, response.Data!.UploadedChunks.Length);
         }
     }
 }

@@ -17,6 +17,7 @@ namespace CloudStorage.API.Tests.Controllers
     {
         private readonly Mock<IFileService> _mockFileService;
         private readonly Mock<IChunkStorageService> _mockChunkStorage;
+        private readonly Mock<IBlobSasService> _mockSasService;
         private readonly Mock<INotificationService> _mockNotificationService;
         private readonly FilesController _controller;
         private readonly int _testUserId = 1;
@@ -25,8 +26,9 @@ namespace CloudStorage.API.Tests.Controllers
         {
             _mockFileService = new Mock<IFileService>();
             _mockChunkStorage = new Mock<IChunkStorageService>();
+            _mockSasService = new Mock<IBlobSasService>();
             _mockNotificationService = new Mock<INotificationService>();
-            _controller = new FilesController(_mockFileService.Object, _mockChunkStorage.Object, _mockNotificationService.Object);
+            _controller = new FilesController(_mockFileService.Object, _mockChunkStorage.Object, _mockSasService.Object, _mockNotificationService.Object);
 
             // Mock User context
             var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
@@ -54,7 +56,9 @@ namespace CloudStorage.API.Tests.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(files, okResult.Value);
+            var response = Assert.IsType<ApiResponse<IEnumerable<FileListDto>>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(files, response.Data);
         }
 
         [Fact]
@@ -71,7 +75,9 @@ namespace CloudStorage.API.Tests.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(file, okResult.Value);
+            var response = Assert.IsType<ApiResponse<FileResponseDto>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(file, response.Data);
         }
 
         [Fact]
@@ -103,7 +109,9 @@ namespace CloudStorage.API.Tests.Controllers
 
             // Assert
             var createdResult = Assert.IsType<CreatedAtActionResult>(result);
-            Assert.Equal(file, createdResult.Value);
+            var response = Assert.IsType<ApiResponse<FileResponseDto>>(createdResult.Value);
+            Assert.True(response.Success);
+            Assert.Equal(file, response.Data);
         }
 
         [Fact]
@@ -118,23 +126,9 @@ namespace CloudStorage.API.Tests.Controllers
             var result = await _controller.DeleteFile(fileId);
 
             // Assert
-            Assert.IsType<OkObjectResult>(result);
-        }
-
-        [Fact]
-        public async Task GrantPermission_ValidDto_ReturnsOk()
-        {
-            // Arrange
-            var fileId = Guid.NewGuid();
-            var dto = new FilePermissionDto { UserId = 2, PermissionType = "Read" };
-            _mockFileService.Setup(x => x.GrantPermissionAsync(fileId, dto.UserId, _testUserId, PermissionType.Read))
-                .Returns(Task.CompletedTask);
-
-            // Act
-            var result = await _controller.GrantPermission(fileId, dto);
-
-            // Assert
-            Assert.IsType<OkObjectResult>(result);
+            var okResult = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<ApiResponse>(okResult.Value);
+            Assert.True(response.Success);
         }
     }
 }

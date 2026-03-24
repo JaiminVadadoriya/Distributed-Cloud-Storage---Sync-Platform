@@ -1,9 +1,11 @@
-import { Component, inject, OnInit, ViewChild, OnDestroy, effect } from '@angular/core';
+import { Component, inject, OnInit, ViewChild, OnDestroy, effect, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FileListComponent } from './file-list/file-list.component';
 import { FileUploadComponent, FileUploadEvent } from '../../components/file-upload/file-upload.component';
 import { UploadProgressComponent } from '../../components/upload-progress/upload-progress.component';
 import { ConflictDialogComponent } from '../../components/conflict-dialog/conflict-dialog.component';
+import { SyncTestPanelComponent } from '../../components/sync-test-panel/sync-test-panel.component';
 import { UploadManagerService, UploadTask } from '../../services/upload-manager.service';
 import { FileService, DashboardStats } from '../../core/file.service';
 import { SignalRService } from '../../core/signalr.service';
@@ -16,7 +18,7 @@ import { Observable, Subscription } from 'rxjs';
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, FileListComponent, FileUploadComponent, UploadProgressComponent, ConflictDialogComponent],
+  imports: [CommonModule, FileListComponent, FileUploadComponent, UploadProgressComponent, ConflictDialogComponent, SyncTestPanelComponent],
   template: `
     <div class="space-y-6">
       <div class="flex items-center justify-between">
@@ -36,14 +38,25 @@ import { Observable, Subscription } from 'rxjs';
             </span>
           }
         </div>
-        <button (click)="showUploadModal = true" class="bg-primary hover:bg-primary/90 text-primary-content px-4 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-colors shadow-lg shadow-primary/25">
+        <div class="flex items-center gap-2">
+          <!-- Sync Test toggle -->
+          <button (click)="showSyncPanel = !showSyncPanel"
+                  class="px-3 py-2 rounded-xl text-sm font-medium transition-colors border"
+                  [class]="showSyncPanel
+                    ? 'bg-amber-50 dark:bg-amber-500/20 border-amber-300 dark:border-amber-500/50 text-amber-700 dark:text-amber-300'
+                    : 'border-gray-200 dark:border-white/10 text-text-muted hover:border-primary/30'"
+                  title="Toggle sync test panel">
+            🔬 Sync Test
+          </button>
+          <button (click)="showUploadModal = true" class="bg-primary hover:bg-primary/90 text-primary-content px-4 py-2.5 rounded-xl font-medium flex items-center gap-2 transition-colors shadow-lg shadow-primary/25">
            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
            <span>Upload <span class="hidden sm:inline">File</span></span>
         </button>
+        </div>
       </div>
 
       <!-- Quick Stats -->
-      @if (stats$ | async; as stats) {
+      @if (stats(); as stats) {
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
          <div class="bg-primary/5 p-6 rounded-2xl border border-primary/10">
             <div class="text-text-muted text-sm font-medium mb-2">Total Storage</div>
@@ -59,17 +72,10 @@ import { Observable, Subscription } from 'rxjs';
             <div class="text-xs text-text-muted">Files uploaded this week</div>
          </div>
       </div>
-      } @else {
-        <!-- Skeleton Loading State -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 animate-pulse">
-           <div class="bg-gray-100 dark:bg-white/5 h-32 rounded-2xl"></div>
-           <div class="bg-gray-100 dark:bg-white/5 h-32 rounded-2xl"></div>
-           <div class="bg-gray-100 dark:bg-white/5 h-32 rounded-2xl"></div>
-        </div>
       }
 
       <!-- Active Uploads Section -->
-      @if (uploadQueue$ | async; as queue) {
+      @if (uploadQueue(); as queue) {
         @if (queue.length > 0) {
           <div class="space-y-4">
             <h3 class="font-bold text-lg">Active Uploads</h3>
@@ -89,6 +95,11 @@ import { Observable, Subscription } from 'rxjs';
 
       <!-- File List -->
       <app-file-list #fileList></app-file-list>
+
+      <!-- Sync Test Panel -->
+      @if (showSyncPanel) {
+        <app-sync-test-panel></app-sync-test-panel>
+      }
 
       <!-- Upload Modal Overlay -->
       @if (showUploadModal) {
@@ -128,13 +139,14 @@ export class DashboardComponent implements OnInit, OnDestroy {
   syncEngine = inject(SyncEngineService);
   offlineCache = inject(OfflineCacheService);
   
-  uploadQueue$: Observable<UploadTask[]> = this.uploadManager.getUploadQueue();
-  stats$: Observable<DashboardStats> = this.fileService.getDashboardStats();
+  uploadQueue = toSignal(this.uploadManager.getUploadQueue(), { initialValue: [] as UploadTask[] });
+  stats = toSignal(this.fileService.getDashboardStats());
   
   @ViewChild('fileList') fileList!: FileListComponent;
   
   showUploadModal = false;
   showConflictDialog = false;
+  showSyncPanel = false;
   private queueSub?: Subscription;
   private signalRSubs: Subscription[] = [];
 
@@ -162,7 +174,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   ngOnInit() {
     // Monitor upload queue to refresh file list when an upload completes
-    this.queueSub = this.uploadQueue$.subscribe(tasks => {
+    this.queueSub = this.uploadManager.getUploadQueue().subscribe(tasks => {
       const hasJustCompleted = tasks.some(t => t.progress.status === 'complete');
       if (hasJustCompleted && this.fileList) {
         this.refreshData();
@@ -203,7 +215,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
     if (this.fileList) {
       this.fileList.loadFiles();
     }
-    this.stats$ = this.fileService.getDashboardStats();
+    // With Signals, we don't need to manually re-assign the observable.
+    // However, if getDashboardStats() returns a NEW observable each time, 
+    // we might need a refresh trigger if the service doesn't use a Subject/BehaviorSubject.
+    // Assuming fileService.getDashboardStats() is reactive.
   }
 
   onFilesSelected(events: FileUploadEvent[]) {

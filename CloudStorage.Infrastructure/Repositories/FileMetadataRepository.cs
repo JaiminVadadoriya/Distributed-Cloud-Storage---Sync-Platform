@@ -66,12 +66,50 @@ namespace CloudStorage.Infrastructure.Repositories
             if (file.OwnerId == userId)
                 return true;
 
-            // Check explicit permissions
-            var permission = file.Permissions.FirstOrDefault(p => p.UserId == userId);
-            if (permission == null)
-                return false;
+            // Check explicit file-level permissions
+            var filePermission = file.Permissions.FirstOrDefault(p => p.UserId == userId);
+            if (filePermission != null && filePermission.PermissionType >= minimumPermission)
+                return true;
 
-            return permission.PermissionType >= minimumPermission;
+            // Check inherited folder permissions (walk up the hierarchy)
+            if (file.FolderId.HasValue)
+            {
+                return await HasFolderPermissionAsync(file.FolderId.Value, userId, minimumPermission);
+            }
+
+            return false;
+        }
+
+        private async Task<bool> HasFolderPermissionAsync(Guid folderId, int userId, PermissionType minimumPermission)
+        {
+            // Limit recursion depth to avoid deep traversal issues
+            const int maxDepth = 10;
+            Guid? currentFolderId = folderId;
+            int depth = 0;
+
+            while (currentFolderId.HasValue && depth < maxDepth)
+            {
+                var folder = await _context.Folders
+                    .Include(f => f.Permissions)
+                    .FirstOrDefaultAsync(f => f.Id == currentFolderId.Value);
+
+                if (folder == null)
+                    break;
+
+                // Folder owner inherits all permissions
+                if (folder.OwnerId == userId)
+                    return true;
+
+                // Check explicit folder-level permission
+                var folderPermission = folder.Permissions?.FirstOrDefault(p => p.UserId == userId);
+                if (folderPermission != null && folderPermission.PermissionType >= minimumPermission)
+                    return true;
+
+                currentFolderId = folder.ParentFolderId;
+                depth++;
+            }
+
+            return false;
         }
 
         public async Task<FileMetadata?> GetBySessionIdAsync(string sessionId)
@@ -79,6 +117,15 @@ namespace CloudStorage.Infrastructure.Repositories
             return await _dbSet
                 .Include(f => f.Chunks.OrderBy(c => c.ChunkIndex))
                 .FirstOrDefaultAsync(f => f.UploadSessionId == sessionId);
+        }
+
+        public async Task<IEnumerable<FileMetadata>> SearchAsync(int userId, string query)
+        {
+            return await _dbSet
+                .Where(f => f.OwnerId == userId && !f.IsDeleted && 
+                            EF.Functions.ILike(f.FileName, $"%{query}%"))
+                .OrderByDescending(f => f.CreatedAt)
+                .ToListAsync();
         }
 
         public async Task<FileMetadata?> GetByIdWithChunksAsync(Guid id)

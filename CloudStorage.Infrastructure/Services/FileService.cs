@@ -14,30 +14,66 @@ namespace CloudStorage.Infrastructure.Services
         private readonly IFileMetadataRepository _fileRepository;
         private readonly IUserRepository _userRepository;
         private readonly ICacheService _cache;
+        private readonly IActivityService _activityService;
 
-        public FileService(IFileMetadataRepository fileRepository, IUserRepository userRepository, ICacheService cache)
+        public FileService(
+            IFileMetadataRepository fileRepository, 
+            IUserRepository userRepository, 
+            ICacheService cache,
+            IActivityService activityService)
         {
             _fileRepository = fileRepository;
             _userRepository = userRepository;
             _cache = cache;
+            _activityService = activityService;
         }
 
         public async Task<IEnumerable<FileListDto>> GetUserFilesAsync(int userId)
         {
             var files = await _fileRepository.GetUserFilesAsync(userId);
+            
+            return files
+                .Where(f => f.Status == UploadStatus.Complete)
+                .Select(f => new FileListDto
+                {
+                    Id = f.Id,
+                    FileName = f.FileName,
+                    Size = f.Size,
+                    CreatedAt = f.CreatedAt,
+                    IsShared = false,
+                    FolderId = f.FolderId
+                });
+        }
+
+        public async Task<IEnumerable<FileListDto>> GetSharedFilesAsync(int userId)
+        {
             var sharedFiles = await _fileRepository.GetSharedFilesAsync(userId);
 
-            var allFiles = files.Concat(sharedFiles)
-                .DistinctBy(f => f.Id)
-                .Where(f => f.Status == UploadStatus.Complete);  // Only show fully uploaded files
+            return sharedFiles
+                .Where(f => f.Status == UploadStatus.Complete)
+                .Select(f => new FileListDto
+                {
+                    Id = f.Id,
+                    FileName = f.FileName,
+                    Size = f.Size,
+                    CreatedAt = f.CreatedAt,
+                    IsShared = true,
+                    FolderId = f.FolderId
+                });
+        }
 
-            return allFiles.Select(f => new FileListDto
+        public async Task<IEnumerable<FileListDto>> SearchFilesAsync(int userId, string query)
+        {
+            var files = await _fileRepository.SearchAsync(userId, query);
+
+            return files.Select(f => new FileListDto
             {
                 Id = f.Id,
                 FileName = f.FileName,
                 Size = f.Size,
                 CreatedAt = f.CreatedAt,
-                IsShared = f.OwnerId != userId
+                IsShared = false,
+                FolderId = f.FolderId
             });
         }
 
@@ -70,7 +106,8 @@ namespace CloudStorage.Infrastructure.Services
                 CreatedAt = file.CreatedAt,
                 LastModifiedAt = file.LastModifiedAt,
                 OwnerId = file.OwnerId,
-                OwnerUsername = owner?.Username ?? "Unknown"
+                OwnerUsername = owner?.Username ?? "Unknown",
+                FolderId = file.FolderId
             };
 
             await _cache.SetAsync(cacheKey, response, TimeSpan.FromMinutes(10));
@@ -119,10 +156,13 @@ namespace CloudStorage.Infrastructure.Services
                 LastModifiedAt = DateTime.UtcNow,
                 StoragePath = string.Empty, // Will be set when chunks are uploaded
                 Version = 1,
-                IsDeleted = false
+                IsDeleted = false,
+                FolderId = dto.FolderId
             };
 
             await _fileRepository.AddAsync(fileMetadata);
+
+            await _activityService.LogActivityAsync(ownerId, "UPLOAD", "FILE", fileMetadata.Id.ToString(), $"File '{fileMetadata.FileName}' uploaded successfully.");
 
             var owner = await _userRepository.GetByIdAsync(ownerId);
 
@@ -137,7 +177,8 @@ namespace CloudStorage.Infrastructure.Services
                 CreatedAt = fileMetadata.CreatedAt,
                 LastModifiedAt = fileMetadata.LastModifiedAt,
                 OwnerId = fileMetadata.OwnerId,
-                OwnerUsername = owner?.Username ?? "Unknown"
+                OwnerUsername = owner?.Username ?? "Unknown",
+                FolderId = fileMetadata.FolderId
             };
         }
 
@@ -154,6 +195,8 @@ namespace CloudStorage.Infrastructure.Services
             file.LastModifiedAt = DateTime.UtcNow;
             await _fileRepository.UpdateAsync(file);
             
+            await _activityService.LogActivityAsync(userId, "DELETE", "FILE", fileId.ToString(), $"File '{file.FileName}' was deleted.");
+
             await _cache.RemoveByPrefixAsync($"file:{fileId}:");
             await _cache.RemoveByPrefixAsync($"stats:{userId}");
             await _cache.RemoveByPrefixAsync($"perm:{fileId}:");
@@ -189,6 +232,9 @@ namespace CloudStorage.Infrastructure.Services
             }
 
             await _fileRepository.UpdateAsync(file);
+
+            await _activityService.LogActivityAsync(grantedByUserId, "SHARE", "FILE", fileId.ToString(), $"File '{file.FileName}' shared with user ID {userId}.");
+
             await _cache.RemoveByPrefixAsync($"perm:{fileId}:");
             await _cache.RemoveByPrefixAsync($"file:{fileId}:");
         }

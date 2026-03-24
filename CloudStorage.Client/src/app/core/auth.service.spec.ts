@@ -1,9 +1,9 @@
-import { vi } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { AuthService, AuthResponse } from './auth.service';
 import { ApiService } from './api.service';
 import { Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -14,6 +14,12 @@ describe('AuthService', () => {
     accessToken: 'mock-token',
     refreshToken: 'mock-refresh',
     user: { id: '1', username: 'test', email: 'test@example.com' }
+  };
+
+  const mockApiResponse = {
+    success: true,
+    data: mockResponse,
+    message: 'Success'
   };
 
   beforeEach(() => {
@@ -38,7 +44,7 @@ describe('AuthService', () => {
   });
 
   it('should login and store tokens', () => {
-    apiServiceMock.post.mockReturnValue(of(mockResponse));
+    apiServiceMock.post.mockReturnValue(of(mockApiResponse));
 
     service.login({ identifier: 'test', password: 'password' }).subscribe(res => {
       expect(res).toEqual(mockResponse);
@@ -51,7 +57,7 @@ describe('AuthService', () => {
   });
 
   it('should register and store tokens', () => {
-    apiServiceMock.post.mockReturnValue(of(mockResponse));
+    apiServiceMock.post.mockReturnValue(of(mockApiResponse));
 
     service.register({ username: 'test', email: 'test@test.com', password: 'pwd' }).subscribe();
 

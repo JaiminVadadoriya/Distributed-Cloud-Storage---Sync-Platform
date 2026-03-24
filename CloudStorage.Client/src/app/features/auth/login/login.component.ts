@@ -12,6 +12,12 @@ import { AuthService } from '../../../core/auth.service';
     <div class="backdrop-blur-xl bg-white/10 dark:bg-black/20 p-8 rounded-3xl shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] border border-white/20 dark:border-white/10 relative z-10">
       <h2 class="text-3xl font-bold mb-8 text-center text-white drop-shadow-md">Welcome Back</h2>
       
+      @if (error) {
+        <div class="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-200 text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-300">
+          {{ error }}
+        </div>
+      }
+
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-5">
         <div class="group">
           <label for="identifier" class="block text-sm font-semibold mb-1.5 text-slate-200 transition-colors group-focus-within:text-cyan-300">Email or Username</label>
@@ -80,6 +86,8 @@ export class LoginComponent {
   });
 
   isLoading = false;
+  error: string | null = null;
+
 
   onSubmit() {
     if (this.loginForm.valid) {
@@ -94,6 +102,7 @@ export class LoginComponent {
         },
         error: (err) => {
           this.isLoading = false;
+          this.error = err.error?.message || 'Login failed. Please try again.';
           this.cdr.detectChanges(); // Force UI update just in case RxJS loses Zone context here
         }
       });

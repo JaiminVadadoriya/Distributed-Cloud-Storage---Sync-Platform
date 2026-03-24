@@ -44,6 +44,12 @@ export interface ConflictCheckResponse {
   serverVersion: number;
 }
 
+export interface SyncLogEntry {
+  timestamp: Date;
+  level: 'info' | 'success' | 'warn' | 'error';
+  message: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -65,6 +71,21 @@ export class SyncEngineService {
   public readonly pendingOpsCount = this._pendingOpsCount.asReadonly();
   public readonly hasPendingOps = computed(() => this._pendingOpsCount() > 0);
 
+  // ── Sync Log ─────────────────────────────────────────────────────────
+  private readonly _syncLog = signal<SyncLogEntry[]>([]);
+  public readonly syncLog = this._syncLog.asReadonly();
+
+  private log(level: 'info' | 'success' | 'warn' | 'error', message: string): void {
+    this._syncLog.update(entries => [
+      { timestamp: new Date(), level, message },
+      ...entries.slice(0, 99)   // keep last 100
+    ]);
+  }
+
+  clearLog(): void {
+    this._syncLog.set([]);
+  }
+
   /**
    * Perform a full sync cycle:
    * 1. Pull server changes since last sync
@@ -73,14 +94,18 @@ export class SyncEngineService {
    */
   async performSync(): Promise<void> {
     if (this._isSyncing() || this.connectionStatus.isOffline() || !this.authService.isAuthenticated) {
+      this.log('warn', this.connectionStatus.isOffline() ? 'Sync skipped — offline.' : 'Sync skipped — not authenticated.');
       return;
     }
 
     this._isSyncing.set(true);
+    this.log('info', 'Sync started …');
     try {
       // Step 1: Pull server changes
       const lastSync = this.offlineCache.getLastSyncTimestamp() || new Date(0).toISOString();
+      this.log('info', `Pulling changes since ${new Date(lastSync).toLocaleTimeString()} …`);
       const delta = await this.pullServerChanges(lastSync);
+      this.log('info', `Server returned ${delta.changedFiles.length} changed, ${delta.deletedFileIds.length} deleted.`);
 
       // Step 2: Check for conflicts on each changed file
       const conflicts: ConflictInfo[] = [];
@@ -95,6 +120,7 @@ export class SyncEngineService {
           );
 
           if (conflictCheck.hasConflict) {
+            this.log('warn', `⚡ Conflict on "${serverFile.fileName}" — local vs server modification.`);
             conflicts.push({
               fileId: serverFile.id,
               fileName: serverFile.fileName,
@@ -110,6 +136,7 @@ export class SyncEngineService {
         }
 
         // No conflict — update the local cache
+        this.log('info', `✓ Updated "${serverFile.fileName}" from server.`);
         await this.offlineCache.updateCachedFile({
           id: serverFile.id,
           fileName: serverFile.fileName,
@@ -123,6 +150,7 @@ export class SyncEngineService {
 
       // Handle deletions
       for (const deletedId of delta.deletedFileIds) {
+        this.log('info', `✗ Removed deleted file ${deletedId} from cache.`);
         await this.offlineCache.removeCachedFile(deletedId);
       }
 
@@ -133,6 +161,8 @@ export class SyncEngineService {
         this.notifications.warning(
           `${conflicts.length} file conflict(s) detected. Please resolve them.`
         );
+      } else {
+        this.log('success', `Sync complete — no conflicts.`);
       }
 
       // Step 3: Push pending offline operations
@@ -140,9 +170,11 @@ export class SyncEngineService {
 
       // Update last sync timestamp
       this.offlineCache.setLastSyncTimestamp(delta.serverTimestampUtc);
+      this.log('success', `Last sync updated to ${new Date(delta.serverTimestampUtc).toLocaleTimeString()}.`);
 
     } catch (err) {
       console.error('[SyncEngine] Sync failed:', err);
+      this.log('error', `Sync failed: ${err instanceof Error ? err.message : String(err)}`);
       this.notifications.error('Sync failed. Will retry when connection is stable.');
     } finally {
       this._isSyncing.set(false);
@@ -201,9 +233,10 @@ export class SyncEngineService {
         });
       }
 
-      this.notifications.success(
+    await this.notifications.success(
         `Conflict resolved for "${conflict.fileName}": ${resolution === 'KeepLocal' ? 'kept local version' : 'kept server version'}`
       );
+      this.log('success', `Resolved "${conflict.fileName}" → ${resolution}.`);
     } catch (err) {
       console.error('[SyncEngine] Conflict resolution failed:', err);
       this.notifications.error(`Failed to resolve conflict for "${conflict.fileName}".`);
@@ -253,5 +286,25 @@ export class SyncEngineService {
   async refreshPendingOpsCount(): Promise<void> {
     const ops = await this.offlineCache.getPendingOperations();
     this._pendingOpsCount.set(ops.length);
+  }
+
+  /**
+   * Simulate a local file modification by writing a "forked" version vector
+   * into the offline cache. On next sync, the server will detect a conflict.
+   */
+  async simulateLocalEdit(fileId: string, fileName: string): Promise<void> {
+    const cached = await this.offlineCache.getCachedFile(fileId);
+    const fakeVector = `{"${fileId.substring(0, 8)}":${Date.now()}}`;
+    const fakeModified = new Date().toISOString();
+    await this.offlineCache.updateCachedFile({
+      id: fileId,
+      fileName,
+      size: cached?.size ?? 0,
+      createdAt: cached?.createdAt ?? fakeModified,
+      lastModifiedAt: fakeModified,
+      isShared: cached?.isShared ?? false,
+      versionVector: fakeVector,
+    });
+    this.log('warn', `🖊 Simulated local edit on "${fileName}" — version vector forked.`);
   }
 }

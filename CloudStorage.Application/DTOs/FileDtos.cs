@@ -15,6 +15,7 @@ namespace CloudStorage.Application.DTOs
         public DateTime LastModifiedAt { get; set; }
         public int OwnerId { get; set; }
         public string OwnerUsername { get; set; } = string.Empty;
+        public Guid? FolderId { get; set; }
     }
 
     public class FileUploadDto
@@ -33,6 +34,7 @@ namespace CloudStorage.Application.DTOs
         public int ChunkCount { get; set; } = 1;
         
         public string Hash { get; set; } = string.Empty;
+        public Guid? FolderId { get; set; }
     }
 
     public class FilePermissionDto
@@ -53,6 +55,7 @@ namespace CloudStorage.Application.DTOs
         public DateTime LastModifiedAt { get; set; }
         public bool IsShared { get; set; }
         public string? VersionVector { get; set; }
+        public Guid? FolderId { get; set; }
     }
 
     public class DashboardStatsDto

@@ -83,6 +83,41 @@ namespace CloudStorage.Infrastructure.Services
 
                 await _context.SaveChangesAsync();
             }
+
+            if (resolution == ConflictResolution.ConflictCopy)
+            {
+                // Create a new "conflicted copy" record for binary files.
+                // The client must subsequently upload the conflicted file chunks under the new ID.
+                var ext = System.IO.Path.GetExtension(file.FileName);
+                var nameWithoutExt = System.IO.Path.GetFileNameWithoutExtension(file.FileName);
+                var conflictName = $"{nameWithoutExt} (conflicted copy {DateTime.UtcNow:yyyy-MM-dd}){ext}";
+
+                var serverVector = DeserializeVersionVector(file.VersionVector);
+                var clientVector = DeserializeVersionVector(clientVersionVector);
+                var mergedVector = MergeVersionVectors(serverVector, clientVector);
+
+                var conflictCopy = new Domain.Entities.FileMetadata
+                {
+                    Id = Guid.NewGuid(),
+                    FileName = conflictName,
+                    ContentType = file.ContentType,
+                    Size = file.Size,
+                    OwnerId = userId,
+                    FolderId = file.FolderId,
+                    Hash = string.Empty,
+                    StoragePath = string.Empty,
+                    VersionVector = SerializeVersionVector(mergedVector),
+                    Version = 1,
+                    ParentVersionId = file.Id,
+                    Status = Domain.Entities.UploadStatus.Pending,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    LastModifiedAt = DateTime.UtcNow
+                };
+
+                _context.FileMetadata.Add(conflictCopy);
+                await _context.SaveChangesAsync();
+            }
         }
 
         /// <summary>

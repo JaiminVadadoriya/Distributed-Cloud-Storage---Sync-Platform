@@ -1,6 +1,6 @@
 # Architecture Document — Distributed Cloud Storage Platform
 
-> **Version:** 1.0 &nbsp;|&nbsp; **Last Updated:** February 2026
+> **Version:** 2.0 &nbsp;|&nbsp; **Last Updated:** March 2026
 
 ---
 
@@ -88,19 +88,34 @@ Defines business contracts and data transfer objects.
 
 **Service Interfaces:**
 
-| Interface                | Responsibility                                        |
-| ------------------------ | ----------------------------------------------------- |
-| `IAuthService`           | Registration, login, JWT tokens, password reset       |
-| `IFileService`           | File CRUD, permission grants, user file listing       |
-| `IChunkStorageService`   | Physical chunk I/O (save, get, delete, existence)     |
-| `IDeduplicationService`  | Chunk registry with reference counting                |
-| `IRefreshTokenService`   | Refresh token lifecycle (generate, validate, revoke)  |
+| Interface                     | Responsibility                                              |
+| ----------------------------- | ----------------------------------------------------------- |
+| `IAuthService`                | Registration, login, JWT tokens, password reset             |
+| `IFileService`                | File CRUD, permission grants, search, user file listing     |
+| `IChunkStorageService`        | Physical chunk I/O (save, get, delete, existence)           |
+| `IDeduplicationService`       | Chunk registry with reference counting                      |
+| `IRefreshTokenService`        | Refresh token lifecycle (generate, validate, revoke)        |
+| `IFolderService`              | Folder CRUD, rename, move, share (nested file propagation)  |
+| `IDeviceService`              | Device registration, last-sync timestamp, removal           |
+| `IActivityService`            | Activity log retrieval per user                             |
+| `IConflictDetectionService`   | Version-vector conflict check and resolution                |
+| `IDeltaSyncService`           | Pull file changes since a given UTC timestamp               |
+| `IBlobSasService`             | Generate Azure SAS tokens for parallel chunk downloads      |
+| `INotificationService`        | SignalR real-time push (file uploaded/deleted)              |
+| `ICacheService`               | Distributed cache abstraction (Redis)                       |
+| `IEmailService`               | Password-reset email dispatch                               |
+| `IMessageQueue`               | RabbitMQ publish (chunk verification, cleanup tasks)        |
+| `IAzureChunkVerificationService` | Background async chunk integrity verification            |
 
-**DTOs (12 total):**
+**DTOs (22 total):**
 
 - **Auth:** `RegisterDto`, `LoginDto`, `LoginResponseDto`, `RefreshTokenDto`, `PasswordResetRequestDto`, `PasswordResetDto`
-- **Files:** `FileResponseDto`, `FileUploadDto`, `FilePermissionDto`, `FileListDto`
+- **Files:** `FileResponseDto`, `FileUploadDto`, `FilePermissionDto`, `FileListDto`, `DashboardStatsDto`, `FileEventDto`
 - **Chunks:** `InitiateUploadDto`, `UploadSessionResponseDto`, `ChunkUploadResponseDto`, `CompleteUploadDto`, `UploadStatusResponseDto`
+- **Folders:** `FolderDto`, `CreateFolderDto`, `RenameFolderDto`, `MoveFolderDto`, `FolderShareDto`
+- **Devices:** `DeviceDto`, `RegisterDeviceDto`
+- **Sync:** `ConflictCheckRequestDto`, `ConflictCheckResponseDto`, `ConflictResolutionDto`, `DeltaSyncResponseDto`
+- **Shared:** `ApiResponse<T>` (generic envelope: `success`, `message`, `data`)
 
 ### 2.3 Infrastructure Layer (`CloudStorage.Infrastructure`)
 
@@ -127,14 +142,19 @@ Implements all interfaces defined in Domain and Application.
 
 RESTful API entry point with Swagger documentation.
 
-| Controller              | Route Prefix       | Auth Required | Endpoints                                          |
-| ----------------------- | ------------------ | ------------- | -------------------------------------------------- |
-| `AuthController`        | `api/auth`         | Partial       | register, login, refresh, logout, password-reset   |
-| `FilesController`       | `api/files`        | Yes           | GET list, GET by ID, POST create, DELETE, POST permissions |
-| `ChunkUploadController` | `api/files`        | Yes           | POST initiate, POST chunks, POST complete, GET session status |
-| `HealthController`      | `health`           | No            | GET health, GET ready (with DB connectivity check) |
+| Controller              | Route Prefix         | Auth Required | Endpoints                                                    |
+| ----------------------- | -------------------- | ------------- | ------------------------------------------------------------ |
+| `AuthController`        | `api/auth`           | Partial       | register, login, refresh, logout, password-reset-request, password-reset |
+| `FilesController`       | `api/files`          | Yes           | GET list/shared/search/stats, GET by ID, GET download, GET download-link, POST create, DELETE, DELETE all, POST permissions/share |
+| `ChunkUploadController` | `api/files`          | Yes           | POST initiate, POST chunks (throttled), POST complete, GET session status |
+| `FoldersController`     | `api/folders`        | Yes           | GET root, GET by ID, POST create, PATCH rename, PATCH move, DELETE, POST share |
+| `DevicesController`     | `api/devices`        | Yes           | GET list, POST register, PATCH sync timestamp, DELETE remove |
+| `ActivityController`    | `api/activity`       | Yes           | GET recent activity (with `?limit`) |
+| `DeltaSyncController`   | `api/sync/delta`     | Yes           | GET changes since UTC timestamp |
+| `ConflictController`    | `api/sync`           | Yes           | POST check-conflicts, POST resolve |
+| `HealthController`      | `health`             | No            | GET health (liveness), GET ready (DB readiness) |
 
-**Middleware Pipeline:** HTTPS Redirect → CORS → Authentication → Authorization → Controllers
+**Middleware Pipeline:** HTTPS Redirect → CORS → Authentication → `UploadThrottlingMiddleware` → Authorization → Rate Limiting → Controllers
 
 ---
 
@@ -276,24 +296,50 @@ Stage 2: nginx:alpine   → Serve SPA with custom nginx.conf
 ```
 CloudStorage.Client/src/
 ├── app/
-│   ├── app.ts                         # Root component with RouterOutlet
-│   ├── app.config.ts                  # Application providers
-│   ├── app.routes.ts                  # Route definitions (empty — MVP)
+│   ├── app.ts                           # Root component with RouterOutlet
+│   ├── app.config.ts                    # Application providers (HTTP, SignalR, Auth)
+│   ├── app.routes.ts                    # Route definitions (auth, dashboard, settings)
+│   ├── core/
+│   │   ├── api.service.ts               # Base HTTP wrapper (GET/POST/PUT/PATCH/DELETE)
+│   │   ├── auth.service.ts              # Login, logout, token management
+│   │   ├── auth.guard.ts                # Route guard (requires JWT)
+│   │   ├── auth.interceptor.ts          # Attaches Bearer token to all API requests
+│   │   ├── error.interceptor.ts         # Global 401/403 error handling + redirect
+│   │   ├── file.service.ts              # File CRUD, stats, download, share
+│   │   ├── folder.service.ts            # Folder CRUD, rename, move, share
+│   │   ├── device.service.ts            # Device register, sync timestamp, remove
+│   │   ├── activity.service.ts          # Recent activity feed
+│   │   ├── signalr.service.ts           # Real-time file events (fileUploaded, fileDeleted)
+│   │   ├── sync-engine.service.ts       # Delta sync + conflict detection and resolution via Signals
+│   │   ├── offline-cache.service.ts     # IndexedDB cache, last-sync timestamp, pending ops
+│   │   ├── connection-status.service.ts # Online/offline signal
+│   │   ├── notification.service.ts      # Toast notification helper
+│   │   ├── layout.service.ts            # Sidebar state management
+│   │   └── parallel-download.service.ts # SAS-based parallel chunk download
 │   ├── services/
-│   │   ├── chunking.service.ts        # File → chunks splitter (SHA-256)
-│   │   ├── upload.service.ts          # HTTP client for chunk upload API
-│   │   └── upload-manager.service.ts  # Upload queue with concurrency control
-│   └── components/
-│       ├── file-upload/               # Drag-and-drop file picker
-│       └── upload-progress/           # Real-time progress tracker
-├── main.ts                            # Bootstrap
-└── test-setup.ts                      # Vitest configuration
+│   │   ├── chunking.service.ts          # File → 5 MB chunks + SHA-256 hash (Web Crypto)
+│   │   ├── upload.service.ts            # HTTP client for chunk upload API
+│   │   └── upload-manager.service.ts    # Upload queue: concurrency, pause/resume/cancel
+│   ├── components/
+│   │   ├── file-upload/                 # Drag-and-drop file picker
+│   │   ├── upload-progress/             # Real-time progress tracker
+│   │   ├── conflict-dialog/             # Conflict resolution UI (KeepLocal / KeepServer)
+│   │   ├── notification-toast/          # Toast notification display
+│   │   └── layout/                      # App shell (sidebar, header)
+│   └── features/
+│       ├── auth/                        # Login / Register pages
+│       ├── dashboard/                   # Main file management view, upload, stats
+│       └── settings/                    # Profile settings, danger zone (clean drive)
+├── main.ts                              # Bootstrap
+└── test-setup.ts                        # Vitest configuration
 ```
 
 **Key Features:**
 - **Chunking:** SHA-256 hashing via Web Crypto API, 5 MB chunk size
 - **Upload Manager:** Queue-based with configurable concurrency (default: 3), pause/resume/cancel
 - **Retry Logic:** Exponential backoff (1s, 2s, 4s) with 3 max retries
+- **Offline-First:** `OfflineCacheService` (IndexedDB) + `ConnectionStatusService` + `SyncEngineService` for delta sync and conflict resolution on reconnect
+- **Real-Time Events:** `SignalRService` subscribes to `fileUploaded`, `fileDeleted`, `allFilesDeleted` events
 - **Standalone Components:** All components are standalone (Angular 21 pattern)
 - **Testing:** Vitest 4.x with jsdom environment
 

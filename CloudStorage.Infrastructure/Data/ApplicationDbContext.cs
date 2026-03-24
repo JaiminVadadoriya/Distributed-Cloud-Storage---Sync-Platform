@@ -16,6 +16,9 @@ namespace CloudStorage.Infrastructure.Data
         public DbSet<SyncEvent> SyncEvents { get; set; }
         public DbSet<ChunkRegistry> ChunkRegistry { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+        public DbSet<Folder> Folders { get; set; } = null!;
+        public DbSet<ActivityLog> ActivityLogs { get; set; } = null!;
+        public DbSet<FolderPermission> FolderPermissions { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -41,6 +44,11 @@ namespace CloudStorage.Infrastructure.Data
                 entity.HasIndex(f => f.Hash);
                 entity.HasIndex(f => f.UploadSessionId);
                 entity.Property(f => f.FileName).IsRequired().HasMaxLength(255);
+
+                entity.HasOne(f => f.Folder)
+                    .WithMany(fol => fol.Files)
+                    .HasForeignKey(f => f.FolderId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // RefreshToken configuration
@@ -142,6 +150,59 @@ namespace CloudStorage.Infrastructure.Data
                 entity.HasIndex(prt => prt.TokenHash).IsUnique();
                 entity.HasIndex(prt => prt.UserId);
                 entity.Property(prt => prt.TokenHash).IsRequired().HasMaxLength(128);
+            });
+
+            // Folder configuration
+            modelBuilder.Entity<Folder>(entity =>
+            {
+                entity.HasOne(f => f.Owner)
+                    .WithMany()
+                    .HasForeignKey(f => f.OwnerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(f => f.ParentFolder)
+                    .WithMany(f => f.SubFolders)
+                    .HasForeignKey(f => f.ParentFolderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(f => f.OwnerId);
+                entity.HasIndex(f => f.ParentFolderId);
+                entity.Property(f => f.Name).IsRequired().HasMaxLength(255);
+            });
+
+            // FolderPermission configuration
+            modelBuilder.Entity<FolderPermission>(entity =>
+            {
+                entity.HasOne(fp => fp.Folder)
+                    .WithMany(f => f.Permissions)
+                    .HasForeignKey(fp => fp.FolderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(fp => fp.User)
+                    .WithMany()
+                    .HasForeignKey(fp => fp.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(fp => fp.FolderId);
+                entity.HasIndex(fp => fp.UserId);
+                entity.HasIndex(fp => new { fp.FolderId, fp.UserId }).IsUnique();
+            });
+
+            // ActivityLog configuration
+            modelBuilder.Entity<ActivityLog>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Action).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.EntityType).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Details).HasMaxLength(500);
+
+                entity.HasOne(d => d.User)
+                    .WithMany()
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => e.Timestamp);
             });
 
             base.OnModelCreating(modelBuilder);

@@ -22,15 +22,18 @@ namespace CloudStorage.API.Controllers
     {
         private readonly IFileService _fileService;
         private readonly IChunkStorageService _chunkStorage;
+        private readonly IBlobSasService _sasService;
         private readonly INotificationService _notificationService;
 
         public FilesController(
             IFileService fileService, 
             IChunkStorageService chunkStorage,
+            IBlobSasService sasService,
             INotificationService notificationService)
         {
             _fileService = fileService;
             _chunkStorage = chunkStorage;
+            _sasService = sasService;
             _notificationService = notificationService;
         }
 
@@ -79,6 +82,54 @@ namespace CloudStorage.API.Controllers
                     Success = true,
                     Message = "Stats retrieved successfully",
                     Data = stats
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
+            }
+        }
+
+        [HttpGet("shared")]
+        public async Task<IActionResult> GetSharedFiles()
+        {
+            try
+            {
+                var userId = GetUserId();
+                var files = await _fileService.GetSharedFilesAsync(userId);
+                return Ok(new ApiResponse<IEnumerable<FileListDto>>
+                {
+                    Success = true,
+                    Message = "Shared files retrieved successfully",
+                    Data = files
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = ex.Message
+                });
+            }
+        }
+
+        [HttpGet("search")]
+        public async Task<IActionResult> SearchFiles([FromQuery] string q)
+        {
+            try
+            {
+                var userId = GetUserId();
+                var files = await _fileService.SearchFilesAsync(userId, q);
+                return Ok(new ApiResponse<IEnumerable<FileListDto>>
+                {
+                    Success = true,
+                    Message = "Search results retrieved successfully",
+                    Data = files
                 });
             }
             catch (Exception ex)
@@ -353,6 +404,7 @@ namespace CloudStorage.API.Controllers
         }
 
         [HttpPost("{id}/permissions")]
+        [HttpPost("{id}/share")] // Standardized alias for frontend compatibility
         public async Task<IActionResult> GrantPermission(Guid id, FilePermissionDto dto)
         {
             try
@@ -405,19 +457,58 @@ namespace CloudStorage.API.Controllers
                         Message = "File not found or access denied"
                     });
 
-                // Generate a simple expiring token or use CDN signing logic
-                // For demonstration, returning a constructed URL
-                var baseUrl = Request.Scheme + "://" + Request.Host;
-                var downloadUrl = $"{baseUrl}/api/files/{id}/download?token=simulated_presigned_token_" + Guid.NewGuid().ToString("N");
+                var chunks = await _fileService.GetFileChunkPathsAsync(id, userId);
+                var chunkDtos = new System.Collections.Generic.List<object>();
+                int index = 0;
+
+                foreach (var chunk in chunks)
+                {
+                    // Extract blob name from storage path
+                    string blobName;
+                    if (chunk.StoragePath.StartsWith("azure://", StringComparison.OrdinalIgnoreCase))
+                    {
+                        blobName = chunk.StoragePath.Substring(8);
+                    }
+                    else if (Uri.IsWellFormedUriString(chunk.StoragePath, UriKind.Absolute))
+                    {
+                        var uri = new Uri(chunk.StoragePath);
+                        // Fallback: extract the part of the path that looks like fileId/chunkIndex.chunk
+                        // Chunks are stored as {fileId}/{index}.chunk
+                        var segments = uri.Segments;
+                        if (segments.Length >= 2)
+                        {
+                            blobName = segments[^2].TrimEnd('/') + "/" + segments[^1];
+                        }
+                        else
+                        {
+                            blobName = segments[^1];
+                        }
+                    }
+                    else
+                    {
+                        blobName = chunk.StoragePath;
+                    }
+
+                    var sasUrl = await _sasService.GenerateDownloadSasUrlAsync(blobName, file.FileName);
+                    chunkDtos.Add(new
+                    {
+                        index = index++,
+                        size = chunk.Size,
+                        sasUrl = sasUrl
+                    });
+                }
                 
                 return Ok(new ApiResponse<object>
                 {
                     Success = true,
-                    Message = "Link generated successfully",
+                    Message = "Parallel download metadata generated",
                     Data = new 
                     { 
-                        url = downloadUrl,
-                        expiresIn = 86400 // 24 hours
+                        fileName = file.FileName,
+                        totalSize = file.Size,
+                        contentType = file.ContentType,
+                        chunks = chunkDtos,
+                        expiresIn = 3600 // 1 hour (align with SAS default)
                     }
                 });
             }

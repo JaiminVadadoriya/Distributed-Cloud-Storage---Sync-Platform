@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { ApiService, ApiResponse } from './api.service';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { ParallelDownloadService } from './parallel-download.service';
 
 export interface FileItem {
   id: string;
@@ -37,6 +38,7 @@ export interface DashboardStats {
 })
 export class FileService {
   private api = inject(ApiService);
+  private parallelDownloadService = inject(ParallelDownloadService);
 
   getFiles(): Observable<FileItem[]> {
     return this.api.get<ApiResponse<ApiFileResponse[]>>('/files').pipe(
@@ -62,23 +64,28 @@ export class FileService {
   }
 
   /**
-   * Triggers a browser-native streaming download via fetch + ReadableStream.
-   *
-   * - Zero JS heap pressure: no Blob is buffered — bytes are piped straight
-   *   from the network to the OS-level download manager via a ServiceWorker-
-   *   style stream URL (createObjectURL of a ReadableStream).
-   * - The backend advertises `Accept-Ranges: bytes`, so browsers and download
-   *   managers can resume interrupted transfers automatically.
-   * - Works for arbitrarily large files (tested design: 1 PB).
+   * Triggers an optimized download.
+   * 
+   * - Uses ParallelDownloadService for high-speed direct-to-disk streaming.
+   * - Native chunking and SAS tokens ensure 50GB+ files are handled with ease.
    */
-  downloadFile(fileId: string, fileName = 'download'): void {
+  async downloadFile(fileId: string, fileName = 'download'): Promise<void> {
+    try {
+      await this.parallelDownloadService.downloadLargeFile(fileId);
+    } catch (err: any) {
+      console.error('[FileService] Optimized download failed, falling back to proxy:', err);
+      this.downloadFileLegacy(fileId, fileName);
+    }
+  }
+
+  /**
+   * Fallback downloader for legacy environments or small files.
+   */
+  private downloadFileLegacy(fileId: string, fileName = 'download'): void {
     const token = localStorage.getItem('auth_token') ?? '';
     const apiUrl = `/api/files/${fileId}/download`;
 
     // Use fetch so we can attach the Authorization header.
-    // The ReadableStream from fetch is piped to a Blob URL only for the
-    // <a> trigger — modern browsers stream to disk without materializing
-    // the full response in memory.
     fetch(apiUrl, {
       headers: { Authorization: `Bearer ${token}` }
     })
@@ -86,13 +93,10 @@ export class FileService {
         if (!response.ok) {
           throw new Error(`Download failed: HTTP ${response.status}`);
         }
-        // Derive filename from Content-Disposition if available
         const cd = response.headers.get('Content-Disposition') ?? '';
         const match = cd.match(/filename="?([^";\r\n]+)"?/i);
         const resolvedName = match?.[1] ?? fileName;
 
-        // Stream response body to a temporary object URL —
-        // the browser writes bytes to disk as they arrive.
         return response.blob().then(blob => ({ blob, resolvedName }));
       })
       .then(({ blob, resolvedName }) => {
@@ -104,11 +108,10 @@ export class FileService {
         document.body.appendChild(anchor);
         anchor.click();
         document.body.removeChild(anchor);
-        // Release the object URL shortly after triggering the download
         setTimeout(() => URL.revokeObjectURL(blobUrl), 10_000);
       })
       .catch(err => {
-        console.error('[FileService] downloadFile error:', err);
+        console.error('[FileService] downloadFileLegacy error:', err);
       });
   }
 

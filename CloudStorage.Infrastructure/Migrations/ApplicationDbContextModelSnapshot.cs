@@ -22,6 +22,46 @@ namespace CloudStorage.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("CloudStorage.Domain.Entities.ActivityLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Details")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("EntityId")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Timestamp");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("ActivityLogs");
+                });
+
             modelBuilder.Entity("CloudStorage.Domain.Entities.ChunkRegistry", b =>
                 {
                     b.Property<string>("Hash")
@@ -155,6 +195,9 @@ namespace CloudStorage.Infrastructure.Migrations
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)");
 
+                    b.Property<Guid?>("FolderId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Hash")
                         .IsRequired()
                         .HasColumnType("text");
@@ -199,6 +242,8 @@ namespace CloudStorage.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("FolderId");
+
                     b.HasIndex("Hash");
 
                     b.HasIndex("OwnerId");
@@ -241,6 +286,71 @@ namespace CloudStorage.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("FilePermissions");
+                });
+
+            modelBuilder.Entity("CloudStorage.Domain.Entities.Folder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("LastModifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid?>("ParentFolderId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("ParentFolderId");
+
+                    b.ToTable("Folders");
+                });
+
+            modelBuilder.Entity("CloudStorage.Domain.Entities.FolderPermission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("FolderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("GrantedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("GrantedBy")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PermissionType")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FolderId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("FolderId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("FolderPermissions");
                 });
 
             modelBuilder.Entity("CloudStorage.Domain.Entities.PasswordResetToken", b =>
@@ -393,6 +503,17 @@ namespace CloudStorage.Infrastructure.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("CloudStorage.Domain.Entities.ActivityLog", b =>
+                {
+                    b.HasOne("CloudStorage.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("CloudStorage.Domain.Entities.Device", b =>
                 {
                     b.HasOne("CloudStorage.Domain.Entities.User", "User")
@@ -417,11 +538,18 @@ namespace CloudStorage.Infrastructure.Migrations
 
             modelBuilder.Entity("CloudStorage.Domain.Entities.FileMetadata", b =>
                 {
+                    b.HasOne("CloudStorage.Domain.Entities.Folder", "Folder")
+                        .WithMany("Files")
+                        .HasForeignKey("FolderId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
                     b.HasOne("CloudStorage.Domain.Entities.User", "Owner")
                         .WithMany()
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Folder");
 
                     b.Navigation("Owner");
                 });
@@ -441,6 +569,43 @@ namespace CloudStorage.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("FileMetadata");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CloudStorage.Domain.Entities.Folder", b =>
+                {
+                    b.HasOne("CloudStorage.Domain.Entities.User", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("CloudStorage.Domain.Entities.Folder", "ParentFolder")
+                        .WithMany("SubFolders")
+                        .HasForeignKey("ParentFolderId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Owner");
+
+                    b.Navigation("ParentFolder");
+                });
+
+            modelBuilder.Entity("CloudStorage.Domain.Entities.FolderPermission", b =>
+                {
+                    b.HasOne("CloudStorage.Domain.Entities.Folder", "Folder")
+                        .WithMany("Permissions")
+                        .HasForeignKey("FolderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CloudStorage.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Folder");
 
                     b.Navigation("User");
                 });
@@ -493,6 +658,15 @@ namespace CloudStorage.Infrastructure.Migrations
                     b.Navigation("Permissions");
 
                     b.Navigation("SyncEvents");
+                });
+
+            modelBuilder.Entity("CloudStorage.Domain.Entities.Folder", b =>
+                {
+                    b.Navigation("Files");
+
+                    b.Navigation("Permissions");
+
+                    b.Navigation("SubFolders");
                 });
 
             modelBuilder.Entity("CloudStorage.Domain.Entities.User", b =>

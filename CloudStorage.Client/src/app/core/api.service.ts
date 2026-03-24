@@ -37,6 +37,10 @@ export class ApiService {
     return this.http.put<T>(`${this.baseUrl}${path}`, body).pipe(catchError(this.formatErrors));
   }
 
+  patch<T>(path: string, body: object = {}): Observable<T> {
+    return this.http.patch<T>(`${this.baseUrl}${path}`, body).pipe(catchError(this.formatErrors));
+  }
+
   delete<T>(path: string): Observable<T> {
     return this.http.delete<T>(`${this.baseUrl}${path}`).pipe(catchError(this.formatErrors));
   }

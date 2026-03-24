@@ -52,8 +52,9 @@ namespace CloudStorage.API.Tests.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            var returnValue = Assert.IsType<ConflictCheckResponseDto>(okResult.Value);
-            Assert.False(returnValue.HasConflict);
+            var response = Assert.IsType<ApiResponse<ConflictCheckResponseDto>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.False(response.Data!.HasConflict);
         }
 
         [Fact]
@@ -91,7 +92,8 @@ namespace CloudStorage.API.Tests.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.NotNull(okResult.Value);
+            var response = Assert.IsType<ApiResponse>(okResult.Value);
+            Assert.True(response.Success);
         }
 
         [Fact]

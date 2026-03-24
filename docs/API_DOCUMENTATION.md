@@ -1,6 +1,6 @@
 # API Documentation
 
-The Distributed Cloud Storage Platform uses Swagger (OpenAPI 3.0) for interactive API documentation. 
+The Distributed Cloud Storage Platform uses Swagger (OpenAPI 3.0) for interactive API documentation.
 
 ## Accessing the Swagger UI
 
@@ -9,38 +9,123 @@ The Distributed Cloud Storage Platform uses Swagger (OpenAPI 3.0) for interactiv
    cd CloudStorage.API
    dotnet run
    ```
-2. Navigate your browser to: `https://localhost:5001/swagger` or `http://localhost:5000/swagger`.
-3. The raw `swagger.json` definition can be downloaded directly from `http://localhost:5000/swagger/v1/swagger.json`.
-
-## Core API Endpoints Overview
-
-The API is fully documented via Swagger, but here is a brief overview of the key controllers and their main functions:
-
-### Authentication (`/api/auth`)
-- `POST /api/auth/register` - Registers a new user.
-- `POST /api/auth/login` - Authenticates a user and returns a JWT pair (Access + Refresh token).
-- `POST /api/auth/refresh` - Refreshes an expired JWT using a valid refresh token.
-- `POST /api/auth/logout` - Revokes a refresh token.
-
-### File Management (`/api/files`)
-- `GET /api/files` - Retrieves a paginated list of file metadata for the authenticated user.
-- `POST /api/files/initiate` - Initiates a chunked file upload and returns a session ID. Verifies SHA-256 for deduplication.
-- `POST /api/files/upload/{sessionId}` - Uploads a chunk of the file (maximum 5MB per chunk).
-- `POST /api/files/complete/{sessionId}` - Finalizes the upload session once all chunks are fully pushed.
-- `GET /api/files/download/{id}` - Downloads a file as a stream.
-- `DELETE /api/files/{id}` - Soft/Hard deletes a file depending on configuration, cascading deletions of chunks.
-
-### Statistics and Metrics (`/api/files/stats`)
-- `GET /api/files/stats` - Retrieves overall statistics like total files, storage used, and recent activity for the user's dashboard.
-
-### Real-Time Sync (`/api/sync`)
-- `GET /api/sync/delta` - Emits changes (delta) made since a specific timestamp/token to optimize syncing across devices.
+2. Navigate to: `http://localhost:5000/swagger`
+3. Raw spec: `http://localhost:5000/swagger/v1/swagger.json`
 
 ## Authentication
-All endpoints (except login and registration) are protected by JWT. The `Authorization` header must be provided as `Bearer <token>`.
+
+All endpoints (except `register`, `login`, `refresh`, and password-reset) require a JWT Bearer token:
 
 ```http
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsIn...
 ```
 
-For SignalR hubs, the token must be passed as a query string parameter `?access_token=<token>` when initiating the connection.
+For SignalR hubs, pass the token as `?access_token=<token>` in the connection URL.
+
+---
+
+## Endpoints
+
+### Authentication (`/api/auth`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/auth/register` | No | Create new user account |
+| POST | `/api/auth/login` | No | Login → JWT access + refresh token |
+| POST | `/api/auth/refresh` | No | Refresh expired access token |
+| POST | `/api/auth/logout` | Yes | Revoke refresh token |
+| POST | `/api/auth/password-reset-request` | No | Send password-reset email |
+| POST | `/api/auth/password-reset` | No | Reset password using token from email |
+
+---
+
+### Files (`/api/files`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/files` | Yes | List owned + shared files |
+| GET | `/api/files/stats` | Yes | Dashboard stats (storage used, file count, recent uploads) |
+| GET | `/api/files/shared` | Yes | List files shared with the current user |
+| GET | `/api/files/search?q=` | Yes | Search files by name |
+| GET | `/api/files/{id}` | Yes | Get file details by ID |
+| GET | `/api/files/{id}/download` | Yes | Stream file download (supports HTTP Range) |
+| GET | `/api/files/{id}/download-link` | Yes | Generate parallel download metadata with Azure SAS URLs per chunk |
+| POST | `/api/files` | Yes | Create file metadata record |
+| POST | `/api/files/{id}/permissions` | Yes | Grant file permissions to another user |
+| POST | `/api/files/{id}/share` | Yes | Alias for permissions (frontend compatibility) |
+| DELETE | `/api/files/{id}` | Yes | Soft-delete a file (owner only) |
+| DELETE | `/api/files/all` | Yes | Delete all files owned by the current user |
+
+---
+
+### Chunked Upload (`/api/files` — chunk routes)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/files/initiate` | Yes | Start upload session → returns `sessionId` + `fileId` |
+| POST | `/api/files/chunks` | Yes | Upload a single chunk (multipart, max 5 MB) |
+| POST | `/api/files/complete` | Yes | Finalize session after all chunks uploaded |
+| GET | `/api/files/session/{id}/status` | Yes | Check upload progress (for resumable uploads) |
+
+> **Note:** `POST /api/files/chunks` is protected by `UploadThrottlingMiddleware` — max 5 concurrent chunk uploads per user (Redis-backed).
+
+---
+
+### Folders (`/api/folders`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/folders/root` | Yes | List all root-level folders for the current user |
+| GET | `/api/folders/{id}` | Yes | Get folder details by ID |
+| POST | `/api/folders` | Yes | Create a new folder (`name`, optional `parentFolderId`) |
+| PATCH | `/api/folders/{id}/rename` | Yes | Rename folder (`newName`) |
+| PATCH | `/api/folders/{id}/move` | Yes | Move folder to a new parent (`newParentFolderId`) |
+| DELETE | `/api/folders/{id}` | Yes | Delete folder (cascades to nested files) |
+| POST | `/api/folders/{id}/share` | Yes | Share folder with another user; propagates to all nested files |
+
+---
+
+### Devices (`/api/devices`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/devices` | Yes | List all devices registered by the current user |
+| POST | `/api/devices` | Yes | Register a new device for sync tracking |
+| PATCH | `/api/devices/{id}/sync` | Yes | Update last-sync timestamp (call after each sync cycle) |
+| DELETE | `/api/devices/{id}` | Yes | Remove a registered device |
+
+---
+
+### Activity Feed (`/api/activity`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/activity?limit=50` | Yes | Get recent activity log entries for the current user (default: 50) |
+
+---
+
+### Sync — Delta (`/api/sync/delta`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/sync/delta?sinceUtc=` | Yes | Get all file changes (created/modified/deleted) since the given UTC timestamp |
+
+Response includes `serverTimestampUtc`, `changedFiles[]`, and `deletedFileIds[]`.
+
+---
+
+### Sync — Conflict Resolution (`/api/sync`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/api/sync/check-conflicts` | Yes | Check whether a file has a conflict between client and server version vectors |
+| POST | `/api/sync/resolve` | Yes | Resolve detected conflict: `resolution = "KeepLocal" (0)` or `"KeepServer" (1)` |
+
+---
+
+### Health (`/health`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/health` | No | Liveness check |
+| GET | `/health/ready` | No | Readiness check (verifies DB connectivity) |

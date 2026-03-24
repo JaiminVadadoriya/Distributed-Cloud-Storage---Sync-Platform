@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { BehaviorSubject, Observable, map, tap } from 'rxjs';
+import { BehaviorSubject, Observable, map, tap, throwError } from 'rxjs';
 import { ApiService, ApiResponse } from './api.service';
 import { Router } from '@angular/router';
 
@@ -92,6 +92,21 @@ export class AuthService {
 
   getToken(): string | null {
     return localStorage.getItem(this.TOKEN_KEY);
+  }
+
+  refreshToken(): Observable<AuthResponse> {
+    const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
+    if (!refreshToken) {
+      this.logout();
+      return throwError(() => new Error('No refresh token available'));
+    }
+    return this.api.post<ApiResponse<AuthResponse>>('/auth/refresh', { refreshToken }).pipe(
+      map(response => {
+        if (!response.success || !response.data) throw new Error(response.message || 'Refresh failed');
+        return response.data;
+      }),
+      tap(data => this.handleAuthResponse(data))
+    );
   }
 
   requestPasswordReset(email: string): Observable<{ message: string }> {
