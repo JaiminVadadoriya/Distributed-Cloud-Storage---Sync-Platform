@@ -13,10 +13,11 @@ describe('FileUploadComponent', () => {
     
     fixture = TestBed.createComponent(FileUploadComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
+    await fixture.whenStable();
   });
 
-  it('should create', () => {
+  it('should create', async () => {
+    await fixture.whenStable();
     expect(component).toBeTruthy();
   });
 

@@ -19,8 +19,8 @@ namespace CloudStorage.API.Services
         private readonly ILogger<BackgroundWorkerService> _logger;
         private readonly IServiceProvider _serviceProvider;
         private readonly IConfiguration _configuration;
-        private IConnection _connection;
-        private IModel _channel;
+        private IConnection? _connection;
+        private IModel? _channel;
 
         public BackgroundWorkerService(
             ILogger<BackgroundWorkerService> logger,

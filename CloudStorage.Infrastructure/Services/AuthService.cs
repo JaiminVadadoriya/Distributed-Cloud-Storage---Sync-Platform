@@ -55,7 +55,7 @@ namespace CloudStorage.Infrastructure.Services
 
         public async Task<LoginResponseDto?> LoginAsync(string identifier, string password)
         {
-            var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == identifier || u.Username == identifier);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == identifier || u.Username == identifier);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                 return null;
@@ -126,7 +126,7 @@ namespace CloudStorage.Infrastructure.Services
         {
             const string genericMessage = "If the email exists, a password reset link has been sent";
 
-            var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == email);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
             if (user == null)
             {
                 // Never reveal whether the email exists

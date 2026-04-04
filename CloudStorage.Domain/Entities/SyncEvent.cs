@@ -10,9 +10,12 @@ namespace CloudStorage.Domain.Entities
         Renamed = 3
     }
 
-    public class SyncEvent
+    /// <summary>
+    /// Records a synchronization event for a file on a specific device.
+    /// Uses BaseEntity since it has Timestamp instead of CreatedAt.
+    /// </summary>
+    public class SyncEvent : BaseEntity<Guid>
     {
-        public Guid Id { get; set; }
         public Guid FileMetadataId { get; set; }
         public FileMetadata FileMetadata { get; set; } = null!;
         public Guid DeviceId { get; set; }

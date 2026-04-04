@@ -1,19 +1,21 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, type Mocked } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { SyncEngineService } from './sync-engine.service';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { OfflineCacheService } from './offline-cache.service';
 import { ConnectionStatusService } from './connection-status.service';
 import { NotificationService } from './notification.service';
 import { AuthService } from './auth.service';
+import { environment } from '../../../environments/environment';
 
 describe('SyncEngineService', () => {
   let service: SyncEngineService;
-  let offlineCacheMock: any;
-  let connectionStatusMock: any;
-  let notificationMock: any;
-  let authMock: any;
+  let httpMock: HttpTestingController;
+  let offlineCacheMock: Mocked<OfflineCacheService>;
+  let connectionStatusMock: Mocked<ConnectionStatusService>;
+  let notificationMock: Mocked<NotificationService>;
+  let authMock: { isAuthenticated: boolean };
 
   beforeEach(() => {
     offlineCacheMock = {
@@ -22,11 +24,22 @@ describe('SyncEngineService', () => {
       updateCachedFile: vi.fn(),
       removeCachedFile: vi.fn(),
       getPendingOperations: vi.fn(),
-      setLastSyncTimestamp: vi.fn()
-    } as any;
-    connectionStatusMock = { isOffline: vi.fn() } as any;
-    notificationMock = { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() } as any;
-    authMock = { isAuthenticated: true } as any;
+      setLastSyncTimestamp: vi.fn(),
+      removePendingOperation: vi.fn()
+    } as unknown as Mocked<OfflineCacheService>;
+    
+    connectionStatusMock = { 
+      isOffline: vi.fn().mockReturnValue(false) 
+    } as unknown as Mocked<ConnectionStatusService>;
+    
+    notificationMock = { 
+      success: vi.fn(), 
+      error: vi.fn(), 
+      warning: vi.fn(), 
+      info: vi.fn() 
+    } as unknown as Mocked<NotificationService>;
+    
+    authMock = { isAuthenticated: true };
 
     TestBed.configureTestingModule({
       providers: [
@@ -39,7 +52,9 @@ describe('SyncEngineService', () => {
         { provide: AuthService, useValue: authMock }
       ]
     });
+    
     service = TestBed.inject(SyncEngineService);
+    httpMock = TestBed.inject(HttpTestingController);
   });
 
   it('should be created', () => {
@@ -53,14 +68,47 @@ describe('SyncEngineService', () => {
     await service.performSync();
     expect(service.isSyncing()).toBe(false);
     expect(offlineCacheMock.getLastSyncTimestamp).not.toHaveBeenCalled();
-    expect(service.syncLog()[0].message).toContain('Sync skipped — offline');
+    expect(service.syncLog()[0].message).toContain('SYNC_ABORTED: System offline.');
+  });
+
+  it('should resolve a conflict', async () => {
+    const fileId = 'f1';
+    const conflict = {
+      fileId,
+      fileName: 'conflict.txt',
+      localVersionVector: 'v1',
+      serverVersionVector: 'v2',
+      serverSize: 200,
+      serverLastModified: new Date().toISOString()
+    };
+    
+    // Setup initial conflict state
+    // We need to use update because _conflicts is a private signal accessed via public readonly conflicts
+    // Since we are in a test, we can use (service as any)._conflicts.set
+    (service as any)._conflicts.set([conflict]);
+
+    const resolutionPromise = service.resolveConflict(fileId, 'KeepServer');
+
+    const req = httpMock.expectOne(`${environment.apiUrl}/sync/resolve`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({
+      fileId,
+      resolution: 1, // KeepServer is 1
+      clientVersionVector: 'v1'
+    });
+    
+    req.flush({ success: true });
+
+    await resolutionPromise;
+
+    expect(service.conflicts()).toHaveLength(0);
+    expect(offlineCacheMock.updateCachedFile).toHaveBeenCalled();
   });
 
   it('should log messages and clear log', () => {
-    // Accessing private log via any for testing if needed, or trigger via public methods
-    (service as any).log('info', 'Test message');
+    (service as any).log('info', 'TEST_LOG');
     expect(service.syncLog().length).toBe(1);
-    expect(service.syncLog()[0].message).toBe('Test message');
+    expect(service.syncLog()[0].message).toBe('TEST_LOG');
 
     service.clearLog();
     expect(service.syncLog().length).toBe(0);
@@ -69,7 +117,15 @@ describe('SyncEngineService', () => {
   it('should simulate local edit', async () => {
     const fileId = 'file1';
     const fileName = 'test.txt';
-    offlineCacheMock.getCachedFile.mockResolvedValue({ id: fileId, size: 100 });
+    offlineCacheMock.getCachedFile.mockResolvedValue({ 
+      id: fileId, 
+      fileName: fileName,
+      size: 100,
+      createdAt: new Date().toISOString(),
+      lastModifiedAt: new Date().toISOString(),
+      isShared: false,
+      versionVector: null
+    } as any);
 
     await service.simulateLocalEdit(fileId, fileName);
 
@@ -78,6 +134,6 @@ describe('SyncEngineService', () => {
       fileName: fileName,
       versionVector: expect.stringContaining(fileId.substring(0, 8))
     }));
-    expect(service.syncLog()[0].message).toContain('Simulated local edit');
+    expect(service.syncLog()[0].message).toContain('INJECT_FORK: Local edit simulated');
   });
 });

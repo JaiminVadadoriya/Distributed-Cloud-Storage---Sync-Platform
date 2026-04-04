@@ -8,6 +8,7 @@ using CloudStorage.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using CloudStorage.API.Extensions;
@@ -58,10 +59,14 @@ if (!string.IsNullOrEmpty(dbConnectionString) && !dbConnectionString.Contains("M
 }
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
+{
     options.UseNpgsql(dbConnectionString, npgsqlOptions => 
     {
         npgsqlOptions.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorCodesToAdd: null);
-    }));
+    });
+    // Suppress the warning about collections without setters which can block migrations in EF Core 10
+    options.ConfigureWarnings(w => w.Ignore(new EventId(10103, "Microsoft.EntityFrameworkCore.Model.CollectionWithoutSetter")));
+});
 
 // Repository registration
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
@@ -185,10 +190,10 @@ builder.Services.AddRateLimiter(options =>
         opt.QueueLimit = 0;
     });
 
-    // Auth policy: 10 requests per 60 seconds per IP (brute-force protection)
+    // Auth policy: 30 requests per 60 seconds per IP (brute-force protection)
     options.AddFixedWindowLimiter("auth", opt =>
     {
-        opt.PermitLimit = 10;
+        opt.PermitLimit = 30;
         opt.Window = TimeSpan.FromSeconds(60);
         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         opt.QueueLimit = 0;
@@ -232,18 +237,8 @@ app.Use(async (context, next) =>
 if (!app.Environment.IsDevelopment())
 {
     app.UseHsts();
+    app.UseHttpsRedirection();
 }
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Cloud Storage API v1");
-    });
-}
-
-app.UseHttpsRedirection();
 app.UseCors();
 app.UseResponseCompression();
 app.UseResponseCaching();

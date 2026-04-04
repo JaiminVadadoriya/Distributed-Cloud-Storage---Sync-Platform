@@ -1,8 +1,7 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { BaseComponent } from '../../../core/models/base-component';
-import { inject } from '@angular/core';
 
 @Component({
   selector: 'app-file-preview',

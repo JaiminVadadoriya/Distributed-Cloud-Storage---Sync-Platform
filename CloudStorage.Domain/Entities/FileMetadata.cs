@@ -12,9 +12,20 @@ namespace CloudStorage.Domain.Entities
         Cancelled = 4
     }
 
-    public class FileMetadata
+    /// <summary>
+    /// Represents metadata for a stored file.
+    /// Inherits Id and CreatedAt from BaseAuditableEntity.
+    /// Implements IOwnedEntity for polymorphic ownership checks.
+    /// </summary>
+    public class FileMetadata : BaseAuditableEntity<Guid>, IOwnedEntity
     {
-        public Guid Id { get; set; }
+        public FileMetadata()
+        {
+            Chunks = new List<FileChunk>();
+            Permissions = new List<FilePermission>();
+            SyncEvents = new List<SyncEvent>();
+        }
+
         public string FileName { get; set; } = string.Empty;
         public string ContentType { get; set; } = string.Empty;
         public long Size { get; set; }
@@ -22,7 +33,6 @@ namespace CloudStorage.Domain.Entities
         public Guid? ParentVersionId { get; set; }
         public int ChunkCount { get; set; }
         public string Hash { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; }
         public DateTime LastModifiedAt { get; set; }
         public DateTime? LastSyncedAt { get; set; }
         public int OwnerId { get; set; }
@@ -41,8 +51,8 @@ namespace CloudStorage.Domain.Entities
         public int UploadedChunks { get; set; }
 
         // Navigation properties
-        public ICollection<FileChunk> Chunks { get; set; } = new List<FileChunk>();
-        public ICollection<FilePermission> Permissions { get; set; } = new List<FilePermission>();
-        public ICollection<SyncEvent> SyncEvents { get; set; } = new List<SyncEvent>();
+        public virtual ICollection<FileChunk> Chunks { get; set; }
+        public virtual ICollection<FilePermission> Permissions { get; set; }
+        public virtual ICollection<SyncEvent> SyncEvents { get; set; }
     }
 }

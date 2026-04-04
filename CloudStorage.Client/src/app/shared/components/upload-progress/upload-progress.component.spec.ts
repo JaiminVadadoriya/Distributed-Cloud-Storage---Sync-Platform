@@ -22,10 +22,11 @@ describe('UploadProgressComponent', () => {
       uploadSpeed: 0,
       status: 'pending'
     };
-    fixture.detectChanges();
+    await fixture.whenStable();
   });
 
-  it('should create', () => {
+  it('should create', async () => {
+    await fixture.whenStable();
     expect(component).toBeTruthy();
   });
 

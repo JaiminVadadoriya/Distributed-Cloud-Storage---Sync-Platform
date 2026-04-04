@@ -1,11 +1,14 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BaseComponent } from '../../../core/models/base-component';
 import { UploadManagerService, UploadTask } from '../../../core/services/upload-manager.service';
 
+import { ErrorBoundaryComponent } from '../../../shared/components/error-boundary/error-boundary.component';
+
 @Component({
   selector: 'app-upload-manager',
-  imports: [CommonModule],
+  standalone: true,
+  imports: [CommonModule, ErrorBoundaryComponent],
   templateUrl: './upload-manager.html',
   styleUrl: './upload-manager.css',
 })

@@ -69,10 +69,6 @@ namespace CloudStorage.Infrastructure.Tests.Services
         [Fact]
         public async Task GetChunkAsync_ShouldThrowExceptionForMissingFile()
         {
-            // Arrange
-            var fileId = Guid.NewGuid();
-            var chunkIndex = 99;
-
             // Act & Assert
             await Assert.ThrowsAsync<FileNotFoundException>(() => _service.GetChunkAsync("non_existent_path.chunk"));
         }

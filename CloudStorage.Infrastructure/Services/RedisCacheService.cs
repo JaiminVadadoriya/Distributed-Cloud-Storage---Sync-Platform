@@ -67,7 +67,7 @@ namespace CloudStorage.Infrastructure.Services
             
             foreach (var key in keys)
             {
-                await _cache.RemoveAsync(key);
+                await _cache.RemoveAsync(key.ToString());
             }
         }
     }

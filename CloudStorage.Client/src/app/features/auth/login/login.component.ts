@@ -36,8 +36,8 @@ import { AuthService } from '../../../core/services/auth.service';
         </div>
 
         <div class="flex items-center justify-between text-[11px] font-mono uppercase tracking-widest mt-8">
-           <label class="flex items-center gap-3 cursor-pointer group text-editorial-text/80 hover:text-editorial-text transition-colors">
-              <input type="checkbox" class="w-3 h-3 rounded-sm border-editorial-text/30 bg-transparent text-editorial-text focus:ring-0 cursor-pointer">
+           <label for="remember" class="flex items-center gap-3 cursor-pointer group text-editorial-text/80 hover:text-editorial-text transition-colors">
+              <input id="remember" type="checkbox" class="w-3 h-3 rounded-sm border-editorial-text/30 bg-transparent text-editorial-text focus:ring-0 cursor-pointer">
               <span>Remember</span>
            </label>
            <a routerLink="/auth/forgot-password" class="text-editorial-text/80 hover:text-editorial-text transition-colors">Recovery</a>

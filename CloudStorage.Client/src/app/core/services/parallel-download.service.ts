@@ -46,7 +46,7 @@ export class ParallelDownloadService extends BaseService {
         throw new Error('BROWSER_UNSUPPORTED: Native Direct-to-Disk streaming requires an Engine-based browser.');
       }
 
-      const fileHandle = await (window as any).showSaveFilePicker({
+      const fileHandle = await (window as unknown as { showSaveFilePicker: (options: unknown) => Promise<{ createWritable: () => Promise<FileSystemWritableFileStream> }> }).showSaveFilePicker({
         suggestedName: metadata.fileName,
         types: [{
           description: 'CinePhone Pro Volume Segment',
@@ -59,11 +59,10 @@ export class ParallelDownloadService extends BaseService {
       try {
         const CONCURRENCY = 16;
         const chunks = metadata.chunks;
-        let completedBytes = 0;
         let writePromise = Promise.resolve();
         
-        const safeWrite = (data: any, position: number) => {
-          writePromise = writePromise.then(() => writable.write({ type: 'write', data, position }));
+        const safeWrite = (data: Uint8Array | ArrayBuffer | Blob, position: number) => {
+          writePromise = writePromise.then(() => writable.write({ type: 'write', data: data as unknown as BufferSource, position }));
           return writePromise;
         };
 
@@ -82,7 +81,6 @@ export class ParallelDownloadService extends BaseService {
 
             await safeWrite(value, currentOffset);
             currentOffset += value.length;
-            completedBytes += value.length;
           }
         };
 
@@ -95,15 +93,14 @@ export class ParallelDownloadService extends BaseService {
           activeDownloads.add(promise);
         }
         await Promise.all(activeDownloads);
-        await writePromise;
         await writable.close();
 
       } catch (err) {
         await writable.abort();
         throw err;
       }
-    } catch (err: any) {
-      if (err.name === 'AbortError') return;
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === 'AbortError') return;
       console.error('[ParallelDownload] Execution failure:', err);
       throw err;
     } finally {

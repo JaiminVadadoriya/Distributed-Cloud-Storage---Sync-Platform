@@ -1,7 +1,10 @@
 <div class="toast-container">
   @for (toast of toasts(); track toast.id) {
-    <div class="toast-item" [class]="'toast-' + toast.type" (click)="dismiss(toast.id)">
-      <span class="toast-message">{{ toast.message }}</span>
-    </div>
+    <button class="toast-item w-full text-left p-4 mb-2 shadow-lg focus:outline-none" 
+            [class]="'toast-' + toast.type" 
+            (click)="dismiss(toast.id)"
+            [attr.aria-label]="'Dismiss ' + toast.type + ' notification'">
+      <span class="toast-message font-mono text-[10px] uppercase tracking-wider">{{ toast.message }}</span>
+    </button>
   }
 </div>

@@ -18,7 +18,9 @@
       
       <!-- Search Suggestions Dropdown -->
       @if (searchService.suggestions().length > 0 && searchInput.value.length > 1) {
-        <div class="absolute top-full left-0 w-full mt-1 bg-editorial-bg border border-editorial-text/20 z-50 shadow-lg">
+        <div animate.enter="animate-dropdown-enter"
+             animate.leave="animate-dropdown-leave"
+             class="absolute top-full left-0 w-full mt-1 bg-editorial-bg border border-editorial-text/20 z-50 shadow-lg">
           @for (suggestion of searchService.suggestions(); track suggestion) {
             <button (click)="navigateToSearch(suggestion); searchInput.value = suggestion"
               class="w-full text-left px-4 py-2 font-mono text-[10px] uppercase tracking-widest text-editorial-text/70 hover:bg-editorial-text/5 transition-none">
@@ -60,7 +62,9 @@
 
       <!-- Notification Dropdown -->
       @if (layoutService.isNotificationDropdownOpen()) {
-        <div class="absolute right-0 top-full mt-2 w-80 bg-editorial-bg border border-editorial-text/20 shadow-lg z-50 max-h-96 overflow-hidden">
+        <div animate.enter="animate-dropdown-enter"
+             animate.leave="animate-dropdown-leave"
+             class="absolute right-0 top-full mt-2 w-80 bg-editorial-bg border border-editorial-text/20 shadow-lg z-50 max-h-96 overflow-hidden">
           <div class="flex items-center justify-between px-4 py-3 border-b border-editorial-text/10">
             <span class="text-[9px] font-mono font-bold uppercase tracking-[0.3em] text-editorial-text">Notifications</span>
             <button (click)="notificationService.markAllAsRead()" class="text-[8px] font-mono uppercase tracking-widest text-editorial-text/50 hover:text-editorial-text">
@@ -69,16 +73,18 @@
           </div>
           <div class="overflow-y-auto max-h-72">
             @for (n of notificationService.notifications(); track n.id) {
-              <div class="px-4 py-3 border-b border-editorial-text/5 hover:bg-editorial-text/[0.02] cursor-pointer"
+              <button type="button"
+                   class="w-full text-left px-4 py-3 border-b border-editorial-text/5 hover:bg-editorial-text/[0.02] transition-colors focus:outline-none focus:bg-editorial-text/[0.05]"
                    [class.bg-editorial-text/[0.03]]="!n.read"
-                   (click)="notificationService.markAsRead(n.id)">
+                   (click)="notificationService.markAsRead(n.id)"
+                   (keydown.enter)="notificationService.markAsRead(n.id)">
                 <div class="flex items-center gap-2 mb-1">
                   <span class="w-1.5 h-1.5 rounded-full"
                     [class]="n.type === 'error' ? 'bg-rose-500' : n.type === 'success' ? 'bg-emerald-500' : n.type === 'warning' ? 'bg-amber-500' : 'bg-editorial-text/30'"></span>
                   <span class="text-[8px] font-mono uppercase tracking-widest text-editorial-text/50">{{ n.title }}</span>
                 </div>
                 <p class="text-[10px] font-mono text-editorial-text/80 tracking-wide truncate">{{ n.message }}</p>
-              </div>
+              </button>
             } @empty {
               <div class="px-4 py-8 text-center text-[9px] font-mono uppercase tracking-widest text-editorial-text/30">
                 No_Notifications
@@ -107,7 +113,9 @@
       </button>
 
       @if (layoutService.isProfileMenuOpen()) {
-        <div class="absolute right-0 top-full mt-2 w-52 bg-editorial-bg border border-editorial-text/20 shadow-lg z-50 py-1">
+        <div animate.enter="animate-dropdown-enter"
+             animate.leave="animate-dropdown-leave"
+             class="absolute right-0 top-full mt-2 w-52 bg-editorial-bg border border-editorial-text/20 shadow-lg z-50 py-1">
           <a routerLink="/settings" (click)="layoutService.closeProfileMenu()"
             class="flex items-center gap-3 px-4 py-2.5 font-mono text-[10px] uppercase tracking-widest text-editorial-text/70 hover:bg-editorial-text/5 hover:text-editorial-text">
             Profile_Settings

@@ -1,14 +1,11 @@
-import { Component, OnDestroy, inject, signal } from '@angular/core';
-import { Subject } from 'rxjs';
+import { Directive, OnDestroy, signal } from '@angular/core';
+import { Subject, Observable, firstValueFrom } from 'rxjs';
 
 /**
  * Abstract Base Component for all Angular components in the project.
  * Handles automatic subscription cleanup and provides common UI state signals.
  */
-@Component({
-  template: '',
-  standalone: true
-})
+@Directive()
 export abstract class BaseComponent implements OnDestroy {
   /** Subject that emits when the component is destroyed. Use with .pipe(takeUntil(this.destroy$)) */
   protected readonly destroy$ = new Subject<void>();
@@ -26,15 +23,32 @@ export abstract class BaseComponent implements OnDestroy {
 
   /**
    * Safe execution wrapper that handles loading state and error trapping.
+   * Supports Promises, Observables, and functions returning them.
    */
-  protected async safeExecute(action: () => Promise<void>): Promise<void> {
+  protected async safeExecute<T>(
+    action: Promise<T> | Observable<T> | (() => Promise<T> | Observable<T>), 
+    onSuccess?: (result: T) => void
+  ): Promise<void> {
     try {
       this.isBusy.set(true);
       this.errorMessage.set(null);
-      await action();
-    } catch (err: any) {
+      
+      let execution: Promise<T> | Observable<T>;
+      if (typeof action === 'function') {
+        execution = action();
+      } else {
+        execution = action;
+      }
+      
+      const result = await (execution instanceof Observable ? firstValueFrom(execution) : execution);
+      
+      if (onSuccess) {
+        onSuccess(result);
+      }
+    } catch (err: unknown) {
       console.error('Component execution error:', err);
-      this.errorMessage.set(err.message || 'An unexpected error occurred in the view boundary.');
+      const message = err instanceof Error ? err.message : 'An unexpected error occurred in the view boundary.';
+      this.errorMessage.set(message);
     } finally {
       this.isBusy.set(false);
     }

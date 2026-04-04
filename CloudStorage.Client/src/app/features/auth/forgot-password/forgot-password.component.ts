@@ -89,7 +89,7 @@ export class ForgotPasswordComponent {
           this.isLoading = false;
           this.isSubmitted = true;
         },
-        error: (err) => {
+        error: (err: unknown) => {
           this.isLoading = false;
           this.error = 'Something went wrong. Please try again later.';
           console.error(err);

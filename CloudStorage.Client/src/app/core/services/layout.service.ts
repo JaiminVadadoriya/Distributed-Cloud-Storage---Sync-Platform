@@ -1,12 +1,32 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 
 export interface ContextMenuItem {
   label: string;
   icon?: string;
-  action: () => void;
+  action?: () => void;
   danger?: boolean;
   disabled?: boolean;
   separator?: boolean;
+  shortcut?: string;
+}
+
+export interface ConfirmConfig {
+  title: string;
+  message: string;
+  danger?: boolean;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  action: () => void;
+}
+
+export interface PromptConfig {
+  title: string;
+  message?: string;
+  initialValue?: string;
+  placeholder?: string;
+  submitLabel?: string;
+  cancelLabel?: string;
+  action: (value: string) => void;
 }
 
 /**
@@ -46,6 +66,12 @@ export class LayoutService {
 
   private readonly _contextMenuItems = signal<ContextMenuItem[]>([]);
   public readonly contextMenuItems = this._contextMenuItems.asReadonly();
+
+  private readonly _confirmModal = signal<(ConfirmConfig & { isOpen: boolean }) | null>(null);
+  public readonly confirmModal = this._confirmModal.asReadonly();
+
+  private readonly _promptModal = signal<(PromptConfig & { isOpen: boolean }) | null>(null);
+  public readonly promptModal = this._promptModal.asReadonly();
 
   public toggleSidebar(): void {
     this._isSidebarOpen.update(v => !v);
@@ -118,6 +144,24 @@ export class LayoutService {
     this._isNotificationDropdownOpen.set(false);
     this._isProfileMenuOpen.set(false);
     this._isContextMenuOpen.set(false);
+    this._confirmModal.set(null);
+    this._promptModal.set(null);
+  }
+
+  public openConfirm(config: ConfirmConfig): void {
+    this._confirmModal.set({ ...config, isOpen: true });
+  }
+
+  public closeConfirm(): void {
+    this._confirmModal.set(null);
+  }
+
+  public openPrompt(config: PromptConfig): void {
+    this._promptModal.set({ ...config, isOpen: true });
+  }
+
+  public closePrompt(): void {
+    this._promptModal.set(null);
   }
 }
 

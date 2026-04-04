@@ -5,6 +5,7 @@ import { LayoutService } from '../../services/layout.service';
 import { FileService } from '../../services/file.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { BaseComponent } from '../../models/base-component';
+import { formatBytes } from '../../utils/format.utils';
 
 @Component({
   selector: 'app-sidebar',
@@ -22,13 +23,8 @@ export class SidebarComponent extends BaseComponent {
     this.layoutService.closeSidebar();
   }
 
-  public formatBytes(bytes: number): string {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  }
+  /** Delegates to shared utility */
+  public formatBytes = formatBytes;
 
   public getPercentage(used: number, total: number): number {
     if (total === 0) return 0;

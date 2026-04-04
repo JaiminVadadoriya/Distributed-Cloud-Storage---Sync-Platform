@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth.service';
-import { Subject, Observable } from 'rxjs';
+import { Subject } from 'rxjs';
 
 export interface FileEvent {
   fileId: string;

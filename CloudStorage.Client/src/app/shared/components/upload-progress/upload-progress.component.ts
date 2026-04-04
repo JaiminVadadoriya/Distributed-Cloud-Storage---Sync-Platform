@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { formatBytes } from '../../../core/utils/format.utils';
 
 export interface UploadProgress {
   fileName: string;
@@ -150,15 +151,8 @@ export class UploadProgressComponent {
     return this.progress.fileSize / this.progress.totalChunks;
   }
 
-  private formatBytes(bytes: number): string {
-    if (bytes === 0) return '0 B';
-
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
-  }
+  /** Delegates to shared utility */
+  private formatBytes = formatBytes;
 
   private formatTime(seconds: number): string {
     if (seconds < 60) {

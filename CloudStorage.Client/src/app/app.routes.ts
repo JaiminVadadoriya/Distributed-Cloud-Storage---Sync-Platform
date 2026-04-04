@@ -18,6 +18,7 @@ import { AuditLogComponent } from './features/activity/audit-log/audit-log.compo
 import { SystemMetricsComponent } from './features/admin/system-metrics/system-metrics.component';
 import { UsageAnalyticsComponent } from './features/admin/usage-analytics/usage-analytics.component';
 import { EncryptionSettingsComponent } from './features/settings/encryption/encryption-settings.component';
+import { FolderView } from './features/files/folder-view/folder-view';
 
 export const routes: Routes = [
   {
@@ -37,6 +38,7 @@ export const routes: Routes = [
     children: [
       { path: 'dashboard', component: DashboardComponent },
       { path: 'files', component: FileListComponent },
+      { path: 'folders/:id', component: FolderView },
       { path: 'shared', component: SharedWithMeComponent },
       { path: 'recent', component: RecentComponent },
       { path: 'activity', component: ActivityComponent },

@@ -4,6 +4,8 @@ import { BaseComponent } from '../../../core/models/base-component';
 import { FileService } from '../../../core/services/file.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { takeUntil } from 'rxjs/operators';
+import { Permission } from '../../../core/models/file.model';
+import { FolderService } from '../../../core/services/folder.service';
 
 @Component({
   selector: 'app-manage-permissions',
@@ -12,55 +14,76 @@ import { takeUntil } from 'rxjs/operators';
   styleUrl: './manage-permissions.css',
 })
 export class ManagePermissions extends BaseComponent implements OnInit {
-  fileId = input<string>('');
+  fileId = input<string | null>(null);
+  folderId = input<string | null>(null);
 
   private fileService = inject(FileService);
+  private folderService = inject(FolderService);
   private notify = inject(NotificationService);
 
-  permissions = signal<any[]>([]);
+  permissions = signal<Permission[]>([]);
 
   ngOnInit() {
     this.loadPermissions();
   }
 
   private loadPermissions() {
-    const id = this.fileId();
-    if (!id) return;
+    const fileId = this.fileId();
+    const folderId = this.folderId();
+    if (!fileId && !folderId) return;
 
     this.isBusy.set(true);
-    this.fileService.getFilePermissions(id)
-      .pipe(takeUntil(this.destroy$))
+    const obs = fileId 
+      ? this.fileService.getFilePermissions(fileId)
+      : this.folderService.getFolderPermissions(folderId!);
+
+    obs.pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (data) => { this.permissions.set(data); this.isBusy.set(false); },
+        next: (data: Permission[]) => { 
+          this.permissions.set(data); 
+          this.isBusy.set(false); 
+        },
         error: () => this.isBusy.set(false)
       });
   }
 
   removeAccess(userId: number) {
-    const id = this.fileId();
-    if (!id) return;
+    const fileId = this.fileId();
+    const folderId = this.folderId();
+    if (!fileId && !folderId) return;
 
-    this.fileService.removePermission(id, userId)
-      .pipe(takeUntil(this.destroy$))
+    this.isBusy.set(true);
+    const obs = fileId
+      ? this.fileService.removePermission(fileId, userId)
+      : this.folderService.removeFolderPermission(folderId!, userId);
+
+    obs.pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.notify.success('Permission removed');
+          this.notify.success('REVOKED: Identity_Node_Decoupled');
           this.loadPermissions();
-        }
+        },
+        error: () => this.isBusy.set(false)
       });
   }
 
   changeRole(userId: number, newRole: string) {
-    const id = this.fileId();
-    if (!id) return;
+    const fileId = this.fileId();
+    const folderId = this.folderId();
+    if (!fileId && !folderId) return;
 
-    this.fileService.updatePermission(id, userId, newRole)
-      .pipe(takeUntil(this.destroy$))
+    this.isBusy.set(true);
+    const obs = fileId
+      ? this.fileService.updatePermission(fileId, userId, newRole)
+      : this.folderService.updateFolderPermission(folderId!, userId, newRole);
+
+    obs.pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.notify.success('Permission updated');
+          this.notify.success('RECONFIGURED: Protocol_Updated');
           this.loadPermissions();
-        }
+        },
+        error: () => this.isBusy.set(false)
       });
   }
 }

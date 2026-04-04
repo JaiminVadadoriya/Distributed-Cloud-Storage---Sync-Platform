@@ -1,55 +1,99 @@
-<div class="folder-view">
-  <!-- Breadcrumbs -->
-  <nav class="breadcrumbs">
-    @for (crumb of breadcrumbs(); track crumb.id; let last = $last) {
-      @if (!last) {
-        <button class="crumb-btn" (click)="navigateTo(crumb.id)">{{ crumb.name }}</button>
-        <span class="crumb-sep">/</span>
-      } @else {
-        <span class="crumb-current">{{ crumb.name }}</span>
+<div class="space-y-12 selection:bg-editorial-text selection:text-editorial-bg" cdkDropListGroup>
+  <!-- Breadcrumbs & Actions -->
+  <nav class="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-6 border-b border-editorial-text/20">
+    <div class="flex items-center gap-2 overflow-x-auto pb-2 sm:pb-0 scrollbar-hide">
+      @for (crumb of breadcrumbs(); track crumb.id; let last = $last) {
+        <div class="flex items-center gap-2 shrink-0" 
+             cdkDropList 
+             [cdkDropListData]="crumb.id"
+             (cdkDropListDropped)="onDrop($event, crumb.id)">
+          @if (!last) {
+            <button (click)="navigateTo(crumb.id)" 
+                    class="font-mono text-[10px] uppercase tracking-[0.2em] text-editorial-text/40 hover:text-editorial-text transition-colors">
+              {{ crumb.name }}
+            </button>
+            <span class="text-editorial-text/20 font-mono text-[10px]">/</span>
+          } @else {
+            <h1 class="font-sans text-2xl font-bold uppercase tracking-tight text-editorial-text">{{ crumb.name }}</h1>
+          }
+        </div>
       }
-    }
+    </div>
+    
+    <div class="flex items-center gap-4">
+      <button (click)="createNewFolder()" 
+              class="px-5 py-3 border border-editorial-text/20 text-[9px] font-mono uppercase tracking-[0.3em] font-bold hover:bg-editorial-text hover:text-editorial-bg transition-all active:scale-[0.98] flex items-center gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/><line x1="12" y1="10" x2="12" y2="16"/><line x1="9" y1="13" x2="15" y2="13"/></svg>
+        New_Folder
+      </button>
+    </div>
   </nav>
 
   @if (isBusy()) {
-    <div class="loading-state"><div class="spinner"></div><p>Loading folder...</p></div>
+    <div class="py-24 text-center space-y-4">
+      <div class="w-8 h-8 border border-editorial-text/20 border-t-editorial-text rounded-full animate-spin mx-auto"></div>
+      <p class="font-mono text-[9px] uppercase tracking-[0.4em] text-editorial-text/40">Synchronizing_Directory...</p>
+    </div>
   } @else {
-    <!-- Sub-Folders -->
+    <!-- Sub-Folders Section -->
     @if (subFolders().length > 0) {
-      <section class="section">
-        <h4 class="section-title">Folders</h4>
-        <div class="grid">
+      <div class="space-y-6">
+        <h3 class="text-[10px] font-mono font-bold uppercase tracking-[0.5em] text-editorial-text/40 border-b border-editorial-text/10 pb-2">Secondary_Directories</h3>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           @for (folder of subFolders(); track folder.id) {
-            <div class="folder-card" (click)="navigateTo(folder.id)">
-              <span class="folder-icon">📁</span>
-              <span class="folder-name">{{ folder.name }}</span>
+            <div class="group p-6 border border-editorial-text/10 bg-editorial-bg hover:border-editorial-text transition-all cursor-pointer relative overflow-hidden"
+                 (click)="navigateTo(folder.id)" 
+                 (contextmenu)="onFolderContextMenu($event, folder)"
+                 cdkDrag [cdkDragData]="folder"
+                 cdkDropList [cdkDropListData]="folder.id"
+                 (cdkDropListDropped)="onDrop($event, folder.id)"
+                 tabindex="0" role="button">
+              <div class="flex items-center gap-4">
+                <div class="text-editorial-text/20 group-hover:text-editorial-text transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+                </div>
+                <span class="font-sans text-[11px] font-bold uppercase tracking-tight text-editorial-text truncate">{{ folder.name }}</span>
+              </div>
+              <div class="absolute bottom-0 left-0 h-0.5 bg-editorial-text w-0 group-hover:w-full transition-all duration-300"></div>
             </div>
           }
         </div>
-      </section>
+      </div>
     }
 
-    <!-- Files -->
+    <!-- Files Section -->
     @if (files().length > 0) {
-      <section class="section">
-        <h4 class="section-title">Files</h4>
-        <div class="grid">
+      <div class="space-y-6">
+        <h3 class="text-[10px] font-mono font-bold uppercase tracking-[0.5em] text-editorial-text/40 border-b border-editorial-text/10 pb-2">Entity_Registry</h3>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           @for (file of files(); track file.id) {
-            <div class="file-card" (click)="openFile(file.id)">
-              <span class="file-icon">📄</span>
-              <div class="file-info">
-                <span class="file-name">{{ file.fileName }}</span>
-                <span class="file-size">{{ formatSize(file.size) }}</span>
+            <div class="group p-6 border border-editorial-text/10 bg-editorial-bg hover:border-editorial-text transition-all cursor-pointer relative overflow-hidden"
+                 (click)="openFile(file.id)" 
+                 (contextmenu)="onFileContextMenu($event, file)"
+                 cdkDrag [cdkDragData]="file"
+                 tabindex="0" role="button">
+              <div class="space-y-4">
+                <div class="text-editorial-text/10 group-hover:text-editorial-text transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                </div>
+                <div class="space-y-1">
+                  <h4 class="font-sans text-[12px] font-bold uppercase tracking-tighter text-editorial-text truncate">{{ file.name }}</h4>
+                  <p class="font-mono text-[9px] uppercase tracking-widest text-editorial-text/40 italic">{{ formatSize(file.size) }}</p>
+                </div>
               </div>
+              <div class="absolute bottom-0 left-0 h-0.5 bg-editorial-text w-0 group-hover:w-full transition-all duration-300"></div>
             </div>
           }
         </div>
-      </section>
+      </div>
     }
 
     @if (subFolders().length === 0 && files().length === 0) {
-      <div class="empty-state">
-        <p>This folder is empty</p>
+      <div class="py-32 text-center border-2 border-dashed border-editorial-text/5">
+        <div class="w-12 h-12 border border-editorial-text/10 mx-auto flex items-center justify-center mb-8 opacity-20">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+        </div>
+        <p class="font-mono text-[9px] uppercase tracking-[0.5em] text-editorial-text/20">Null_Sequence: Directory_Empty</p>
       </div>
     }
   }

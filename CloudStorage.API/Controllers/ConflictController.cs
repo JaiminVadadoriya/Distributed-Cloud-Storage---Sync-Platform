@@ -2,15 +2,16 @@ using System;
 using System.Threading.Tasks;
 using CloudStorage.Application.DTOs;
 using CloudStorage.Application.Interfaces;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CloudStorage.API.Controllers
 {
-    [ApiController]
+    /// <summary>
+    /// Manages sync conflict detection and resolution.
+    /// Inherits from BaseApiController for shared infrastructure.
+    /// </summary>
     [Route("api/sync")]
-    [Authorize]
-    public class ConflictController : ControllerBase
+    public class ConflictController : BaseApiController
     {
         private readonly IConflictDetectionService _conflictService;
 
@@ -19,78 +20,30 @@ namespace CloudStorage.API.Controllers
             _conflictService = conflictService;
         }
 
-        private int GetUserId()
-        {
-            var userIdClaim = User.FindFirst("id")?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-                throw new UnauthorizedAccessException("User ID not found in token");
-
-            return int.Parse(userIdClaim);
-        }
-
         /// <summary>
         /// Check if a file has a conflict between the client's version vector and the server's.
         /// </summary>
         [HttpPost("check-conflicts")]
-        public async Task<IActionResult> CheckConflicts([FromBody] ConflictCheckRequestDto request)
+        public Task<IActionResult> CheckConflicts([FromBody] ConflictCheckRequestDto request) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var result = await _conflictService.CheckConflictAsync(request.FileId, request.ClientVersionVector);
-                return Ok(new ApiResponse<ConflictCheckResponseDto>
-                {
-                    Success = true,
-                    Message = "Conflict check completed",
-                    Data = result
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+            var result = await _conflictService.CheckConflictAsync(request.FileId, request.ClientVersionVector);
+            return Ok(ApiResponse<ConflictCheckResponseDto>.Ok(result, "Conflict check completed"));
+        });
 
         /// <summary>
         /// Resolve a detected conflict by choosing "KeepLocal" or "KeepServer".
         /// </summary>
         [HttpPost("resolve")]
-        public async Task<IActionResult> ResolveConflict([FromBody] ConflictResolutionDto request)
+        public Task<IActionResult> ResolveConflict([FromBody] ConflictResolutionDto request) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                await _conflictService.ResolveConflictAsync(
-                    request.FileId,
-                    userId,
-                    request.Resolution,
-                    request.ClientVersionVector);
+            var userId = GetUserId();
+            await _conflictService.ResolveConflictAsync(
+                request.FileId,
+                userId,
+                request.Resolution,
+                request.ClientVersionVector);
 
-                return Ok(new ApiResponse
-                {
-                    Success = true,
-                    Message = "Conflict resolved successfully."
-                });
-            }
-            catch (InvalidOperationException ex)
-            {
-                return NotFound(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+            return Ok(ApiResponse.Ok("Conflict resolved successfully."));
+        });
     }
 }

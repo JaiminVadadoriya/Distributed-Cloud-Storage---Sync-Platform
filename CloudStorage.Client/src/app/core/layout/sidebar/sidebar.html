@@ -56,22 +56,24 @@
   </nav>
 
   <!-- Storage Usage -->
-  <div class="px-3 mt-auto mb-6" *ngIf="stats() as currentStats">
-    <div class="p-4 rounded-none border border-editorial-text/20 bg-editorial-text/5">
-      <div
-        class="flex items-center justify-between font-mono uppercase tracking-widest text-[9px] text-editorial-text/60 mb-2">
-        <span>Storage</span>
-        <span>{{ getPercentage(currentStats.totalStorageBytes, currentStats.maxStorageBytes) }}%</span>
-      </div>
-      <div class="h-1 w-full bg-editorial-text/10 rounded-none overflow-hidden">
-        <div class="h-full bg-editorial-text rounded-none"
-          [style.width.%]="getPercentage(currentStats.totalStorageBytes, currentStats.maxStorageBytes)"></div>
-      </div>
-      <div class="mt-2 font-mono uppercase tracking-tight text-[9px] text-editorial-text/50">
-        {{ formatBytes(currentStats.totalStorageBytes) }} / {{ formatBytes(currentStats.maxStorageBytes) }}
+  @if (stats(); as currentStats) {
+    <div class="px-3 mt-auto mb-6">
+      <div class="p-4 rounded-none border border-editorial-text/20 bg-editorial-bg">
+        <div
+          class="flex items-center justify-between font-mono uppercase tracking-widest text-[9px] text-editorial-text/60 mb-2">
+          <span>Storage</span>
+          <span>{{ getPercentage(currentStats.totalStorageBytes, currentStats.maxStorageBytes) }}%</span>
+        </div>
+        <div class="h-1 w-full bg-editorial-text/10 rounded-none overflow-hidden">
+          <div class="h-full bg-editorial-text rounded-none"
+            [style.width.%]="getPercentage(currentStats.totalStorageBytes, currentStats.maxStorageBytes)"></div>
+        </div>
+        <div class="mt-2 font-mono uppercase tracking-tight text-[9px] text-editorial-text/50">
+          {{ formatBytes(currentStats.totalStorageBytes) }} / {{ formatBytes(currentStats.maxStorageBytes) }}
+        </div>
       </div>
     </div>
-  </div>
+  }
 
   <!-- Settings -->
   <div class="px-3 border-t border-editorial-text/10 pt-4">

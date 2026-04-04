@@ -13,8 +13,9 @@ export interface FileUploadEvent {
   imports: [CommonModule],
   template: `
     <div class="w-full space-y-12">
-      <div 
-        class="relative border border-editorial-text/10 p-20 text-center transition-none group cursor-pointer"
+      <button 
+        type="button"
+        class="relative w-full border border-editorial-text/10 p-20 text-center transition-none group cursor-pointer focus:outline-none focus:border-editorial-text"
         [ngClass]="{
           'bg-editorial-text/5 border-editorial-text/40': isDragging,
           'bg-transparent hover:bg-editorial-text/[0.02]': !isDragging
@@ -22,7 +23,8 @@ export interface FileUploadEvent {
         (dragover)="onDragOver($event)"
         (dragleave)="onDragLeave($event)"
         (drop)="onDrop($event)"
-        (click)="fileInput.click()">
+        (click)="fileInput.click()"
+        aria-label="Upload files">
         
         <div class="absolute inset-0 border border-editorial-text/5 m-2 pointer-events-none opacity-40 group-hover:opacity-100 transition-opacity"></div>
         
@@ -44,7 +46,7 @@ export interface FileUploadEvent {
           (change)="onFileSelected($event)"
           class="hidden"
           id="file-upload-input">
-      </div>
+      </button>
 
       <!-- Technical Grid Metadata -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-0 border border-editorial-text/10">

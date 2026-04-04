@@ -147,25 +147,9 @@ namespace CloudStorage.Infrastructure.Services
                 $"Folder shared with user ID {targetUserId} ({permissionType}).");
         }
 
-        private FolderDto MapToDto(Folder folder)
-        {
-            return new FolderDto
-            {
-                Id = folder.Id,
-                Name = folder.Name,
-                ParentFolderId = folder.ParentFolderId,
-                CreatedAt = folder.CreatedAt,
-                LastModifiedAt = folder.LastModifiedAt,
-                SubFolders = folder.SubFolders?.Select(MapToDto).ToList() ?? new List<FolderDto>(),
-                Files = folder.Files?.Select(f => new FileListDto
-                {
-                    Id = f.Id,
-                    FileName = f.FileName,
-                    Size = f.Size,
-                    CreatedAt = f.CreatedAt,
-                    IsShared = f.OwnerId != folder.OwnerId
-                }).ToList() ?? new List<FileListDto>()
-            };
-        }
+        /// <summary>
+        /// Mapping is now delegated to MappingExtensions.ToDto() for reusability.
+        /// </summary>
+        private static FolderDto MapToDto(Folder folder) => folder.ToDto();
     }
 }

@@ -1,36 +1,43 @@
-import { Directive, EventEmitter, HostBinding, HostListener, Output } from '@angular/core';
+import { Directive, EventEmitter, Output, signal } from '@angular/core';
 
 @Directive({
   selector: '[appDragDrop]',
-  standalone: true
+  standalone: true,
+  host: {
+    '[class.border-primary-500]': 'fileOver()',
+    '[class.bg-primary-50]': 'bgOver()',
+    '(dragover)': 'onDragOver($event)',
+    '(dragleave)': 'onDragLeave($event)',
+    '(drop)': 'onDrop($event)'
+  }
 })
 export class DragDrop {
   @Output() fileDropped = new EventEmitter<FileList>();
 
-  @HostBinding('class.border-primary-500') fileOver: boolean = false;
-  @HostBinding('class.bg-primary-50') bgOver: boolean = false;
+  protected readonly fileOver = signal(false);
+  protected readonly bgOver = signal(false);
 
-  @HostListener('dragover', ['$event']) onDragOver(evt: DragEvent) {
+  public onDragOver(evt: DragEvent) {
     evt.preventDefault();
     evt.stopPropagation();
-    this.fileOver = true;
-    this.bgOver = true;
+    this.fileOver.set(true);
+    this.bgOver.set(true);
   }
 
-  @HostListener('dragleave', ['$event']) public onDragLeave(evt: DragEvent) {
+  public onDragLeave(evt: DragEvent) {
     evt.preventDefault();
     evt.stopPropagation();
-    this.fileOver = false;
-    this.bgOver = false;
+    this.fileOver.set(false);
+    this.bgOver.set(false);
   }
 
-  @HostListener('drop', ['$event']) public ondrop(evt: DragEvent) {
+  public onDrop(evt: DragEvent) {
     evt.preventDefault();
     evt.stopPropagation();
-    this.fileOver = false;
-    this.bgOver = false;
+    this.fileOver.set(false);
+    this.bgOver.set(false);
     
-    let files = evt.dataTransfer?.files;
+    const files = evt.dataTransfer?.files;
     if (files && files.length > 0) {
       this.fileDropped.emit(files);
     }

@@ -1,6 +1,6 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 
@@ -92,9 +92,9 @@ export class ResetPasswordComponent implements OnInit {
     }
   }
 
-  passwordMatchValidator(g: any) {
-    const password = g.get('password').value;
-    const confirm = g.get('confirmPassword').value;
+  passwordMatchValidator(g: AbstractControl) {
+    const password = g.get('password')?.value;
+    const confirm = g.get('confirmPassword')?.value;
     return password === confirm ? null : { 'mismatch': true };
   }
 
@@ -113,7 +113,7 @@ export class ResetPasswordComponent implements OnInit {
           // Redirect after 2 seconds so the user can see the success message
           setTimeout(() => this.router.navigate(['/auth/login']), 2000);
         },
-        error: (err) => {
+        error: (err: unknown) => {
           this.isLoading = false;
           this.error = this.extractErrorMessage(err) || 'Failed to reset password. The link may have expired.';
         }
@@ -121,10 +121,11 @@ export class ResetPasswordComponent implements OnInit {
     }
   }
 
-  private extractErrorMessage(err: any): string | null {
-    if (!err || !err.error) return null;
-    if (typeof err.error === 'object' && err.error.message) return err.error.message;
-    if (typeof err.error === 'string') return err.error;
+  private extractErrorMessage(err: unknown): string | null {
+    const errorObj = err as { error?: { message?: string, title?: string } };
+    if (!errorObj.error) return null;
+    if (typeof errorObj.error === 'object' && errorObj.error.message) return errorObj.error.message;
+    if (typeof errorObj.error === 'string') return errorObj.error;
     return null;
   }
 }

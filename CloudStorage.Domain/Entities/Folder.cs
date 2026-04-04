@@ -3,11 +3,21 @@ using System.Collections.Generic;
 
 namespace CloudStorage.Domain.Entities
 {
-    public class Folder
+    /// <summary>
+    /// Represents a folder in the hierarchical file system.
+    /// Inherits Id and CreatedAt from BaseAuditableEntity.
+    /// Implements IOwnedEntity for polymorphic ownership checks.
+    /// </summary>
+    public class Folder : BaseAuditableEntity<Guid>, IOwnedEntity
     {
-        public Guid Id { get; set; }
+        public Folder()
+        {
+            SubFolders = new List<Folder>();
+            Files = new List<FileMetadata>();
+            Permissions = new List<FolderPermission>();
+        }
+
         public string Name { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; }
         public DateTime LastModifiedAt { get; set; }
         
         public int OwnerId { get; set; }
@@ -16,8 +26,8 @@ namespace CloudStorage.Domain.Entities
         public Guid? ParentFolderId { get; set; }
         public Folder? ParentFolder { get; set; }
 
-        public ICollection<Folder> SubFolders { get; set; } = new List<Folder>();
-        public ICollection<FileMetadata> Files { get; set; } = new List<FileMetadata>();
-        public ICollection<FolderPermission> Permissions { get; set; } = new List<FolderPermission>();
+        public virtual ICollection<Folder> SubFolders { get; set; }
+        public virtual ICollection<FileMetadata> Files { get; set; }
+        public virtual ICollection<FolderPermission> Permissions { get; set; }
     }
 }

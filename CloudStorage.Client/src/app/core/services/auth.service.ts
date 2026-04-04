@@ -1,5 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { Observable, map, tap, throwError, catchError } from 'rxjs';
+import { Observable, map, tap, throwError, catchError, finalize, shareReplay } from 'rxjs';
 import { ApiService } from './api.service';
 import { Router } from '@angular/router';
 import { BaseService } from '../models/base-service';
@@ -27,8 +27,12 @@ export class AuthService extends BaseService {
   private api = inject(ApiService);
   private router = inject(Router);
 
-  private readonly _currentUser = signal<User | null>(null);
+  protected readonly _currentUser = signal<User | null>(null);
   public readonly currentUser = this._currentUser.asReadonly();
+  
+  private refreshObservable: Observable<AuthResponse> | null = null;
+  private readonly _isRefreshing = signal<boolean>(false);
+  public readonly isRefreshing = this._isRefreshing.asReadonly();
   
   private readonly TOKEN_KEY = 'auth_token';
   private readonly REFRESH_TOKEN_KEY = 'refresh_token';
@@ -45,7 +49,7 @@ export class AuthService extends BaseService {
       if (storedUser && storedUser !== 'undefined') {
         this._currentUser.set(JSON.parse(storedUser));
       }
-    } catch (e) {
+    } catch {
       localStorage.removeItem(this.USER_KEY);
     }
   }
@@ -100,33 +104,58 @@ export class AuthService extends BaseService {
   }
 
   public refreshToken(): Observable<AuthResponse> {
+    // If a refresh is already in progress, return the same observable
+    if (this.refreshObservable) {
+      console.log('[AuthS] Returning existing refresh observable');
+      return this.refreshObservable;
+    }
+
     const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
     if (!refreshToken) {
-      this.logout();
+      console.warn('[AuthS] Refresh Token MISSING from storage');
+      if (this.currentUser()) {
+        this.logout();
+      }
       return throwError(() => new Error('AUTH_REFRESH_TOKEN_MISSING'));
     }
-    return this.api.post<ApiResponse<AuthResponse>>('/auth/refresh', { refreshToken }).pipe(
+
+    console.log('[AuthS] Starting NEW refresh API call...');
+    this._isRefreshing.set(true);
+    
+    this.refreshObservable = this.api.post<ApiResponse<AuthResponse>>('/auth/refresh', { refreshToken }).pipe(
       map(response => {
         if (!response.success || !response.data) throw new Error(response.message || 'AUTH_REFRESH_FAILED');
         return response.data;
       }),
-      tap(data => this.handleAuthResponse(data)),
+      tap(data => {
+        console.log('[AuthS] Refresh Success: Updating session');
+        this.handleAuthResponse(data);
+      }),
       catchError(err => {
+        console.error('[AuthS] Refresh API Error:', err);
         this.logout();
         return throwError(() => err);
-      })
+      }),
+      finalize(() => {
+        console.log('[AuthS] Refresh observable cleared');
+        this.refreshObservable = null;
+        this._isRefreshing.set(false);
+      }),
+      shareReplay(1)
     );
+
+    return this.refreshObservable;
   }
 
   public requestPasswordReset(email: string): Observable<{ message: string }> {
-    return this.api.post<ApiResponse<any>>('/auth/password-reset-request', { email }).pipe(
+    return this.api.post<ApiResponse<void>>('/auth/password-reset-request', { email }).pipe(
       map(response => ({ message: response.message || 'SUCCESS' })),
       catchError(this.handleError<{ message: string }>('RESET_REQUEST'))
     );
   }
 
   public resetPassword(data: { token: string; newPassword: string }): Observable<{ message: string }> {
-    return this.api.post<ApiResponse<any>>('/auth/password-reset', data).pipe(
+    return this.api.post<ApiResponse<void>>('/auth/password-reset', data).pipe(
       map(response => ({ message: response.message || 'SUCCESS' })),
       catchError(this.handleError<{ message: string }>('RESET_CONFIRM'))
     );

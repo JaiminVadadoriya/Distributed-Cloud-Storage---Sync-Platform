@@ -18,11 +18,11 @@ export abstract class BaseService {
    * @param operation The name of the operation that failed.
    * @param result Optional default value to return instead of throwing.
    */
-  protected handleError<T>(operation: string = 'Operation', result?: T) {
+  protected handleError<T>(operation = 'Operation', result?: T) {
     return (error: HttpErrorResponse): Observable<T> => {
       console.error(`${operation} failed:`, error);
       
-      let message = 'An unexpected system error occurred.';
+      let message: string;
       if (error.error instanceof ErrorEvent) {
         message = `Client_Error: ${error.error.message}`;
       } else if (error.error?.message) {

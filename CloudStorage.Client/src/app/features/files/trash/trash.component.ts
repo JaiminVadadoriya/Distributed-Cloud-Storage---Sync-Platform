@@ -6,12 +6,14 @@ import { NotificationService } from '../../../core/services/notification.service
 import { TrashItem } from '../../../core/models/file.model';
 import { SkeletonLoaderComponent } from '../../../shared/components/skeleton-loader/skeleton-loader.component';
 import { ErrorBoundaryComponent } from '../../../shared/components/error-boundary/error-boundary.component';
+import { ConfirmModalComponent } from '../../../shared/components/modal/confirm-modal.component';
 import { takeUntil } from 'rxjs/operators';
+import { lastValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-trash',
   standalone: true,
-  imports: [CommonModule, SkeletonLoaderComponent, ErrorBoundaryComponent],
+  imports: [CommonModule, SkeletonLoaderComponent, ErrorBoundaryComponent, ConfirmModalComponent],
   template: `
     <div class="space-y-12">
       <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-8 border-b border-editorial-text/20">
@@ -22,7 +24,7 @@ import { takeUntil } from 'rxjs/operators';
         @if (trashItems().length > 0) {
           <button (click)="onEmptyTrash()" [disabled]="isBusy()"
             class="px-6 py-3 bg-rose-600 text-white font-mono text-[9px] uppercase tracking-[0.2em] font-bold hover:bg-rose-700 active:scale-[0.98] transition-all disabled:opacity-50">
-            Purge_All_Items
+            {{ isBusy() ? 'Executing_Protocol...' : 'Purge_All_Items' }}
           </button>
         }
       </div>
@@ -37,7 +39,7 @@ import { takeUntil } from 'rxjs/operators';
           <p class="text-[10px] font-mono uppercase tracking-[0.3em] text-editorial-text/40">Bin_Status: EMPTY</p>
         </div>
       } @else {
-        <div class="border border-editorial-text/20 divide-y divide-editorial-text/10">
+        <div class="border border-editorial-text/20 divide-y divide-editorial-text/10" [class.opacity-50]="isBusy()">
           <!-- Table Header -->
           <div class="grid grid-cols-12 gap-4 px-6 py-3 bg-editorial-text/[0.02]">
             <div class="col-span-5 text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/50">File_Name</div>
@@ -51,11 +53,13 @@ import { takeUntil } from 'rxjs/operators';
               <div class="col-span-5 text-[11px] font-mono text-editorial-text truncate">{{ item.name }}</div>
               <div class="col-span-2 text-[9px] font-mono uppercase tracking-wider text-editorial-text/50">{{ item.type }}</div>
               <div class="col-span-2 text-[9px] font-mono text-editorial-text/50">{{ item.deletedAt | date:'short' }}</div>
-              <div class="col-span-3 flex items-center gap-2 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                <button (click)="onRestore(item.id)" class="px-4 py-1.5 border border-editorial-text/20 text-[8px] font-mono uppercase tracking-widest hover:bg-editorial-text hover:text-editorial-bg transition-none">
+              <div class="col-span-3 flex items-center gap-2 justify-end opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                <button (click)="onRestore(item.id)" [disabled]="isBusy()"
+                        class="px-4 py-1.5 border border-editorial-text/20 text-[8px] font-mono uppercase tracking-widest hover:bg-editorial-text hover:text-editorial-bg transition-none disabled:opacity-30">
                   Restore
                 </button>
-                <button (click)="onPermanentDelete(item.id)" class="px-4 py-1.5 border border-rose-500/20 text-rose-500 text-[8px] font-mono uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-none">
+                <button (click)="onPermanentDelete(item.id)" [disabled]="isBusy()"
+                        class="px-4 py-1.5 border border-rose-500/20 text-rose-500 text-[8px] font-mono uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-none disabled:opacity-30">
                   Destroy
                 </button>
               </div>
@@ -63,6 +67,16 @@ import { takeUntil } from 'rxjs/operators';
           }
         </div>
       }
+
+      <!-- Confirmation Modals -->
+      <app-confirm-modal 
+        [isOpen]="confirmState().isOpen" 
+        [title]="confirmState().title" 
+        [message]="confirmState().message"
+        [danger]="confirmState().danger" 
+        (confirmed)="onConfirmExecution()" 
+        (cancelled)="closeConfirmModal()">
+      </app-confirm-modal>
     </div>
   `
 })
@@ -71,6 +85,14 @@ export class TrashComponent extends BaseComponent implements OnInit {
   private notify = inject(NotificationService);
 
   trashItems = signal<TrashItem[]>([]);
+  
+  confirmState = signal({
+    isOpen: false,
+    title: '',
+    message: '',
+    danger: false,
+    action: null as (() => Promise<void>) | null
+  });
 
   ngOnInit(): void {
     this.loadTrash();
@@ -80,26 +102,63 @@ export class TrashComponent extends BaseComponent implements OnInit {
     this.isBusy.set(true);
     this.errorMessage.set(null);
     this.trashService.getTrashItems().pipe(takeUntil(this.destroy$)).subscribe({
-      next: items => { this.trashItems.set(items); this.isBusy.set(false); },
-      error: (err) => { this.errorMessage.set(err.message); this.isBusy.set(false); }
+      next: items => { 
+        this.trashItems.set(items); 
+        this.isBusy.set(false); 
+      },
+      error: (err) => { 
+        this.errorMessage.set(err.message || 'Failed to initialize trash collection.'); 
+        this.isBusy.set(false); 
+      }
     });
   }
 
-  onRestore(id: string): void {
-    this.trashService.restoreFile(id).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.notify.success('File restored'); this.loadTrash(); }
+  async onRestore(id: string): Promise<void> {
+    console.log('Attempting Restore for ID:', id);
+    await this.safeExecute(async () => {
+      await lastValueFrom(this.trashService.restoreFile(id));
+      this.notify.success('RESTORE_SUCCESS: Entity normalized.');
+      this.loadTrash();
     });
   }
 
   onPermanentDelete(id: string): void {
-    this.trashService.permanentDelete(id).pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.notify.success('File permanently deleted'); this.loadTrash(); }
+    this.confirmState.set({
+      isOpen: true,
+      title: 'CRITICAL_PURGE',
+      message: 'Are you sure you want to permanently delete this entity? This operation is irreversible.',
+      danger: true,
+      action: async () => {
+        await lastValueFrom(this.trashService.permanentDelete(id));
+        this.notify.success('PURGE_COMPLETE: Trace effectively eliminated.');
+        this.loadTrash();
+      }
     });
   }
 
   onEmptyTrash(): void {
-    this.trashService.emptyTrash().pipe(takeUntil(this.destroy$)).subscribe({
-      next: () => { this.notify.success('Trash emptied'); this.trashItems.set([]); }
+    this.confirmState.set({
+      isOpen: true,
+      title: 'GLOBAL_PURGE_PROTOCOL',
+      message: 'Empty recycle bin? ALL deleted entities will be permanently erased.',
+      danger: true,
+      action: async () => {
+        await lastValueFrom(this.trashService.emptyTrash());
+        this.notify.success('GLOBAL_PURGE_SUCCESS');
+        this.trashItems.set([]);
+      }
     });
+  }
+
+  async onConfirmExecution() {
+    const state = this.confirmState();
+    if (state.action) {
+      this.closeConfirmModal();
+      await this.safeExecute(state.action);
+    }
+  }
+
+  closeConfirmModal() {
+    this.confirmState.update(s => ({ ...s, isOpen: false }));
   }
 }

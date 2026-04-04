@@ -1,6 +1,30 @@
 :host { display: block; }
 .folder-view { padding: 1.5rem; }
-.breadcrumbs { display: flex; align-items: center; gap: 0.25rem; margin-bottom: 1.5rem; font-size: 0.85rem; }
+.breadcrumbs-container { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid var(--color-border, rgba(255,255,255,0.05)); padding-bottom: 1rem; }
+.breadcrumbs { display: flex; align-items: center; gap: 0.25rem; font-size: 0.85rem; }
+.new-folder-btn { 
+  display: flex; 
+  align-items: center; 
+  gap: 0.5rem; 
+  background: var(--color-surface, #1a1a2e); 
+  border: 1px solid var(--color-border, rgba(255,255,255,0.1)); 
+  color: var(--color-text, #e0e0e0); 
+  padding: 0.5rem 1rem; 
+  font-family: var(--font-mono, monospace); 
+  font-size: 0.7rem; 
+  text-transform: uppercase; 
+  letter-spacing: 0.15em; 
+  cursor: pointer; 
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.new-folder-btn:hover { 
+  background: var(--color-text, #e0e0e0); 
+  color: var(--color-surface, #1a1a2e); 
+  border-color: var(--color-text, #e0e0e0); 
+  transform: translateY(-1px);
+}
+.new-folder-btn:active { transform: translateY(0); }
+.btn-icon { font-size: 1rem; font-weight: 300; }
 .crumb-btn { background: none; border: none; color: var(--color-accent, #6366f1); cursor: pointer; padding: 0; font-size: inherit; }
 .crumb-btn:hover { text-decoration: underline; }
 .crumb-sep { color: var(--color-text-muted, #555); }

@@ -14,13 +14,43 @@
     <!-- Offline Banner -->
     <app-offline-banner></app-offline-banner>
 
+    <!-- Sync Status Floating Panel -->
+    <app-sync-status class="absolute bottom-6 right-6 z-40"></app-sync-status>
+
     <!-- Scrollable Content -->
-    <main class="flex-1 overflow-y-auto p-6 lg:p-8 bg-editorial-bg relative" (click)="layoutService.closeAllOverlays()">
-      <router-outlet></router-outlet>
+    <main class="flex-1 overflow-y-auto p-6 lg:p-8 bg-editorial-bg relative shadow-inner" 
+          (click)="layoutService.closeAllOverlays()"
+          (keydown.escape)="layoutService.closeAllOverlays()"
+          tabindex="0">
+      <div class="max-w-7xl mx-auto">
+        <router-outlet></router-outlet>
+      </div>
     </main>
   </div>
 
   <!-- Global Overlays -->
   <app-notification-toast></app-notification-toast>
   <app-context-menu></app-context-menu>
+  <app-upload-modal></app-upload-modal>
+  
+  <app-confirm-modal
+    *ngIf="layoutService.confirmModal() as config"
+    [isOpen]="config.isOpen"
+    [title]="config.title"
+    [message]="config.message"
+    [danger]="config.danger ?? false"
+    (confirm)="config.action()"
+    (cancel)="layoutService.closeConfirm()">
+  </app-confirm-modal>
+
+  <app-prompt-modal
+    *ngIf="layoutService.promptModal() as config"
+    [isOpen]="config.isOpen"
+    [title]="config.title"
+    [message]="config.message ?? ''"
+    [initialValue]="config.initialValue ?? ''"
+    [placeholder]="config.placeholder ?? 'Enter_Value'"
+    (submit)="config.action($event)"
+    (cancel)="layoutService.closePrompt()">
+  </app-prompt-modal>
 </div>

@@ -1,5 +1,7 @@
 using CloudStorage.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Logging;
 
 namespace CloudStorage.Infrastructure.Data
 {
@@ -20,6 +22,13 @@ namespace CloudStorage.Infrastructure.Data
         public DbSet<ActivityLog> ActivityLogs { get; set; } = null!;
         public DbSet<FolderPermission> FolderPermissions { get; set; } = null!;
         public DbSet<Notification> Notifications { get; set; } = null!;
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            // Set all warnings to Log behavior instead of Throw to prevent them from blocking migrations
+            optionsBuilder.ConfigureWarnings(w => w.Default(WarningBehavior.Log));
+            base.OnConfiguring(optionsBuilder);
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

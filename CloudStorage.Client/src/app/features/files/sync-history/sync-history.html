@@ -1,0 +1,62 @@
+<div class="space-y-12 animate-in fade-in duration-1000 selection:bg-editorial-text selection:text-editorial-bg">
+  <header class="flex flex-col sm:flex-row sm:items-end justify-between gap-8 pb-10 border-b border-editorial-text/20">
+    <div class="space-y-2">
+      <h3 class="font-mono text-[10px] uppercase tracking-[0.5em] text-editorial-text/40 italic">Temporal_Audit</h3>
+      <h1 class="font-sans text-4xl font-bold uppercase tracking-tight text-editorial-text leading-none">Transmission_Log</h1>
+    </div>
+    
+    <div class="flex items-center gap-6">
+      <div class="px-4 py-2 border border-editorial-text/10 bg-editorial-text/[0.02]">
+        <p class="font-mono text-[10px] uppercase tracking-[0.3em] text-editorial-text italic">Log_Deepness: {{ syncLog().length }}</p>
+      </div>
+      @if (syncLog().length > 0) {
+        <button (click)="clearLog()" class="font-mono text-[10px] uppercase tracking-widest text-editorial-text/40 hover:text-editorial-text border-b border-transparent hover:border-editorial-text transition-all pb-1">Flush_Cache</button>
+      }
+    </div>
+  </header>
+
+  @if (syncLog().length === 0) {
+    <div class="py-48 text-center border border-dashed border-editorial-text/10 space-y-8 group">
+      <p class="font-mono text-[10px] uppercase tracking-[0.6em] text-editorial-text/20">No_Temporal_Records_Found_In_Active_Session</p>
+    </div>
+  } @else {
+    <div class="relative">
+      <!-- Vertical timeline line -->
+      <div class="absolute left-0 top-0 bottom-0 w-[1px] bg-editorial-text/10"></div>
+
+      <div class="space-y-16 pl-10 mt-8">
+        @for (entry of syncLog(); track entry.timestamp) {
+          <div class="relative space-y-4 group">
+            <!-- Timeline dot -->
+            <div class="absolute -left-10 top-1 w-2.5 h-2.5 border border-editorial-text bg-editorial-bg group-hover:bg-editorial-text transition-colors"></div>
+
+            <div class="flex items-baseline gap-6 mb-2">
+               <span class="font-mono text-[10px] font-bold uppercase tracking-widest text-editorial-text/40 italic">{{ entry.timestamp | date:'HH:mm:ss.SSS' }}</span>
+               <span class="font-mono text-[8px] px-2 py-0.5 border border-editorial-text/10 uppercase tracking-[0.3em]"
+                     [class.text-emerald-500]="entry.level === 'success'"
+                     [class.text-rose-500]="entry.level === 'error'"
+                     [class.text-amber-500]="entry.level === 'warn'"
+                     [class.text-editorial-text]="entry.level === 'info'">
+                 {{ entry.level }}
+               </span>
+            </div>
+
+            <p class="font-sans text-lg font-bold uppercase tracking-tight text-editorial-text max-w-3xl leading-relaxed">
+              {{ entry.message }}
+            </p>
+
+            <div class="overflow-hidden h-[1px] w-0 group-hover:w-full bg-editorial-text/10 transition-all duration-700"></div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <footer class="pt-24 pb-8 opacity-20 hover:opacity-60 transition-opacity duration-1000 flex justify-between items-center">
+    <span class="font-mono text-[8px] uppercase tracking-[0.5em]">Realtime_Entropy_Tracking: Active</span>
+    <div class="flex gap-8">
+       <span class="font-mono text-[8px] uppercase tracking-[0.5em]">System_State: {{ syncLog().length > 0 ? 'Diverging' : 'Stable' }}</span>
+       <span class="font-mono text-[8px] uppercase tracking-[0.5em]">Buffer: 100_Entries_Max</span>
+    </div>
+  </footer>
+</div>

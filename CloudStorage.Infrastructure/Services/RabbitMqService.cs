@@ -23,9 +23,27 @@ namespace CloudStorage.Infrastructure.Services
                 DispatchConsumersAsync = true
             };
 
-            // Warning: In production, consider retry policies and handling connection drops
-            _connection = factory.CreateConnection();
-            _channel = _connection.CreateModel();
+            var retries = 5;
+            var delay = TimeSpan.FromSeconds(5);
+
+            for (int i = 0; i < retries; i++)
+            {
+                try
+                {
+                    _connection = factory.CreateConnection();
+                    _channel = _connection.CreateModel();
+                    return;
+                }
+                catch (Exception)
+                {
+                    if (i == retries - 1) throw;
+                    System.Threading.Thread.Sleep(delay);
+                }
+            }
+
+            // Fallback for compiler flow analysis
+            _connection = null!;
+            _channel = null!;
         }
 
         public Task PublishAsync<T>(string queueName, T message)

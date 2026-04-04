@@ -25,14 +25,14 @@ import { NotificationService } from '../../../core/services/notification.service
 
             <div class="space-y-6">
               <div class="space-y-2">
-                <label class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/50">Email</label>
-                <input type="email" [(ngModel)]="email"
+                <label for="reauth-email" class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/50">Email</label>
+                <input type="email" id="reauth-email" [(ngModel)]="email"
                   class="w-full px-0 py-3 bg-transparent border-b border-editorial-text/20 focus:border-editorial-text outline-none font-mono text-[11px] text-editorial-text placeholder:text-editorial-text/30"
                   placeholder="Enter_Email">
               </div>
               <div class="space-y-2">
-                <label class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/50">Password</label>
-                <input type="password" [(ngModel)]="password"
+                <label for="reauth-password" class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/50">Password</label>
+                <input type="password" id="reauth-password" [(ngModel)]="password"
                   class="w-full px-0 py-3 bg-transparent border-b border-editorial-text/20 focus:border-editorial-text outline-none font-mono text-[11px] text-editorial-text placeholder:text-editorial-text/30"
                   placeholder="Enter_Password">
               </div>

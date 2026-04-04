@@ -1,33 +1,36 @@
-import { Directive, output, HostListener, HostBinding, signal } from '@angular/core';
+import { Directive, output, signal } from '@angular/core';
 
 @Directive({
   selector: '[appDragDrop]',
-  standalone: true
+  standalone: true,
+  host: {
+    '[class.drag-over]': 'isDragging()',
+    '(dragover)': 'onDragOver($event)',
+    '(dragleave)': 'onDragLeave($event)',
+    '(drop)': 'onDrop($event)'
+  }
 })
 export class DragDropDirective {
   filesDropped = output<FileList>();
-  
-  private _isDragging = signal(false);
-  
-  @HostBinding('class.drag-over') get dragOver() { return this._isDragging(); }
+  isDragging = signal(false);
 
-  @HostListener('dragover', ['$event']) onDragOver(event: DragEvent): void {
+  onDragOver(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    this._isDragging.set(true);
+    this.isDragging.set(true);
   }
 
-  @HostListener('dragleave', ['$event']) onDragLeave(event: DragEvent): void {
+  onDragLeave(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    this._isDragging.set(false);
+    this.isDragging.set(false);
   }
 
-  @HostListener('drop', ['$event']) onDrop(event: DragEvent): void {
+  onDrop(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    this._isDragging.set(false);
-    if (event.dataTransfer?.files.length) {
+    this.isDragging.set(false);
+    if (event?.dataTransfer?.files?.length) {
       this.filesDropped.emit(event.dataTransfer.files);
     }
   }

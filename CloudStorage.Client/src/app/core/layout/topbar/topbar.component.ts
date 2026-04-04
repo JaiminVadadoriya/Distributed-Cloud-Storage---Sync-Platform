@@ -15,7 +15,19 @@ import { BaseComponent } from '../../models/base-component';
   standalone: true,
   imports: [CommonModule, RouterModule],
   templateUrl: './topbar.html',
-  styleUrl: './topbar.css'
+  styleUrl: './topbar.css',
+  styles: [`
+    @keyframes dropdown-in {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes dropdown-out {
+      from { opacity: 1; transform: translateY(0); }
+      to { opacity: 0; transform: translateY(-5px); }
+    }
+    .animate-dropdown-enter { animation: dropdown-in 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .animate-dropdown-leave { animation: dropdown-out 250ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+  `]
 })
 export class TopbarComponent extends BaseComponent {
   public authService = inject(AuthService);

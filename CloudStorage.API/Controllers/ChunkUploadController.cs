@@ -1,24 +1,22 @@
 using System;
-using System.IO;
-using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using CloudStorage.Application.DTOs;
 using CloudStorage.Application.Interfaces;
 using CloudStorage.Domain.Entities;
 using CloudStorage.Domain.Interfaces;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace CloudStorage.API.Controllers
 {
-    [ApiController]
+    /// <summary>
+    /// Manages chunked file uploads — session initiation, chunk upload,
+    /// SAS URL generation, chunk verification, and upload completion.
+    /// Inherits from BaseApiController for shared infrastructure.
+    /// </summary>
     [Route("api/files")]
-    [Authorize]
     [EnableRateLimiting("upload")]
-    public class ChunkUploadController : ControllerBase
+    public class ChunkUploadController : BaseApiController
     {
         private readonly IFileMetadataRepository _fileRepository;
         private readonly IRepository<FileChunk> _chunkRepository;
@@ -49,387 +47,233 @@ namespace CloudStorage.API.Controllers
             _messageQueue = messageQueue;
         }
 
-        private int GetUserId()
+        public class UploadChunkRequestDto
         {
-            var userIdClaim = User.FindFirst("id")?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-                throw new UnauthorizedAccessException("User ID not found in token");
-
-            return int.Parse(userIdClaim);
+            public required IFormFile Chunk { get; set; }
+            public required string SessionId { get; set; }
+            public int ChunkIndex { get; set; }
+            public required string Hash { get; set; }
         }
 
         [HttpPost("initiate")]
-        public async Task<IActionResult> InitiateUpload([FromBody] InitiateUploadDto dto)
+        public Task<IActionResult> InitiateUpload([FromBody] InitiateUploadDto dto) => ExecuteAsync(async () =>
         {
-            try
+            var userId = GetUserId();
+            var sessionId = Guid.NewGuid().ToString();
+
+            Console.WriteLine($"[TX_INIT] User: {userId} | Session: {sessionId} | File: {dto.FileName}");
+
+            var fileMetadata = new FileMetadata
             {
-                var userId = GetUserId();
-                var sessionId = Guid.NewGuid().ToString();
+                Id = Guid.NewGuid(),
+                FileName = dto.FileName,
+                ContentType = dto.ContentType,
+                Size = dto.FileSize,
+                ChunkCount = dto.TotalChunks,
+                OwnerId = userId,
+                UploadSessionId = sessionId,
+                Status = UploadStatus.InProgress,
+                UploadedChunks = 0,
+                CreatedAt = DateTime.UtcNow,
+                LastModifiedAt = DateTime.UtcNow
+            };
 
-                var fileMetadata = new FileMetadata
-                {
-                    Id = Guid.NewGuid(),
-                    FileName = dto.FileName,
-                    ContentType = dto.ContentType,
-                    Size = dto.FileSize,
-                    ChunkCount = dto.TotalChunks,
-                    OwnerId = userId,
-                    UploadSessionId = sessionId,
-                    Status = UploadStatus.InProgress,
-                    UploadedChunks = 0,
-                    CreatedAt = DateTime.UtcNow,
-                    LastModifiedAt = DateTime.UtcNow
-                };
+            await _fileRepository.AddAsync(fileMetadata);
 
-                await _fileRepository.AddAsync(fileMetadata);
-
-                var response = new UploadSessionResponseDto
-                {
-                    FileId = fileMetadata.Id,
-                    SessionId = sessionId,
-                    UploadUrl = $"/api/files/chunks"
-                };
-
-                return Ok(new ApiResponse<UploadSessionResponseDto>
-                {
-                    Success = true,
-                    Message = "Upload session initiated",
-                    Data = response
-                });
-            }
-            catch (Exception ex)
+            var response = new UploadSessionResponseDto
             {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+                FileId = fileMetadata.Id,
+                SessionId = sessionId,
+                UploadUrl = $"/api/files/chunks"
+            };
 
-        public class UploadChunkRequestDto
-        {
-            public IFormFile Chunk { get; set; }
-            public string SessionId { get; set; }
-            public int ChunkIndex { get; set; }
-            public string Hash { get; set; }
-        }
+            return Ok(ApiResponse<UploadSessionResponseDto>.Ok(response, "Upload session initiated"));
+        });
 
         [HttpPost("chunks")]
         [RequestSizeLimit(115_343_360)] // 110 MB limit (chunk size + overhead)
-        public async Task<IActionResult> UploadChunk([FromForm] UploadChunkRequestDto request)
+        public Task<IActionResult> UploadChunk([FromForm] UploadChunkRequestDto request) => ExecuteAsync(async () =>
         {
-            try
+            if (request.Chunk == null || request.Chunk.Length == 0)
+                return BadRequest(ApiResponse.Fail("Chunk data is required"));
+
+            var userId = GetUserId();
+
+            var fileMetadata = await _fileRepository.GetBySessionIdAsync(request.SessionId);
+            if (fileMetadata == null)
+                return NotFound(ApiResponse.Fail("Upload session not found"));
+
+            if (fileMetadata.OwnerId != userId)
+                return StatusCode(403, ApiResponse.Fail("Unauthorized access to upload session"));
+
+            var isDuplicate = await _deduplication.IsChunkDuplicateAsync(request.Hash);
+            string storagePath;
+
+            if (isDuplicate)
             {
-                if (request.Chunk == null || request.Chunk.Length == 0)
-                    return BadRequest(new ApiResponse
-                    {
-                        Success = false,
-                        Message = "Chunk data is required"
-                    });
-
-                var userId = GetUserId();
-
-                // Find file by session ID
-                var fileMetadata = await _fileRepository.GetBySessionIdAsync(request.SessionId);
-                if (fileMetadata == null)
-                    return NotFound(new ApiResponse
-                    {
-                        Success = false,
-                        Message = "Upload session not found"
-                    });
-
-                if (fileMetadata.OwnerId != userId)
-                    return Forbid("Unauthorized access to upload session");
-
-                // Check for deduplication (avoid re-hashing/re-transmitting from network)
-                var isDuplicate = await _deduplication.IsChunkDuplicateAsync(request.Hash);
-                string storagePath;
-
-                if (isDuplicate)
-                {
-                    // Even for duplicates, save the chunk under THIS file's own directory.
-                    // Reusing another file's StoragePath would cause cascading failures if
-                    // that original file is ever deleted. The dedup benefit is that the
-                    // client skips re-uploading identical bytes (server confirms via hash).
-                    using var stream = request.Chunk.OpenReadStream();
-                    storagePath = await _chunkStorage.SaveChunkAsync(fileMetadata.Id, request.ChunkIndex, stream);
-                }
-                else
-                {
-                    // Save new chunk and register in dedup registry
-                    using var stream = request.Chunk.OpenReadStream();
-                    storagePath = await _chunkStorage.SaveChunkAsync(fileMetadata.Id, request.ChunkIndex, stream);
-                    await _deduplication.RegisterChunkAsync(request.Hash, storagePath, request.Chunk.Length);
-                }
-
-                // Create chunk record
-                var fileChunk = new FileChunk
-                {
-                    Id = Guid.NewGuid(),
-                    FileMetadataId = fileMetadata.Id,
-                    ChunkIndex = request.ChunkIndex,
-                    Size = request.Chunk.Length,
-                    Hash = request.Hash,
-                    StoragePath = storagePath,
-                    IsDuplicate = isDuplicate,
-                    CreatedAt = DateTime.UtcNow,
-                    UploadedAt = DateTime.UtcNow
-                };
-
-                // Insert chunk into the repository explicitly
-                // NOT updating fileMetadata here to avoid Optimistic Concurrency exceptions.
-                await _chunkRepository.AddAsync(fileChunk);
-
-                var response = new ChunkUploadResponseDto
-                {
-                    ChunkId = fileChunk.Id,
-                    Status = "uploaded",
-                    IsDuplicate = isDuplicate,
-                    Message = isDuplicate ? "Chunk deduplicated" : "Chunk uploaded successfully"
-                };
-
-                return Ok(new ApiResponse<ChunkUploadResponseDto>
-                {
-                    Success = true,
-                    Message = response.Message,
-                    Data = response
-                });
+                using var stream = request.Chunk.OpenReadStream();
+                storagePath = await _chunkStorage.SaveChunkAsync(fileMetadata.Id, request.ChunkIndex, stream);
             }
-            catch (Exception ex)
+            else
             {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
+                using var stream = request.Chunk.OpenReadStream();
+                storagePath = await _chunkStorage.SaveChunkAsync(fileMetadata.Id, request.ChunkIndex, stream);
+                await _deduplication.RegisterChunkAsync(request.Hash, storagePath, request.Chunk.Length);
             }
-        }
+
+            var fileChunk = new FileChunk
+            {
+                Id = Guid.NewGuid(),
+                FileMetadataId = fileMetadata.Id,
+                ChunkIndex = request.ChunkIndex,
+                Size = request.Chunk.Length,
+                Hash = request.Hash,
+                StoragePath = storagePath,
+                IsDuplicate = isDuplicate,
+                CreatedAt = DateTime.UtcNow,
+                UploadedAt = DateTime.UtcNow
+            };
+
+            await _chunkRepository.AddAsync(fileChunk);
+
+            var response = new ChunkUploadResponseDto
+            {
+                ChunkId = fileChunk.Id,
+                Status = "uploaded",
+                IsDuplicate = isDuplicate,
+                Message = isDuplicate ? "Chunk deduplicated" : "Chunk uploaded successfully"
+            };
+
+            return Ok(ApiResponse<ChunkUploadResponseDto>.Ok(response, response.Message));
+        });
 
         [HttpPost("complete")]
-        public async Task<IActionResult> CompleteUpload([FromBody] CompleteUploadDto dto)
+        public Task<IActionResult> CompleteUpload([FromBody] CompleteUploadDto dto) => ExecuteAsync(async () =>
         {
-            try
+            var userId = GetUserId();
+
+            var fileMetadata = await _fileRepository.GetBySessionIdAsync(dto.SessionId);
+            if (fileMetadata == null)
+                return NotFound(ApiResponse.Fail("Upload session not found"));
+
+            if (fileMetadata.OwnerId != userId)
+                return StatusCode(403, ApiResponse.Fail("Unauthorized access to upload session"));
+
+            var dedupTask = new
             {
-                var userId = GetUserId();
+                TaskType = "VerifyAndComplete",
+                FileId = fileMetadata.Id,
+                ChunkCount = fileMetadata.ChunkCount,
+                SessionId = dto.SessionId,
+                OwnerId = fileMetadata.OwnerId,
+                FileName = fileMetadata.FileName,
+                Size = fileMetadata.Size
+            };
 
-                var fileMetadata = await _fileRepository.GetBySessionIdAsync(dto.SessionId);
-                if (fileMetadata == null)
-                    return NotFound(new ApiResponse
-                    {
-                        Success = false,
-                        Message = "Upload session not found"
-                    });
+            await _messageQueue.PublishAsync("deduplication-tasks", dedupTask);
 
-                if (fileMetadata.OwnerId != userId)
-                    return Forbid("Unauthorized access to upload session");
+            fileMetadata.Status = UploadStatus.Complete;
+            fileMetadata.LastModifiedAt = DateTime.UtcNow;
+            await _fileRepository.UpdateAsync(fileMetadata);
 
-                // Offload verification to RabbitMQ instead of doing it synchronously
-                var dedupTask = new
-                {
-                    TaskType = "VerifyAndComplete",
-                    FileId = fileMetadata.Id,
-                    ChunkCount = fileMetadata.ChunkCount,
-                    SessionId = dto.SessionId,
-                    OwnerId = fileMetadata.OwnerId,
-                    FileName = fileMetadata.FileName,
-                    Size = fileMetadata.Size
-                };
-                
-                await _messageQueue.PublishAsync("deduplication-tasks", dedupTask);
-
-                // Update status to processing (or complete if we trust the background worker)
-                fileMetadata.Status = UploadStatus.Complete; // Assuming frontend expects Complete to proceed, or Processing.
-                fileMetadata.LastModifiedAt = DateTime.UtcNow;
-                await _fileRepository.UpdateAsync(fileMetadata);
-
-                return Ok(new ApiResponse<object>
-                {
-                    Success = true,
-                    Message = "Upload completed",
-                    Data = new
-                    {
-                        fileId = fileMetadata.Id,
-                        status = "complete",
-                        metadata = new
-                        {
-                            fileMetadata.FileName,
-                            fileMetadata.Size,
-                            fileMetadata.ChunkCount,
-                            fileMetadata.ContentType
-                        }
-                    }
-                });
-            }
-            catch (Exception ex)
+            return Ok(ApiResponse<object>.Ok(new
             {
-                return BadRequest(new ApiResponse
+                fileId = fileMetadata.Id,
+                status = "complete",
+                metadata = new
                 {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+                    fileMetadata.FileName,
+                    fileMetadata.Size,
+                    fileMetadata.ChunkCount,
+                    fileMetadata.ContentType
+                }
+            }, "Upload completed"));
+        });
 
         [HttpGet("session/{sessionId}/status")]
-        public async Task<IActionResult> GetUploadStatus(string sessionId)
+        public Task<IActionResult> GetUploadStatus(string sessionId) => ExecuteAsync(async () =>
         {
-            try
+            var userId = GetUserId();
+
+            var fileMetadata = await _fileRepository.GetBySessionIdAsync(sessionId);
+            if (fileMetadata == null)
+                return NotFound(ApiResponse.Fail("Upload session not found"));
+
+            if (fileMetadata.OwnerId != userId)
+                return StatusCode(403, ApiResponse.Fail("Unauthorized access to upload session"));
+
+            var uploadedChunks = fileMetadata.Chunks
+                .OrderBy(c => c.ChunkIndex)
+                .Select(c => c.ChunkIndex)
+                .ToArray();
+
+            var response = new UploadStatusResponseDto
             {
-                var userId = GetUserId();
+                SessionId = sessionId,
+                UploadedChunks = uploadedChunks,
+                TotalChunks = fileMetadata.ChunkCount,
+                Status = fileMetadata.Status.ToString()
+            };
 
-                var fileMetadata = await _fileRepository.GetBySessionIdAsync(sessionId);
-                if (fileMetadata == null)
-                    return NotFound(new ApiResponse
-                    {
-                        Success = false,
-                        Message = "Upload session not found"
-                    });
-
-                if (fileMetadata.OwnerId != userId)
-                    return Forbid("Unauthorized access to upload session");
-
-                // Get uploaded chunk indices
-                var uploadedChunks = fileMetadata.Chunks
-                    .OrderBy(c => c.ChunkIndex)
-                    .Select(c => c.ChunkIndex)
-                    .ToArray();
-
-                var response = new UploadStatusResponseDto
-                {
-                    SessionId = sessionId,
-                    UploadedChunks = uploadedChunks,
-                    TotalChunks = fileMetadata.ChunkCount,
-                    Status = fileMetadata.Status.ToString()
-                };
-
-                return Ok(new ApiResponse<UploadStatusResponseDto>
-                {
-                    Success = true,
-                    Message = "Status retrieved",
-                    Data = response
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+            return Ok(ApiResponse<UploadStatusResponseDto>.Ok(response, "Status retrieved"));
+        });
 
         [HttpPost("sas-url")]
-        public async Task<IActionResult> GenerateSasUrl([FromBody] SasUploadUrlRequestDto dto)
+        public Task<IActionResult> GenerateSasUrl([FromBody] SasUploadUrlRequestDto dto) => ExecuteAsync(async () =>
         {
-            try
+            var userId = GetUserId();
+            var fileMetadata = await _fileRepository.GetBySessionIdAsync(dto.SessionId);
+
+            if (fileMetadata == null)
+                return NotFound(ApiResponse.Fail("Upload session not found"));
+
+            if (fileMetadata.OwnerId != userId)
+                return StatusCode(403, ApiResponse.Fail("Unauthorized access to upload session"));
+
+            var isDuplicate = await _deduplication.IsChunkDuplicateAsync(dto.Hash);
+            if (isDuplicate)
             {
-                var userId = GetUserId();
-                var fileMetadata = await _fileRepository.GetBySessionIdAsync(dto.SessionId);
-                
-                if (fileMetadata == null)
-                    return NotFound(new ApiResponse
-                    {
-                        Success = false,
-                        Message = "Upload session not found"
-                    });
-
-                if (fileMetadata.OwnerId != userId)
-                    return Forbid("Unauthorized access to upload session");
-
-                var isDuplicate = await _deduplication.IsChunkDuplicateAsync(dto.Hash);
-                if (isDuplicate)
-                {
-                    // For duplicates, client doesn't need to upload to Azure
-                    return Ok(new ApiResponse<object>
-                    {
-                        Success = true,
-                        Message = "Chunk deduplicated",
-                        Data = new { isDuplicate = true }
-                    });
-                }
-
-                var sasResponse = await _sasService.GenerateChunkUploadSasAsync(fileMetadata.Id, dto.ChunkIndex);
-                
-                return Ok(new ApiResponse<SasUploadUrlResponseDto>
-                {
-                    Success = true,
-                    Message = "SAS URL generated",
-                    Data = sasResponse
-                });
+                return Ok(ApiResponse<object>.Ok(new { isDuplicate = true }, "Chunk deduplicated"));
             }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+
+            var sasResponse = await _sasService.GenerateChunkUploadSasAsync(fileMetadata.Id, dto.ChunkIndex);
+            return Ok(ApiResponse<SasUploadUrlResponseDto>.Ok(sasResponse, "SAS URL generated"));
+        });
 
         [HttpPost("verify-chunk")]
-        public async Task<IActionResult> VerifyChunk([FromBody] VerifyChunkUploadDto dto)
+        public Task<IActionResult> VerifyChunk([FromBody] VerifyChunkUploadDto dto) => ExecuteAsync(async () =>
         {
-            try
+            var userId = GetUserId();
+            var fileMetadata = await _fileRepository.GetBySessionIdAsync(dto.SessionId);
+
+            if (fileMetadata == null)
+                return NotFound(ApiResponse.Fail("Upload session not found"));
+
+            if (fileMetadata.OwnerId != userId)
+                return StatusCode(403, ApiResponse.Fail("Unauthorized access to upload session"));
+
+            var exists = await _sasService.ChunkBlobExistsAsync(dto.BlobName);
+            if (!exists)
+                return BadRequest(ApiResponse.Fail("Chunk blob not found in storage"));
+
+            var fileChunk = new FileChunk
             {
-                var userId = GetUserId();
-                var fileMetadata = await _fileRepository.GetBySessionIdAsync(dto.SessionId);
-                
-                if (fileMetadata == null)
-                    return NotFound(new ApiResponse
-                    {
-                        Success = false,
-                        Message = "Upload session not found"
-                    });
+                Id = Guid.NewGuid(),
+                FileMetadataId = fileMetadata.Id,
+                ChunkIndex = dto.ChunkIndex,
+                Size = dto.Size,
+                Hash = dto.Hash,
+                StoragePath = $"azure://{dto.BlobName}",
+                BlobUrl = dto.BlobName,
+                IsDuplicate = false,
+                CreatedAt = DateTime.UtcNow,
+                UploadedAt = DateTime.UtcNow
+            };
 
-                if (fileMetadata.OwnerId != userId)
-                    return Forbid("Unauthorized access to upload session");
+            await _chunkRepository.AddAsync(fileChunk);
+            await _deduplication.RegisterChunkAsync(dto.Hash, fileChunk.StoragePath, dto.Size);
 
-                // Verify the blob actually exists in Azure
-                var exists = await _sasService.ChunkBlobExistsAsync(dto.BlobName);
-                if (!exists)
-                {
-                    return BadRequest(new ApiResponse
-                    {
-                        Success = false,
-                        Message = "Chunk blob not found in storage"
-                    });
-                }
-
-                // Create chunk record
-                var fileChunk = new FileChunk
-                {
-                    Id = Guid.NewGuid(),
-                    FileMetadataId = fileMetadata.Id,
-                    ChunkIndex = dto.ChunkIndex,
-                    Size = dto.Size,
-                    Hash = dto.Hash,
-                    StoragePath = $"azure://{dto.BlobName}", 
-                    BlobUrl = dto.BlobName,
-                    IsDuplicate = false,
-                    CreatedAt = DateTime.UtcNow,
-                    UploadedAt = DateTime.UtcNow
-                };
-
-                await _chunkRepository.AddAsync(fileChunk);
-                await _deduplication.RegisterChunkAsync(dto.Hash, fileChunk.StoragePath, dto.Size);
-
-                return Ok(new ApiResponse
-                {
-                    Success = true,
-                    Message = "Chunk verified and registered successfully"
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+            return Ok(ApiResponse.Ok("Chunk verified and registered successfully"));
+        });
     }
 }

@@ -88,7 +88,7 @@ export class RegisterComponent {
         next: () => {
           this.router.navigate(['/dashboard']);
         },
-        error: (err) => {
+        error: (err: unknown) => {
           this.isLoading = false;
           this.error = this.extractErrorMessage(err) || 'Registration failed. Please try again.';
         }
@@ -96,30 +96,31 @@ export class RegisterComponent {
     }
   }
 
-  private extractErrorMessage(err: any): string | null {
-    if (!err || !err.error) return null;
+  private extractErrorMessage(err: unknown): string | null {
+    const errorObj = err as { error?: { message?: string, errors?: Record<string, string[]>, title?: string } };
+    if (!errorObj.error) return null;
     
     // Check for our custom { message: '...' } format
-    if (typeof err.error === 'object' && err.error.message) {
-      return err.error.message;
+    if (typeof errorObj.error === 'object' && errorObj.error.message) {
+      return errorObj.error.message;
     }
     
     // Check for ASP.NET Core ValidationProblemDetails
-    if (typeof err.error === 'object' && err.error.errors) {
-      const firstKey = Object.keys(err.error.errors)[0];
-      if (firstKey && err.error.errors[firstKey].length > 0) {
-        return err.error.errors[firstKey][0];
+    if (typeof errorObj.error === 'object' && errorObj.error.errors) {
+      const firstKey = Object.keys(errorObj.error.errors)[0];
+      if (firstKey && errorObj.error.errors[firstKey].length > 0) {
+        return errorObj.error.errors[firstKey][0];
       }
     }
     
     // Check for standard ASP.NET Core ProblemDetails title
-    if (typeof err.error === 'object' && err.error.title) {
-      return err.error.title;
+    if (typeof errorObj.error === 'object' && errorObj.error.title) {
+      return errorObj.error.title;
     }
     
     // If the error string itself was returned
-    if (typeof err.error === 'string') {
-      return err.error;
+    if (typeof errorObj.error === 'string') {
+      return errorObj.error;
     }
     
     return null;

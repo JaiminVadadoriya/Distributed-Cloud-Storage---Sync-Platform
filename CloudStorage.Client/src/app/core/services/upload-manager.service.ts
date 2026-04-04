@@ -82,6 +82,7 @@ export class UploadManagerService extends BaseService {
       );
 
       if (!session) throw new Error('HANDSHAKE_REJECTED');
+      console.log(`[TX_MGR] Session started: ${session.sessionId} for ${task.file.name}`);
 
       const updatedTask = { ...task, sessionId: session.sessionId };
       this.updateTask(updatedTask);
@@ -90,11 +91,13 @@ export class UploadManagerService extends BaseService {
       await this.transmitSegments(updatedTask);
 
       // Atomic commit
+      console.log(`[TX_MGR] Finalizing session: ${session.sessionId}`);
       await lastValueFrom(this.uploader.completeUpload(session.sessionId));
       this.updateTask({ ...updatedTask, status: 'complete', uploadedChunks: task.totalChunks });
 
-    } catch (err: any) {
-      this.updateTask({ ...task, status: 'error', error: err.message || 'TRANSMISSION_FAULT' });
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error('TRANSMISSION_FAULT');
+      this.updateTask({ ...task, status: 'error', error: error.message });
     } finally {
       this._activeCount.update(c => c - 1);
       this.processNext();
@@ -108,7 +111,7 @@ export class UploadManagerService extends BaseService {
     let lastLoaded = 0;
     const chunkSize = this.chunker.getChunkSize(task.file.size);
 
-    const activeRequests: Promise<any>[] = [];
+    const activeRequests: Promise<void>[] = [];
     const pendingChunks = [...task.chunks];
 
     while (pendingChunks.length > 0 || activeRequests.length > 0) {

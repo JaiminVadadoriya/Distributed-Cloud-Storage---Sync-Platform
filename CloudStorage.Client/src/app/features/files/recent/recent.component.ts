@@ -6,6 +6,7 @@ import { FileService } from '../../../core/services/file.service';
 import { FileItem } from '../../../core/models/file.model';
 import { SkeletonLoaderComponent } from '../../../shared/components/skeleton-loader/skeleton-loader.component';
 import { takeUntil } from 'rxjs/operators';
+import { formatBytes } from '../../../core/utils/format.utils';
 
 
 @Component({
@@ -66,11 +67,5 @@ export class RecentComponent extends BaseComponent implements OnInit {
     });
   }
 
-  formatSize(bytes: number): string {
-    if (!bytes) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-  }
+  formatSize = formatBytes;
 }

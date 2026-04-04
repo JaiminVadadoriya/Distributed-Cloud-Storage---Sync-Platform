@@ -34,15 +34,7 @@ namespace CloudStorage.Infrastructure.Services
             
             return files
                 .Where(f => f.Status == UploadStatus.Complete)
-                .Select(f => new FileListDto
-                {
-                    Id = f.Id,
-                    FileName = f.FileName,
-                    Size = f.Size,
-                    CreatedAt = f.CreatedAt,
-                    IsShared = false,
-                    FolderId = f.FolderId
-                });
+                .Select(f => f.ToListDto());
         }
 
         public async Task<IEnumerable<FileListDto>> GetSharedFilesAsync(int userId)
@@ -51,30 +43,14 @@ namespace CloudStorage.Infrastructure.Services
 
             return sharedFiles
                 .Where(f => f.Status == UploadStatus.Complete)
-                .Select(f => new FileListDto
-                {
-                    Id = f.Id,
-                    FileName = f.FileName,
-                    Size = f.Size,
-                    CreatedAt = f.CreatedAt,
-                    IsShared = true,
-                    FolderId = f.FolderId
-                });
+                .Select(f => f.ToListDto(isShared: true));
         }
 
         public async Task<IEnumerable<FileListDto>> SearchFilesAsync(int userId, string query)
         {
             var files = await _fileRepository.SearchAsync(userId, query);
 
-            return files.Select(f => new FileListDto
-            {
-                Id = f.Id,
-                FileName = f.FileName,
-                Size = f.Size,
-                CreatedAt = f.CreatedAt,
-                IsShared = false,
-                FolderId = f.FolderId
-            });
+            return files.Select(f => f.ToListDto());
         }
 
         public async Task<FileResponseDto?> GetFileByIdAsync(Guid fileId, int requestingUserId)
@@ -94,21 +70,7 @@ namespace CloudStorage.Infrastructure.Services
                 return null;
 
             var owner = await _userRepository.GetByIdAsync(file.OwnerId);
-
-            var response = new FileResponseDto
-            {
-                Id = file.Id,
-                FileName = file.FileName,
-                ContentType = file.ContentType,
-                Size = file.Size,
-                Version = file.Version,
-                ChunkCount = file.ChunkCount,
-                CreatedAt = file.CreatedAt,
-                LastModifiedAt = file.LastModifiedAt,
-                OwnerId = file.OwnerId,
-                OwnerUsername = owner?.Username ?? "Unknown",
-                FolderId = file.FolderId
-            };
+            var response = file.ToResponseDto(owner?.Username ?? "Unknown");
 
             await _cache.SetAsync(cacheKey, response, TimeSpan.FromMinutes(10));
             return response;
@@ -165,21 +127,7 @@ namespace CloudStorage.Infrastructure.Services
             await _activityService.LogActivityAsync(ownerId, "UPLOAD", "FILE", fileMetadata.Id.ToString(), $"File '{fileMetadata.FileName}' uploaded successfully.");
 
             var owner = await _userRepository.GetByIdAsync(ownerId);
-
-            return new FileResponseDto
-            {
-                Id = fileMetadata.Id,
-                FileName = fileMetadata.FileName,
-                ContentType = fileMetadata.ContentType,
-                Size = fileMetadata.Size,
-                Version = fileMetadata.Version,
-                ChunkCount = fileMetadata.ChunkCount,
-                CreatedAt = fileMetadata.CreatedAt,
-                LastModifiedAt = fileMetadata.LastModifiedAt,
-                OwnerId = fileMetadata.OwnerId,
-                OwnerUsername = owner?.Username ?? "Unknown",
-                FolderId = fileMetadata.FolderId
-            };
+            return fileMetadata.ToResponseDto(owner?.Username ?? "Unknown");
         }
 
         public async Task DeleteFileAsync(Guid fileId, int userId)
@@ -362,20 +310,7 @@ namespace CloudStorage.Infrastructure.Services
             await _cache.RemoveByPrefixAsync($"file:{fileId}:");
 
             var owner = await _userRepository.GetByIdAsync(currentFile.OwnerId);
-            return new FileResponseDto
-            {
-                Id = currentFile.Id,
-                FileName = currentFile.FileName,
-                ContentType = currentFile.ContentType,
-                Size = currentFile.Size,
-                Version = currentFile.Version,
-                ChunkCount = currentFile.ChunkCount,
-                CreatedAt = currentFile.CreatedAt,
-                LastModifiedAt = currentFile.LastModifiedAt,
-                OwnerId = currentFile.OwnerId,
-                OwnerUsername = owner?.Username ?? "Unknown",
-                FolderId = currentFile.FolderId
-            };
+            return currentFile.ToResponseDto(owner?.Username ?? "Unknown");
         }
 
         // ─── File Operations ──────────────────────────────────────────────

@@ -1,7 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NotificationService } from '../../../core/services/notification.service';
-import { animate, style, transition, trigger } from '@angular/animations';
 import { BaseComponent } from '../../../core/models/base-component';
 
 /**
@@ -15,7 +14,8 @@ import { BaseComponent } from '../../../core/models/base-component';
   template: `
     <div class="fixed top-8 right-8 z-[100] flex flex-col gap-4 pointer-events-none">
       @for (toast of notificationService.toasts(); track toast.id) {
-        <div [@toastAnimation]
+        <div animate.enter="animate-enter-slide"
+             animate.leave="animate-leave-fade"
              class="pointer-events-auto w-[400px] border-2 border-editorial-text p-6 bg-editorial-bg relative overflow-hidden group selection:bg-editorial-text selection:text-editorial-bg">
           
           <div class="grain-overlay pointer-events-none opacity-[0.02]"></div>
@@ -55,17 +55,7 @@ import { BaseComponent } from '../../../core/models/base-component';
       }
     </div>
   `,
-  animations: [
-    trigger('toastAnimation', [
-      transition(':enter', [
-        style({ transform: 'translateY(20px)', opacity: 0 }),
-        animate('150ms ease-out', style({ transform: 'translateY(0)', opacity: 1 }))
-      ]),
-      transition(':leave', [
-        animate('150ms ease-in', style({ transform: 'translateX(20px)', opacity: 0 }))
-      ])
-    ])
-  ],
+  styles: [``],
   host: {
     class: 'block'
   }

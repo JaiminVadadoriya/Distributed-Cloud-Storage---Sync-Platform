@@ -1,80 +1,76 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BaseComponent } from '../../../core/models/base-component';
 
 @Component({
   selector: 'app-usage-analytics',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="space-y-12">
-      <div class="pb-8 border-b border-editorial-text/20">
-        <h1 class="text-4xl font-bold font-sans tracking-[0.5em] text-editorial-text uppercase">Analytics</h1>
-        <p class="text-[10px] font-mono uppercase tracking-[0.3em] text-editorial-text/60 mt-2">Storage trends and usage patterns</p>
-      </div>
-
-      <!-- Usage Bars -->
-      <div class="space-y-6">
-        <div class="text-[9px] font-mono font-bold uppercase tracking-[0.3em] text-editorial-text/70">Storage_By_Type</div>
+    <div class="space-y-16 animate-in fade-in slide-in-from-bottom-4 duration-700 selection:bg-editorial-text selection:text-editorial-bg">
+      <header class="pb-12 border-b-2 border-editorial-text flex justify-between items-end">
         <div class="space-y-4">
-          @for (item of storageBreakdown; track item.label) {
-            <div class="space-y-1">
-              <div class="flex justify-between text-[9px] font-mono uppercase tracking-widest">
-                <span class="text-editorial-text/70">{{ item.label }}</span>
-                <span class="text-editorial-text/50">{{ item.value }}</span>
-              </div>
-              <div class="h-2 w-full bg-editorial-text/5 overflow-hidden">
-                <div class="h-full bg-editorial-text/40" [style.width.%]="item.percent"></div>
-              </div>
-            </div>
-          }
+          <h3 class="font-mono text-[10px] uppercase tracking-[0.5em] text-editorial-text/40 italic">Global_Usage_Analytics</h3>
+          <h1 class="text-7xl font-sans font-bold tracking-tighter text-editorial-text uppercase italic leading-none">Activity_Spectral</h1>
+          <p class="font-mono text-[10px] uppercase tracking-[0.4em] text-editorial-text/60">Cross-segment user behavior and storage lifecycle telemetry</p>
         </div>
+      </header>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        @for (stat of overviewStats(); track stat.label) {
+          <div class="p-8 border border-editorial-text/10 bg-editorial-text/[0.01] space-y-4 group hover:border-editorial-text/40 transition-all">
+             <div class="flex justify-between items-start">
+                <span class="font-mono text-[9px] uppercase tracking-[0.3em] opacity-40 italic">{{ stat.label }}</span>
+                <span class="text-emerald-500 text-[8px] font-mono font-bold">+{{ stat.trend }}%</span>
+             </div>
+             <div class="text-4xl font-sans font-bold tracking-tighter text-editorial-text uppercase leading-none">{{ stat.value }}</div>
+          </div>
+        }
       </div>
 
-      <!-- Activity Heatmap Placeholder -->
-      <div class="border border-editorial-text/10 bg-editorial-text/[0.01] p-10 space-y-6">
-        <div class="text-[9px] font-mono font-bold uppercase tracking-[0.3em] text-editorial-text/50">Activity_Heatmap</div>
-        <div class="grid grid-cols-7 gap-1">
-          @for (day of heatmapDays; track $index) {
-            <div class="aspect-square bg-editorial-text/5 hover:bg-editorial-text/20 transition-colors"
-              [style.opacity]="0.2 + (day * 0.8)"></div>
-          }
+      <section class="space-y-12">
+        <header class="pb-4 border-b border-editorial-text/20">
+          <h2 class="text-sm font-mono font-bold uppercase tracking-[0.4em] text-editorial-text">Storage_Inertia_Analysis</h2>
+        </header>
+
+        <div class="relative h-48 border border-editorial-text/10 bg-editorial-text/[0.01] p-10 flex gap-4 items-end justify-between overflow-hidden">
+           <div class="absolute inset-0 opacity-[0.02] grain-overlay select-none"></div>
+           @for (i of [1,2,3,4,5,6,7,8,9,10,11,12]; track i) {
+             <div class="flex-1 bg-editorial-text/10 transition-all duration-700 group hover:bg-editorial-text relative pt-12" [style.height.%]="i * 8">
+                <div class="absolute -top-12 left-0 w-full text-center font-mono text-[8px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Node_{{ i }}</div>
+             </div>
+           }
         </div>
-        <div class="flex justify-between text-[7px] font-mono uppercase tracking-widest text-editorial-text/30">
-          <span>4 weeks ago</span>
-          <span>Today</span>
-        </div>
+        <p class="font-mono text-[10px] uppercase tracking-widest text-editorial-text/40 text-center leading-loose">
+          Predictive model: High_Affinity_Growth | Regression: Linear_Positive
+        </p>
+      </section>
+
+      <div class="p-16 border-2 border-editorial-text border-dashed bg-editorial-text/[0.02] flex flex-col items-center text-center space-y-10 group">
+         <div class="w-16 h-16 border border-editorial-text/10 flex items-center justify-center text-editorial-text/20 text-3xl font-mono grayscale group-hover:grayscale-0 transition-all select-none">&#128200;</div>
+         <div class="space-y-4 max-w-xl mx-auto">
+            <h4 class="text-xl font-sans font-bold uppercase tracking-tight text-editorial-text">Enterprise_Intelligence_Suite</h4>
+            <p class="font-mono text-xs uppercase tracking-widest text-editorial-text/50 leading-relaxed italic px-8">
+              Deep behavior spectral analysis and automated storage lifecycle forecasting remains locked for the current Tier. Contact global admin for Node_Escalation.
+            </p>
+            <button class="px-12 py-5 bg-editorial-text text-editorial-bg font-mono text-[10px] font-bold uppercase tracking-[0.3em] hover:opacity-90 active:scale-[0.98] transition-all">
+              Request_Observation_Binding
+            </button>
+         </div>
       </div>
 
-      <!-- Monthly Stats -->
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-0 border border-editorial-text/20">
-        <div class="p-8 border-b md:border-b-0 md:border-r border-editorial-text/20">
-          <div class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/40 mb-2">Uploads_This_Month</div>
-          <div class="text-2xl font-bold font-mono text-editorial-text">342</div>
-        </div>
-        <div class="p-8 border-b md:border-b-0 md:border-r border-editorial-text/20">
-          <div class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/40 mb-2">Downloads</div>
-          <div class="text-2xl font-bold font-mono text-editorial-text">189</div>
-        </div>
-        <div class="p-8 border-b md:border-b-0 md:border-r border-editorial-text/20">
-          <div class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/40 mb-2">Shared_Files</div>
-          <div class="text-2xl font-bold font-mono text-editorial-text">27</div>
-        </div>
-        <div class="p-8">
-          <div class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/40 mb-2">Active_Devices</div>
-          <div class="text-2xl font-bold font-mono text-editorial-text">3</div>
-        </div>
-      </div>
+      <footer class="opacity-20 flex justify-between items-center text-[8px] font-mono uppercase tracking-[0.5em] pt-12 pb-10">
+         <span>Audit: PASS</span>
+         <div class="h-[1px] flex-1 bg-editorial-text/10 mx-16"></div>
+         <span>Telemetry: Captured_V3</span>
+      </footer>
     </div>
   `
 })
-export class UsageAnalyticsComponent extends BaseComponent {
-  storageBreakdown = [
-    { label: 'Documents', value: '2.4 GB', percent: 45 },
-    { label: 'Images', value: '1.8 GB', percent: 34 },
-    { label: 'Videos', value: '800 MB', percent: 15 },
-    { label: 'Other', value: '320 MB', percent: 6 },
-  ];
-
-  heatmapDays = Array.from({ length: 28 }, () => Math.random());
+export class UsageAnalyticsComponent {
+  overviewStats = signal([
+    { label: 'Active_Nodes', value: '4,102', trend: 12 },
+    { label: 'Avg_Storage_IO', value: '42.8 GB', trend: 6 },
+    { label: 'Network_Affinity', value: '0.84', trend: 22 },
+    { label: 'Segment_Entropy', value: 'Low', trend: 0 },
+  ]);
 }

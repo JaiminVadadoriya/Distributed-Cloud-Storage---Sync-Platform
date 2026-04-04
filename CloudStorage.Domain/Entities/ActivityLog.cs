@@ -2,9 +2,12 @@ using System;
 
 namespace CloudStorage.Domain.Entities
 {
-    public class ActivityLog
+    /// <summary>
+    /// Records an auditable user action in the system.
+    /// Uses BaseEntity (not Auditable) because it has Timestamp instead of CreatedAt.
+    /// </summary>
+    public class ActivityLog : BaseEntity<Guid>
     {
-        public Guid Id { get; set; }
         public int UserId { get; set; }
         public string Action { get; set; } = string.Empty; // e.g., "UPLOAD", "DELETE", "SHARE", "RENAME"
         public string EntityType { get; set; } = string.Empty; // e.g., "FILE", "FOLDER"

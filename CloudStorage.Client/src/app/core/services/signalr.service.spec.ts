@@ -1,14 +1,24 @@
-import { vi } from 'vitest';
+import { vi, describe, it, expect, beforeEach, type Mocked } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { SignalRService } from './signalr.service';
 import { AuthService } from './auth.service';
 
 describe('SignalRService', () => {
   let service: SignalRService;
-  let authServiceMock: any;
+  let authServiceMock: Mocked<AuthService>;
 
   beforeEach(() => {
-    authServiceMock = { getToken: vi.fn() } as any;
+    authServiceMock = { 
+      getToken: vi.fn(), 
+      logout: vi.fn(), 
+      login: vi.fn(), 
+      register: vi.fn(), 
+      requestPasswordReset: vi.fn(), 
+      resetPassword: vi.fn(),
+      currentUser: vi.fn(),
+      isAuthenticated: false
+    } as unknown as Mocked<AuthService>;
+    
     // Return null initially, user not logged in
     authServiceMock.getToken.mockReturnValue(null);
 
@@ -30,6 +40,6 @@ describe('SignalRService', () => {
     service.startConnection();
     // In our implementation, hubConnection isn't created if there's no token.
     // We can just verify it doesn't throw.
-    expect((service as any).hubConnection).toBeNull();
+    expect((service as unknown as { hubConnection: unknown }).hubConnection).toBeNull();
   });
 });

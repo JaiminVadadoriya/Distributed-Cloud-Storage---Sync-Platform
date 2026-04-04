@@ -9,13 +9,13 @@
       @for (version of versions(); track version.id; let first = $first) {
         <div class="version-item" [class.current]="first">
           <div class="version-header">
-            <span class="version-badge">v{{ version.version }}</span>
+            <span class="version-badge">v{{ version.versionNumber }}</span>
             @if (first) { <span class="current-tag">Current</span> }
           </div>
           <div class="version-meta">
             <span>{{ formatSize(version.size) }}</span>
             <span>{{ version.createdAt | date:'short' }}</span>
-            <span>by {{ version.modifiedByUsername }}</span>
+            <span>by {{ version.createdBy }}</span>
           </div>
           @if (!first) {
             <button class="restore-btn" (click)="restore(version.id)">Restore</button>

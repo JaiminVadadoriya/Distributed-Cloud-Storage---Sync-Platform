@@ -12,9 +12,12 @@ namespace CloudStorage.Domain.Entities
         FileRestored = 5
     }
 
-    public class Notification
+    /// <summary>
+    /// Represents a user notification.
+    /// Inherits Id and CreatedAt from BaseAuditableEntity.
+    /// </summary>
+    public class Notification : BaseAuditableEntity<Guid>
     {
-        public Guid Id { get; set; }
         public int UserId { get; set; }
         public User User { get; set; } = null!;
         public NotificationType Type { get; set; }
@@ -22,6 +25,5 @@ namespace CloudStorage.Domain.Entities
         public string Message { get; set; } = string.Empty;
         public bool IsRead { get; set; }
         public Guid? RelatedEntityId { get; set; }
-        public DateTime CreatedAt { get; set; }
     }
 }

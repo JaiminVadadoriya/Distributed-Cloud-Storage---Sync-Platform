@@ -2,11 +2,12 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { lastValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { OfflineCacheService, PendingOperation, CachedFileMetadata } from './offline-cache.service';
+import { OfflineCacheService, PendingOperation } from './offline-cache.service';
 import { ConnectionStatusService } from './connection-status.service';
 import { AuthService } from './auth.service';
 import { BaseService } from '../models/base-service';
 import { ApiResponse } from '../models/api-response.model';
+import { SyncConflict } from '../models/file.model';
 
 export interface DeltaSyncResponse {
   serverTimestampUtc: string;
@@ -24,16 +25,7 @@ export interface ServerFileItem {
   versionVector: string | null;
 }
 
-export interface ConflictInfo {
-  fileId: string;
-  fileName: string;
-  localLastModified: string;
-  serverLastModified: string;
-  localVersionVector: string | null;
-  serverVersionVector: string | null;
-  serverSize: number;
-  serverVersion: number;
-}
+// Removed local ConflictInfo, now using SyncConflict from file.model.ts
 
 export interface ConflictCheckResponse {
   hasConflict: boolean;
@@ -66,7 +58,7 @@ export class SyncEngineService extends BaseService {
   private readonly _isSyncing = signal(false);
   public readonly isSyncing = this._isSyncing.asReadonly();
 
-  private readonly _conflicts = signal<ConflictInfo[]>([]);
+  private readonly _conflicts = signal<SyncConflict[]>([]);
   public readonly conflicts = this._conflicts.asReadonly();
   public readonly hasConflicts = computed(() => this._conflicts().length > 0);
 
@@ -77,7 +69,7 @@ export class SyncEngineService extends BaseService {
   private readonly _syncLog = signal<SyncLogEntry[]>([]);
   public readonly syncLog = this._syncLog.asReadonly();
 
-  private log(level: 'info' | 'success' | 'warn' | 'error', message: string): void {
+  protected log(level: 'info' | 'success' | 'warn' | 'error', message: string): void {
     this._syncLog.update(entries => [
       { timestamp: new Date(), level, message },
       ...entries.slice(0, 99)
@@ -107,7 +99,7 @@ export class SyncEngineService extends BaseService {
       const delta = await this.pullServerChanges(lastSync);
       this.log('info', `PULL_COMPLETE: ${delta.changedFiles.length} objects updated, ${delta.deletedFileIds.length} objects purged.`);
 
-      const conflicts: ConflictInfo[] = [];
+      const conflicts: SyncConflict[] = [];
       for (const serverFile of delta.changedFiles) {
         const cachedFile = await this.offlineCache.getCachedFile(serverFile.id);
 
@@ -123,6 +115,7 @@ export class SyncEngineService extends BaseService {
               serverLastModified: serverFile.lastModifiedAt,
               localVersionVector: cachedFile.versionVector,
               serverVersionVector: serverFile.versionVector,
+              localSize: cachedFile.size,
               serverSize: conflictCheck.serverSize,
               serverVersion: conflictCheck.serverVersion
             });
@@ -157,8 +150,9 @@ export class SyncEngineService extends BaseService {
       this.offlineCache.setLastSyncTimestamp(delta.serverTimestampUtc);
       this.log('success', `SYNC_FINALIZED: Root timestamp updated to ${delta.serverTimestampUtc}.`);
 
-    } catch (err: any) {
-      this.log('error', `SYNC_FAULT: ${err.message || 'Unknown resolution failure'}.`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown resolution failure';
+      this.log('error', `SYNC_FAULT: ${message}.`);
       this.notificationService.error('SYNC_FAULT: Local cache mismatch. Retry scheduled.');
     } finally {
       this._isSyncing.set(false);
@@ -215,7 +209,7 @@ export class SyncEngineService extends BaseService {
 
       this.notificationService.success(`RESOLVED: [${conflict.fileName}] reconciled to ${resolution} state.`);
       this.log('success', `RECONCILED: "${conflict.fileName}" fixed.`);
-    } catch (err) {
+    } catch {
       this.notificationService.error(`FAULT: Resolution failed for [${conflict.fileName}].`);
     }
   }
@@ -229,7 +223,7 @@ export class SyncEngineService extends BaseService {
         await this.executePendingOperation(op);
         await this.offlineCache.removePendingOperation(op.id);
         this._pendingOpsCount.update(c => c - 1);
-      } catch (err) {
+      } catch {
         break; 
       }
     }

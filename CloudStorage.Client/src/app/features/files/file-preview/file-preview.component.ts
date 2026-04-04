@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { BaseComponent } from '../../../core/models/base-component';
 import { FileService } from '../../../core/services/file.service';
-import { ApiFileResponse } from '../../../core/models/file.model';
+import { FileItem } from '../../../core/models/file.model';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { takeUntil } from 'rxjs/operators';
 
@@ -20,7 +20,7 @@ import { takeUntil } from 'rxjs/operators';
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>
           </button>
           <div>
-            <h1 class="text-xl font-mono font-bold uppercase tracking-widest text-editorial-text">{{ file()?.fileName || 'Loading...' }}</h1>
+            <h1 class="text-xl font-mono font-bold uppercase tracking-widest text-editorial-text">{{ file()?.name || 'Loading...' }}</h1>
             <p class="text-[9px] font-mono uppercase tracking-[0.3em] text-editorial-text/50 mt-1">Preview_Mode: {{ getPreviewType() }}</p>
           </div>
         </div>
@@ -34,11 +34,11 @@ import { takeUntil } from 'rxjs/operators';
         <div class="flex items-center justify-center py-32 text-editorial-text/20">
           <span class="font-mono text-[10px] uppercase tracking-widest animate-pulse">Loading_Preview...</span>
         </div>
-      } @else if (file()) {
+      } @else if (file(); as fileData) {
         <div class="border border-editorial-text/10 bg-editorial-text/[0.01] min-h-[60vh] flex items-center justify-center">
           @switch (getPreviewType()) {
             @case ('image') {
-              <img [src]="previewUrl()" [alt]="file()!.fileName" class="max-w-full max-h-[70vh] object-contain">
+              <img [src]="previewUrl()" [alt]="fileData.name" class="max-w-full max-h-[70vh] object-contain">
             }
             @case ('video') {
               <video controls class="max-w-full max-h-[70vh]" [src]="previewUrl()">
@@ -70,24 +70,27 @@ import { takeUntil } from 'rxjs/operators';
         <div class="grid grid-cols-2 md:grid-cols-4 gap-0 border border-editorial-text/10">
           <div class="p-6 border-r border-editorial-text/10">
             <div class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/40 mb-1">Size</div>
-            <div class="text-sm font-mono font-bold text-editorial-text">{{ formatSize(file()!.size) }}</div>
+            <div class="text-sm font-mono font-bold text-editorial-text">{{ formatSize(fileData.size) }}</div>
           </div>
           <div class="p-6 border-r border-editorial-text/10">
             <div class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/40 mb-1">Type</div>
             <div class="text-sm font-mono font-bold text-editorial-text uppercase">{{ getExtension() }}</div>
           </div>
           <div class="p-6 border-r border-editorial-text/10">
-            <div class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/40 mb-1">Created</div>
-            <div class="text-sm font-mono font-bold text-editorial-text">{{ file()!.createdAt | date:'shortDate' }}</div>
+            <div class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/40 mb-1">Modified</div>
+            <div class="text-sm font-mono font-bold text-editorial-text">{{ fileData.lastModifiedAt | date:'shortDate' }}</div>
           </div>
           <div class="p-6">
-            <div class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/40 mb-1">Modified</div>
-            <div class="text-sm font-mono font-bold text-editorial-text">{{ file()!.lastModifiedAt | date:'shortDate' }}</div>
+            <div class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/40 mb-1">Owner</div>
+            <div class="text-sm font-mono font-bold text-editorial-text uppercase">{{ fileData.owner }}</div>
           </div>
         </div>
       }
     </div>
-  `
+  `,
+  styles: [`
+    :host { display: block; }
+  `]
 })
 export class FilePreviewComponent extends BaseComponent implements OnInit {
   private route = inject(ActivatedRoute);
@@ -95,7 +98,7 @@ export class FilePreviewComponent extends BaseComponent implements OnInit {
   private fileService = inject(FileService);
   private sanitizer = inject(DomSanitizer);
 
-  file = signal<ApiFileResponse | null>(null);
+  file = signal<FileItem | null>(null);
   previewUrl = signal<string>('');
   textContent = signal<string>('');
 
@@ -123,7 +126,8 @@ export class FilePreviewComponent extends BaseComponent implements OnInit {
   }
 
   getExtension(): string {
-    return this.file()?.fileName?.split('.').pop()?.toLowerCase() || '';
+    const fileName = this.file()?.name;
+    return fileName?.split('.').pop()?.toLowerCase() || '';
   }
 
   getPreviewType(): string {
@@ -141,7 +145,7 @@ export class FilePreviewComponent extends BaseComponent implements OnInit {
 
   downloadFile(): void {
     const f = this.file();
-    if (f) this.fileService.downloadFile(f.id, f.fileName);
+    if (f) this.fileService.downloadFile(f.id, f.name);
   }
 
   goBack(): void {

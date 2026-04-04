@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, type Mocked } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { ActivityService } from './activity.service';
 import { ApiService } from './api.service';
@@ -8,12 +8,12 @@ import { firstValueFrom } from 'rxjs';
 
 describe('ActivityService', () => {
   let service: ActivityService;
-  let apiMock: any;
+  let apiMock: Mocked<ApiService>;
 
   beforeEach(() => {
     apiMock = {
       get: vi.fn()
-    };
+    } as unknown as Mocked<ApiService>;
 
     TestBed.configureTestingModule({
       providers: [
@@ -34,11 +34,11 @@ describe('ActivityService', () => {
     ];
     apiMock.get.mockReturnValue(of({ success: true, data: mockData }));
 
-    const activities = await firstValueFrom(service.getRecentActivity(10));
+    const activities = await firstValueFrom(service.getRecentActivity('all', 10));
     
     expect(activities).toEqual(mockData);
     expect(apiMock.get).toHaveBeenCalledWith('/activity', expect.any(HttpParams));
-    const params = apiMock.get.mock.calls[0][1] as HttpParams;
+    const params = apiMock.get.mock.calls[0][1] as unknown as HttpParams;
     expect(params.get('limit')).toBe('10');
   });
 
