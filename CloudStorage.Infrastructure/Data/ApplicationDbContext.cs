@@ -39,6 +39,7 @@ namespace CloudStorage.Infrastructure.Data
                 entity.HasIndex(u => u.Username).IsUnique();
                 entity.Property(u => u.Username).IsRequired().HasMaxLength(50);
                 entity.Property(u => u.Email).IsRequired().HasMaxLength(255);
+                entity.Property(u => u.Role).IsRequired().HasMaxLength(20).HasDefaultValue("User");
             });
 
             // FileMetadata configuration

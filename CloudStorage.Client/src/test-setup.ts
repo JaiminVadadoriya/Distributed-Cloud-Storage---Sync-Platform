@@ -4,13 +4,12 @@ import {
   platformBrowserDynamicTesting,
 } from '@angular/platform-browser-dynamic/testing';
 import { TestBed, getTestBed } from '@angular/core/testing';
-import { destroyPlatform } from '@angular/core';
 
 // Use a global flag to ensure initialization only happens once per worker
-const globalObj = (typeof window !== 'undefined' ? window : globalThis) as any;
+const globalObj = (typeof window !== 'undefined' ? window : globalThis) as unknown as Record<string, unknown>;
 
-if (!globalObj.__ANGULAR_TEST_INIT__) {
-  globalObj.__ANGULAR_TEST_INIT__ = true;
+if (!globalObj['__ANGULAR_TEST_INIT__']) {
+  globalObj['__ANGULAR_TEST_INIT__'] = true;
 
   // Clean reset of the testing environment
   try {
@@ -43,7 +42,7 @@ if (!globalObj.__ANGULAR_TEST_INIT__) {
 
   // Minimal indexedDB mock
   if (typeof window !== 'undefined' && !window.indexedDB) {
-    (window as any).indexedDB = {
+    (window as unknown as Record<string, unknown>)['indexedDB'] = {
       open: vi.fn().mockReturnValue({
         onsuccess: null,
         onerror: null,
@@ -70,7 +69,7 @@ if (!globalObj.__ANGULAR_TEST_INIT__) {
     });
 
     const store: Record<string, string> = {};
-    (window as any).localStorage = {
+    const mockStorage = {
       getItem: vi.fn((key: string) => store[key] || null),
       setItem: vi.fn((key: string, value: string) => { store[key] = value; }),
       removeItem: vi.fn((key: string) => { delete store[key]; }),
@@ -81,7 +80,13 @@ if (!globalObj.__ANGULAR_TEST_INIT__) {
       get length() { return Object.keys(store).length; }
     };
 
-    (window as any).ResizeObserver = vi.fn().mockImplementation(() => ({
+    Object.defineProperty(window, 'localStorage', {
+      value: mockStorage,
+      writable: true,
+      configurable: true
+    });
+
+    (window as unknown as Record<string, unknown>)['ResizeObserver'] = vi.fn().mockImplementation(() => ({
       observe: vi.fn(),
       unobserve: vi.fn(),
       disconnect: vi.fn(),

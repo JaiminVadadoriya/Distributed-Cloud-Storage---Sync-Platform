@@ -1,5 +1,8 @@
 using CloudStorage.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using CloudStorage.Domain.Entities;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace CloudStorage.API.Extensions
 {
@@ -19,7 +22,17 @@ namespace CloudStorage.API.Extensions
                 {
                     Console.WriteLine($"Applying migrations (attempt {i + 1}/{retries})...");
                     dbContext.Database.Migrate();
-                    Console.WriteLine("Migrations applied successfully.");
+                    
+                    // Seed Admin User Role
+                    var adminUser = dbContext.Users.FirstOrDefault(u => u.Username == "admin");
+                    if (adminUser != null && adminUser.Role != "Admin")
+                    {
+                        Console.WriteLine("Seeding Admin role for user 'admin'...");
+                        adminUser.Role = "Admin";
+                        dbContext.SaveChanges();
+                    }
+                    
+                    Console.WriteLine("Migrations and seeding applied successfully.");
                     return;
                 }
                 catch (Exception ex)

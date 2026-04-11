@@ -17,6 +17,13 @@ using CloudStorage.API.Services;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.ResponseCompression;
 using Prometheus;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Logs;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using OpenTelemetry.Instrumentation.EntityFrameworkCore;
+using OpenTelemetry.Instrumentation.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -87,6 +94,7 @@ builder.Services.AddScoped<IDeduplicationService, DeduplicationService>();
 builder.Services.AddScoped<INotificationService, SignalRNotificationService>();
 builder.Services.AddScoped<IDeltaSyncService, DeltaSyncService>();
 builder.Services.AddScoped<IConflictDetectionService, ConflictDetectionService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<INotificationPersistenceService, NotificationPersistenceService>();
 
 // Notification repository
@@ -173,8 +181,30 @@ builder.Services.AddCors(options =>
     });
 });
 
-// Health checks
-builder.Services.AddHealthChecks();
+// Health checks with specialized probes
+builder.Services.AddHealthChecks()
+    .AddNpgSql(dbConnectionString!, name: "PostgreSQL")
+    .AddRedis(redisConnectionString, name: "Redis")
+    .AddAzureBlobStorage(blobConnectionString, name: "Azure_Blob_Storage");
+
+// OpenTelemetry Configuration
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource
+        .AddService(serviceName: "CloudStorage.API"))
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation(options =>
+        {
+            options.Filter = httpContext => !httpContext.Request.Path.StartsWithSegments("/health");
+        })
+        .AddEntityFrameworkCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddOtlpExporter())
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddMeter("System.Net.Http")
+        .AddMeter("System.Net.NameResolution")
+        .AddRuntimeInstrumentation()
+        .AddOtlpExporter());
 
 // Rate limiting
 builder.Services.AddRateLimiter(options =>

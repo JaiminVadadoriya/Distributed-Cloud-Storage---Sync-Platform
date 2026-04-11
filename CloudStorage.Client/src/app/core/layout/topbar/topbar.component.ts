@@ -52,7 +52,7 @@ export class TopbarComponent extends BaseComponent {
   }
 
   public openUpload(): void {
-    this.layoutService.openUploadModal();
+    this.layoutService.triggerGlobalUpload();
   }
 
   public logout(): void {

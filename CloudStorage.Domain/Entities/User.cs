@@ -23,6 +23,7 @@ namespace CloudStorage.Domain.Entities
         public bool EmailVerified { get; set; }
         public DateTime? LastLoginAt { get; set; }
         public bool IsActive { get; set; } = true;
+        public string Role { get; set; } = "User"; // e.g., "Admin", "User"
 
         // Navigation properties
         public virtual ICollection<RefreshToken> RefreshTokens { get; set; }

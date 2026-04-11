@@ -1,16 +1,16 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ContextMenuComponent } from './context-menu.component';
-import { LayoutService } from '../../../core/services/layout.service';
+import { LayoutService, ContextMenuItem } from '../../../core/services/layout.service';
 import { By } from '@angular/platform-browser';
 import { signal } from '@angular/core';
 
 class MockLayoutService {
   isContextMenuOpen = signal(false);
   contextMenuPosition = signal({ x: 0, y: 0 });
-  contextMenuItems = signal<any[]>([]);
+  contextMenuItems = signal<ContextMenuItem[]>([]);
 
-  openContextMenu(x: number, y: number, items: any[]) {
+  openContextMenu(x: number, y: number, items: ContextMenuItem[]) {
     this.contextMenuPosition.set({ x, y });
     this.contextMenuItems.set(items);
     this.isContextMenuOpen.set(true);
@@ -26,10 +26,10 @@ describe('ContextMenuComponent', () => {
   let fixture: ComponentFixture<ContextMenuComponent>;
   let layoutService: MockLayoutService;
 
-  const mockItems = [
+  const mockItems: ContextMenuItem[] = [
     { label: 'Edit', icon: '<i></i>', action: vi.fn() },
     { label: 'Delete', icon: '<i></i>', danger: true, action: vi.fn() },
-    { separator: true },
+    { label: '---', separator: true },
     { label: 'Locked', disabled: true, action: vi.fn() }
   ];
 

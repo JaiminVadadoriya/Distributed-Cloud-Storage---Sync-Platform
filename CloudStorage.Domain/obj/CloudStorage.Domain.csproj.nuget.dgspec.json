@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj": {}
+    "d:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj": {}
   },
   "projects": {
-    "D:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj": {
+    "d:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj",
+        "projectUniqueName": "d:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj",
         "projectName": "CloudStorage.Domain",
-        "projectPath": "D:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj",
+        "projectPath": "d:\\college\\cloud-storage\\CloudStorage.Domain\\CloudStorage.Domain.csproj",
         "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-        "outputPath": "D:\\college\\cloud-storage\\CloudStorage.Domain\\obj\\",
+        "outputPath": "d:\\college\\cloud-storage\\CloudStorage.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

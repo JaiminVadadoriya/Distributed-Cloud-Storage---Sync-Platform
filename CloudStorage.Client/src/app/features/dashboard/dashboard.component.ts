@@ -2,10 +2,8 @@ import { Component, OnInit, inject, signal, effect, ChangeDetectionStrategy, OnD
 import { toSignal } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FileListComponent } from './file-list/file-list.component';
-import { SidebarComponent } from '../../core/layout/sidebar/sidebar.component';
-import { TopbarComponent } from '../../core/layout/topbar/topbar.component';
 import { FileService } from '../../core/services/file.service';
-import { FolderService, CreateFolderDto } from '../../core/services/folder.service';
+import { FolderService } from '../../core/services/folder.service';
 import { SignalRService } from '../../core/services/signalr.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { ActivityService } from '../../core/services/activity.service';
@@ -13,10 +11,11 @@ import { ConnectionStatusService } from '../../core/services/connection-status.s
 import { SyncEngineService } from '../../core/services/sync-engine.service';
 import { OfflineCacheService } from '../../core/services/offline-cache.service';
 import { LayoutService } from '../../core/services/layout.service';
-import { FileUploadComponent } from '../../shared/components/file-upload/file-upload.component';
 import { UploadManagerService } from '../../core/services/upload-manager.service';
 import { formatBytes } from '../../core/utils/format.utils';
 import { BaseComponent } from '../../core/models/base-component';
+import { SearchService } from '../../core/services/search.service';
+import { SearchFilter } from '../../core/models/file.model';
 import { takeUntil } from 'rxjs';
 
 @Component({
@@ -24,13 +23,18 @@ import { takeUntil } from 'rxjs';
   standalone: true,
   imports: [
     CommonModule, 
-    FileListComponent, 
-    SidebarComponent, 
-    TopbarComponent,
-    FileUploadComponent
+    FileListComponent
   ],
   templateUrl: './dashboard.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '[class.block]': 'true',
+    '[class.h-full]': 'true',
+    '[class.w-full]': 'true'
+  },
+  styles: [`
+    :host { display: block; height: 100%; }
+  `]
 })
 export class DashboardComponent extends BaseComponent implements OnInit, OnDestroy {
   uploadManager = inject(UploadManagerService);
@@ -55,6 +59,9 @@ export class DashboardComponent extends BaseComponent implements OnInit, OnDestr
   viewMode = signal<'grid' | 'list'>('grid');
   showConflictDialog = false;
   showSyncPanel = false;
+
+  public readonly searchService = inject(SearchService);
+  public currentCategory = signal<string | null>(null);
 
   constructor() {
     super();
@@ -126,16 +133,22 @@ export class DashboardComponent extends BaseComponent implements OnInit, OnDestr
   onFilesDropped(): void {
     // Selection handled via template
   }  
-  
-  onFilesSelected(events: { file: File, valid: boolean }[]) {
-    events.filter(e => e.valid).forEach(e => {
-      this.uploadManager.addToQueue(e.file);
-    });
-    
-    if (events.some(e => e.valid)) {
-      this.layoutService.closeUploadModal();
+
+  onSearch(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.searchService.updateQuery(input.value);
+  }
+
+  toggleFilter(category: string): void {
+    if (this.currentCategory() === category) {
+      this.currentCategory.set(null);
+      this.searchService.clearFilters();
+    } else {
+      this.currentCategory.set(category);
+      this.searchService.updateFilters({ fileType: category as SearchFilter['fileType'] });
     }
   }
+  
 
   onConflictResolved(event: { fileId: string; resolution: 'KeepLocal' | 'KeepServer' }) {
     this.syncEngine.resolveConflict(event.fileId, event.resolution);
@@ -144,50 +157,9 @@ export class DashboardComponent extends BaseComponent implements OnInit, OnDestr
   }
 
   createNewFolder() {
-    this.layoutService.openPrompt({
-      title: 'Initialize_Node',
-      placeholder: 'NODE_NAME',
-      action: (folderName: string) => {
-        if (!folderName || !folderName.trim()) return;
-
-        const trimmedName = folderName.trim();
-        const nameRegex = /^[a-zA-Z0-9 _-]+$/;
-        
-        if (trimmedName.length > 50) {
-          this.notificationService.error('ERR_VALIDATION: Name exceeds 50 character capacity.');
-          return;
-        }
-        
-        if (!nameRegex.test(trimmedName)) {
-          this.notificationService.error('ERR_VALIDATION: Name contains illegal characters.');
-          return;
-        }
-
-        // Check for duplicates in current fileList
-        if (this.fileList && this.fileList.folders().some((f: any) => f.name.toLowerCase() === trimmedName.toLowerCase())) {
-          this.notificationService.error('ERR_DUPLICATE: An entity with this identity already exists.');
-          return;
-        }
-
-        const dto: CreateFolderDto = {
-          name: trimmedName,
-          parentFolderId: null
-        };
-
-        this.folderService.createFolder(dto)
-          .pipe(takeUntil(this.destroy$))
-          .subscribe({
-            next: () => {
-              this.refreshData();
-              this.notificationService.success(`GENESIS_SUCCESS: Folder '${trimmedName}' initialized.`);
-            },
-            error: (err: unknown) => {
-              console.error('Failed to create folder:', err);
-              this.notificationService.error('ERR_API: Node initialization failed.');
-            }
-          });
-      }
-    });
+    if (this.fileList) {
+      this.fileList.createNewFolder();
+    }
   }
 
   formatBytes = formatBytes;

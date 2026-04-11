@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { TestBed } from '@angular/core/testing';
 import { NotificationService } from './notification.service';
 
 describe('NotificationService', () => {

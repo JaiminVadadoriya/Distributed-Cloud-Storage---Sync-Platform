@@ -25,9 +25,9 @@ export class UploadService extends BaseService {
   /**
    * Initializes a new upload session on the remote node.
    */
-  public initiateUpload(name: string, size: number, chunks: number, type: string): Observable<UploadSession> {
+  public initiateUpload(name: string, size: number, chunks: number, type: string, parentFolderId?: string): Observable<UploadSession> {
     return this.http.post<ApiResponse<UploadSession>>(`${this.endpoint}/initiate`, { 
-      fileName: name, fileSize: size, totalChunks: chunks, contentType: type 
+      fileName: name, fileSize: size, totalChunks: chunks, contentType: type, parentFolderId 
     }).pipe(
       map(response => {
         if (!response.success || !response.data) throw new Error(response.message || 'INIT_UPLOAD_REJECTED');

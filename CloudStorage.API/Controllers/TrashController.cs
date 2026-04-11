@@ -102,10 +102,7 @@ namespace CloudStorage.API.Controllers
             var files = await _fileRepository.GetUserFilesAsync(userId, true);
             var trashFiles = files.Where(f => f.IsDeleted).ToList();
 
-            foreach (var file in trashFiles)
-            {
-                await _fileRepository.DeleteAsync(file);
-            }
+            await _fileRepository.DeleteRangeAsync(trashFiles);
 
             await _activityService.LogActivityAsync(userId, "EMPTY_TRASH", "USER", userId.ToString(), "Trash was emptied.");
             return Ok(ApiResponse.Ok($"Trash emptied. {trashFiles.Count} files permanently deleted."));

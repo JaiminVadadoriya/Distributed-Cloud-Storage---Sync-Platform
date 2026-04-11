@@ -529,6 +529,13 @@ namespace CloudStorage.Infrastructure.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("User");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasMaxLength(50)

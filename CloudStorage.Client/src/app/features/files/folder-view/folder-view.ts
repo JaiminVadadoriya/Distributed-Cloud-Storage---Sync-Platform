@@ -5,7 +5,7 @@ import { BaseComponent } from '../../../core/models/base-component';
 import { FileService } from '../../../core/services/file.service';
 import { FolderService, CreateFolderDto } from '../../../core/services/folder.service';
 import { Folder, FileItem } from '../../../core/models/file.model';
-import { takeUntil } from 'rxjs/operators';
+import { takeUntil, tap } from 'rxjs/operators';
 import { FormsModule } from '@angular/forms';
 import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { LayoutService } from '../../../core/services/layout.service';
@@ -117,23 +117,28 @@ export class FolderView extends BaseComponent implements OnInit {
 
   onDrop<T, O>(event: CdkDragDrop<T, O, FileItem | Folder>, targetFolderId: string | null) {
     const item = event.item.data as (FileItem | Folder);
-    
+    if (!item || item.id === targetFolderId) return;
+
     // Determine if it was a file or folder being dragged
     const isFile = 'size' in item;
     
     if (isFile) {
+      if (item.folderId === targetFolderId) return;
       this.fileService.moveFile(item.id, targetFolderId).subscribe({
         next: () => {
           this.loadFolder();
           this.notificationService.success(`Moved ${item.name} successfully.`);
-        }
+        },
+        error: () => this.notificationService.error(`Failed to move ${item.name}.`)
       });
     } else {
+      if ((item as Folder).parentId === targetFolderId) return;
       this.folderService.moveFolder(item.id, targetFolderId).subscribe({
         next: () => {
           this.loadFolder();
           this.notificationService.success(`Moved ${item.name} successfully.`);
-        }
+        },
+        error: () => this.notificationService.error(`Failed to move folder ${item.name}.`)
       });
     }
   }
@@ -180,7 +185,7 @@ export class FolderView extends BaseComponent implements OnInit {
       },
       { separator: true, label: '' },
       { 
-        label: 'PURGE_RECORD', 
+        label: 'PURGE_DIRECTORY', 
         danger: true,
         icon: '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>',
         action: () => {
@@ -188,9 +193,18 @@ export class FolderView extends BaseComponent implements OnInit {
             title: 'PURGE_SEQUENCE',
             message: `Delete folder "${folder.name}" and all its contents?`,
             danger: true,
-            action: () => {
-              this.folderService.deleteFolder(folder.id).subscribe(() => this.loadFolder());
-            }
+            action: () => this.folderService.deleteFolder(folder.id).pipe(
+              tap({
+                next: () => {
+                  this.notificationService.success(`Folder '${folder.name}' deleted.`);
+                  this.loadFolder();
+                },
+                error: (err) => {
+                  console.error('Delete folder failed:', err);
+                  this.notificationService.error(`Failed to delete folder '${folder.name}'.`);
+                }
+              })
+            )
           });
         }
       }
@@ -237,9 +251,18 @@ export class FolderView extends BaseComponent implements OnInit {
             title: 'PURGE_SEQUENCE',
             message: `Delete file "${file.name}"?`,
             danger: true,
-            action: () => {
-              this.fileService.deleteFile(file.id).subscribe(() => this.loadFolder());
-            }
+            action: () => this.fileService.deleteFile(file.id).pipe(
+              tap({
+                next: () => {
+                  this.notificationService.success(`File '${file.name}' deleted.`);
+                  this.loadFolder();
+                },
+                error: (err) => {
+                  console.error('Delete file failed:', err);
+                  this.notificationService.error(`Failed to delete file '${file.name}'.`);
+                }
+              })
+            )
           });
         }
       }

@@ -96,7 +96,9 @@ import { NotificationService } from '../../../core/services/notification.service
         </header>
         
         <div class="p-10 border-2 border-editorial-text bg-editorial-text text-editorial-bg space-y-8 relative overflow-hidden group">
-           <div class="absolute inset-0 opacity-10 grain-overlay"></div>
+           <div class="grain-wrapper">
+             <div class="absolute inset-0 opacity-10 grain-overlay"></div>
+           </div>
            <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-12">
               <div class="space-y-2 max-w-lg">
                 <h3 class="text-2xl font-sans font-bold uppercase tracking-tighter italic">Terminate_Identity</h3>

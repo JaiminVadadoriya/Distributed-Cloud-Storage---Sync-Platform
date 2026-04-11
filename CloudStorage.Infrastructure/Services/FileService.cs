@@ -12,17 +12,20 @@ namespace CloudStorage.Infrastructure.Services
     public class FileService : IFileService
     {
         private readonly IFileMetadataRepository _fileRepository;
+        private readonly IFolderRepository _folderRepository;
         private readonly IUserRepository _userRepository;
         private readonly ICacheService _cache;
         private readonly IActivityService _activityService;
 
         public FileService(
             IFileMetadataRepository fileRepository, 
+            IFolderRepository folderRepository,
             IUserRepository userRepository, 
             ICacheService cache,
             IActivityService activityService)
         {
             _fileRepository = fileRepository;
+            _folderRepository = folderRepository;
             _userRepository = userRepository;
             _cache = cache;
             _activityService = activityService;
@@ -354,12 +357,33 @@ namespace CloudStorage.Infrastructure.Services
 
         // ─── Bulk Operations ──────────────────────────────────────────────
 
-        public async Task BulkDeleteAsync(IEnumerable<Guid> fileIds, int userId)
+        public async Task BulkDeleteAsync(IEnumerable<Guid> resourceIds, int userId)
         {
-            foreach (var fileId in fileIds)
+            foreach (var id in resourceIds)
             {
-                await DeleteFileAsync(fileId, userId);
+                var file = await _fileRepository.GetByIdAsync(id);
+                if (file != null)
+                {
+                    await DeleteFileAsync(id, userId);
+                    continue;
+                }
+
+                var folder = await _folderRepository.GetByIdAsync(id);
+                if (folder != null)
+                {
+                    if (folder.OwnerId != userId)
+                        throw new UnauthorizedAccessException("Only the owner can delete this folder");
+
+                    await _folderRepository.DeleteAsync(folder);
+                    await _activityService.LogActivityAsync(userId, "DELETE", "FOLDER", id.ToString(), $"Folder '{folder.Name}' was deleted via bulk operation.");
+                    continue;
+                }
+                
+                // If neither found, we log warning but continue the sequence
+                Console.WriteLine($"[BulkDelete] Resource {id} not found in files or folders for User {userId}");
             }
+            
+            await _cache.RemoveByPrefixAsync($"stats:{userId}");
         }
 
         public async Task BulkMoveAsync(IEnumerable<Guid> fileIds, Guid? targetFolderId, int userId)

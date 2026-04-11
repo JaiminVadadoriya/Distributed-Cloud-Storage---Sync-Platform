@@ -1,7 +1,7 @@
 {
   "format": 1,
   "restore": {
-    "D:\\college\\cloud-storage\\tests\\CloudStorage.Application.Tests\\CloudStorage.Application.Tests.csproj": {}
+    "d:\\college\\cloud-storage\\tests\\CloudStorage.Application.Tests\\CloudStorage.Application.Tests.csproj": {}
   },
   "projects": {
     "D:\\college\\cloud-storage\\CloudStorage.Application\\CloudStorage.Application.csproj": {
@@ -752,6 +752,10 @@
               "target": "Package",
               "version": "[10.0.0, )"
             },
+            "Microsoft.Extensions.Diagnostics.HealthChecks": {
+              "target": "Package",
+              "version": "[10.0.5, )"
+            },
             "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",
               "version": "[10.0.0, )"
@@ -1063,14 +1067,14 @@
         }
       }
     },
-    "D:\\college\\cloud-storage\\tests\\CloudStorage.Application.Tests\\CloudStorage.Application.Tests.csproj": {
+    "d:\\college\\cloud-storage\\tests\\CloudStorage.Application.Tests\\CloudStorage.Application.Tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\college\\cloud-storage\\tests\\CloudStorage.Application.Tests\\CloudStorage.Application.Tests.csproj",
+        "projectUniqueName": "d:\\college\\cloud-storage\\tests\\CloudStorage.Application.Tests\\CloudStorage.Application.Tests.csproj",
         "projectName": "CloudStorage.Application.Tests",
-        "projectPath": "D:\\college\\cloud-storage\\tests\\CloudStorage.Application.Tests\\CloudStorage.Application.Tests.csproj",
+        "projectPath": "d:\\college\\cloud-storage\\tests\\CloudStorage.Application.Tests\\CloudStorage.Application.Tests.csproj",
         "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-        "outputPath": "D:\\college\\cloud-storage\\tests\\CloudStorage.Application.Tests\\obj\\",
+        "outputPath": "d:\\college\\cloud-storage\\tests\\CloudStorage.Application.Tests\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

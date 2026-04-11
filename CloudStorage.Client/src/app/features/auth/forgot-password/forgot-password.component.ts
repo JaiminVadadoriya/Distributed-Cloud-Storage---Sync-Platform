@@ -9,58 +9,88 @@ import { AuthService } from '../../../core/services/auth.service';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   template: `
-    <div class="bg-editorial-bg border border-editorial-text p-12 relative z-10 transition-none rounded-none">
-      <h2 class="text-4xl font-bold mb-6 text-editorial-text font-sans tracking-tighter text-center">Recovery</h2>
-      <p class="text-editorial-text/40 font-mono text-center mb-12 text-[10px] uppercase tracking-widest leading-relaxed">Enter credentials to initialize recovery sequence.</p>
+    <div class="bg-editorial-bg border-4 border-editorial-text p-6 md:p-14 relative z-10 transition-none rounded-none shadow-brutalist animate-in-up overflow-hidden group/card text-left">
+      <!-- Subtle internal technical pattern -->
+      <div class="absolute inset-0 tech-grid pointer-events-none opacity-[0.03]"></div>
+      
+      <div class="flex flex-col md:flex-row items-start md:items-baseline justify-between mb-12 md:mb-16 gap-6 px-2 relative z-10 text-left">
+        <h2 class="text-4xl md:text-6xl font-sans font-black text-editorial-text tracking-[-0.05em] uppercase italic leading-none">Recovery</h2>
+        <div class="flex flex-col items-start md:items-end opacity-40">
+          <span class="font-mono text-[9px] uppercase tracking-[0.4em] font-bold">Protocol_v2.1</span>
+          <span class="font-mono text-[8px] uppercase tracking-[0.2em]">SEC_REC_SEQUENCE</span>
+        </div>
+      </div>
       
       @if (isSubmitted) {
-        <div class="p-8 bg-editorial-text text-editorial-bg font-mono text-center">
-           <h3 class="font-bold text-xs mb-4 tracking-widest uppercase items-center flex justify-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
-              SEQUENCE INITIATED
-           </h3>
-           <p class="text-[10px] tracking-wider leading-relaxed opacity-60">Verification link transmitted to registered identity <span class="opacity-100 font-bold underline">{{ email }}</span>.</p>
-           <button (click)="isSubmitted = false" class="mt-8 text-[10px] font-bold underline uppercase tracking-widest hover:opacity-70 transition-opacity">Abort & Retry</button>
+        <div class="p-10 bg-editorial-text text-editorial-bg font-mono relative z-10 animate-in-fade shadow-brutalist">
+           <div class="flex items-center gap-6 mb-8">
+              <div class="w-2 h-8 bg-editorial-bg animate-pulse"></div>
+              <h3 class="font-black text-sm tracking-[0.4em] uppercase">Sequence_Initiated</h3>
+           </div>
+           <p class="text-[11px] tracking-[0.2em] opacity-80 leading-[2] mb-10">Verification link transmitted to registered identity: <br><span class="opacity-100 font-black text-editorial-accent uppercase bg-editorial-accent/10 px-2 py-1">{{ email }}</span></p>
+           
+           <div class="flex gap-8">
+              <button (click)="isSubmitted = false" class="text-[9px] font-black underline underline-offset-8 uppercase tracking-[0.3em] hover:opacity-70 transition-all">Abort & Retry</button>
+              <a routerLink="/auth/login" class="text-[9px] font-black underline underline-offset-8 uppercase tracking-[0.3em] hover:opacity-70 transition-all">Return_Home</a>
+           </div>
         </div>
-        
-        <p class="mt-12 text-center">
-           <a routerLink="/auth/login" class="text-editorial-text/60 font-mono text-[10px] uppercase tracking-widest hover:text-editorial-text transition-colors inline-flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-              Return Home
-           </a>
-        </p>
       } @else {
-        <form [formGroup]="forgotForm" (ngSubmit)="onSubmit()" class="space-y-10">
-          <div class="relative group">
-            <label for="email" class="block text-[10px] font-mono uppercase tracking-[0.2em] mb-1 text-editorial-text/50">Identified Email</label>
-            <input id="email" type="email" formControlName="email" class="w-full py-2 bg-transparent border-b border-editorial-text/10 text-editorial-text font-mono text-sm focus:border-editorial-text outline-none transition-all placeholder:text-editorial-text/20" placeholder="identity@domain.com">
+        <form [formGroup]="forgotForm" (ngSubmit)="onSubmit()" class="space-y-12 relative z-10 text-left">
+          <div class="relative group/field">
+            <div class="flex items-center justify-between mb-4 px-2">
+              <label for="email" class="text-[10px] font-mono uppercase tracking-[0.5em] text-editorial-text/30 group-focus-within/field:text-editorial-text transition-colors font-black">01_Network_Identity</label>
+              <span class="text-[8px] font-mono text-editorial-text/10 font-bold hidden sm:inline">ID_VERIFICATION</span>
+            </div>
+            
+            <div class="flex items-stretch border-2 border-editorial-text/10 group-focus-within/field:border-editorial-text transition-colors p-0.5 sm:p-1 bg-transparent">
+              <div class="w-12 flex items-center justify-center font-mono text-[10px] text-editorial-text/20 group-focus-within/field:text-editorial-text font-bold bg-editorial-text/5">
+                 [01]
+              </div>
+              <input id="email" 
+                     type="email" 
+                     formControlName="email" 
+                     class="flex-1 h-12 px-4 bg-transparent text-editorial-text font-sans text-lg font-black focus:bg-editorial-text/[0.01] outline-none transition-all placeholder:text-editorial-text/5 tracking-tight" 
+                     [attr.placeholder]="'IDENTITY@HOST.COM'">
+            </div>
+            
             @if (forgotForm.get('email')?.touched && forgotForm.get('email')?.invalid) {
-              <div class="text-rose-600 text-[10px] font-mono mt-1 uppercase tracking-wider">Invalid identifier</div>
+              <div class="absolute right-0 -bottom-6 text-rose-600 text-[8px] font-mono uppercase tracking-[0.3em] font-black animate-in-fade">!_INVALID_IDENTITY</div>
             }
           </div>
 
           @if (error) {
-            <div class="p-6 border border-rose-500/20 bg-rose-500/[0.02] text-rose-500 text-[10px] font-mono font-bold uppercase tracking-[0.2em] leading-relaxed">
-               {{ error }}
+            <div class="mb-12 p-8 border-l-8 border-rose-500 bg-rose-500/[0.04] text-rose-600 text-[10px] font-mono font-black uppercase tracking-[0.3em] leading-relaxed relative z-10 flex items-center gap-6">
+               <div class="w-1.5 h-1.5 bg-rose-500 animate-pulse"></div>
+               <span>System_Fault: {{ error }}</span>
             </div>
           }
 
-          <button type="submit" [disabled]="forgotForm.invalid || isLoading" class="w-full py-4 bg-editorial-text text-editorial-bg font-mono text-[11px] tracking-[0.25em] uppercase hover:opacity-90 active:scale-[0.99] transition-all disabled:opacity-20 disabled:cursor-not-allowed">
-            @if (isLoading) {
-              <span class="flex items-center justify-center gap-2">
-                <svg class="animate-spin h-3 w-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-                TRANSMITTING...
-              </span>
-            } @else {
-              INITIATE RECOVERY
-            }
+          <button type="submit" 
+                  [disabled]="forgotForm.invalid || isLoading" 
+                  class="relative h-[80px] w-full bg-editorial-text text-editorial-bg font-mono text-xs tracking-[0.6em] uppercase transition-all hover:bg-black active:scale-[0.99] disabled:opacity-30 disabled:cursor-not-allowed group overflow-hidden border-none shadow-brutalist">
+            <div class="relative z-10 flex items-center justify-center gap-6">
+              @if (isLoading) {
+                <div class="flex items-center gap-4">
+                   <span class="font-black">Transmitting...</span>
+                </div>
+              } @else {
+                <span class="font-black group-hover:tracking-[0.8em] transition-all duration-700">Initiate_Recovery</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" class="group-hover:translate-x-3 transition-transform duration-700">
+                  <path d="m12 19 7-7-7-7"></path><path d="M19 12H5"></path>
+                </svg>
+              }
+            </div>
+            <!-- Shimmer overlay on hover -->
+            <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-[0.05] transition-opacity duration-500 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.3)_50%,transparent_75%)] bg-[length:250%_250%] animate-[shimmer_3s_infinite]"></div>
           </button>
         </form>
  
-        <p class="mt-12 text-center font-mono text-[10px] tracking-[0.15em] text-editorial-text/40 uppercase">
-          Recall Credentials? 
-          <a routerLink="/auth/login" class="text-editorial-text font-bold hover:underline ml-2">Sign In</a>
-        </p>
+        <div class="mt-20 pt-10 border-t-2 border-editorial-text/5 text-center relative z-10">
+          <p class="font-mono text-[10px] tracking-[0.3em] text-editorial-text/20 uppercase flex flex-col items-center justify-center gap-6">
+            <span>Recall_Credentials?</span> 
+            <a routerLink="/auth/login" class="text-editorial-text font-black hover:tracking-[0.5em] transition-all px-8 py-2 border-2 border-editorial-text/10 hover:border-editorial-text">Establish_Session</a>
+          </p>
+        </div>
       }
     </div>
   `

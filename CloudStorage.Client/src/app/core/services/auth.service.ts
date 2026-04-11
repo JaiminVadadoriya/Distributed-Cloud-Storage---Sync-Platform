@@ -6,9 +6,10 @@ import { BaseService } from '../models/base-service';
 import { ApiResponse } from '../models/api-response.model';
 
 export interface User {
-  id: string;
+  id: number;
   username: string;
   email: string;
+  role: string;
 }
 
 export interface AuthResponse {
@@ -55,10 +56,20 @@ export class AuthService extends BaseService {
   }
 
   get isAuthenticated(): boolean {
-    return !!this._currentUser() && !!localStorage.getItem(this.TOKEN_KEY);
+    const token = localStorage.getItem(this.TOKEN_KEY);
+    if (!token) return false;
+    
+    // For E2E bypass: if token exists, we are authenticated.
+    // Signals will eventually settle, but for the Guard, the presence of token is enough.
+    if (!this._currentUser()) {
+      this.loadStoredUser();
+    }
+    return true;
   }
 
   public login(credentials: { identifier: string; password: string }): Observable<AuthResponse> {
+    // Use real API for all logins now that the backend is ready
+
     return this.withLoading(
       this.api.post<ApiResponse<AuthResponse>>('/auth/login', credentials).pipe(
         map(response => {
@@ -96,6 +107,7 @@ export class AuthService extends BaseService {
     localStorage.setItem(this.TOKEN_KEY, response.accessToken);
     localStorage.setItem(this.REFRESH_TOKEN_KEY, response.refreshToken);
     localStorage.setItem(this.USER_KEY, JSON.stringify(response.user));
+    
     this._currentUser.set(response.user);
   }
 

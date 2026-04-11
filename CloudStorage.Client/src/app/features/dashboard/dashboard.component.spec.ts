@@ -25,16 +25,16 @@ describe('DashboardComponent', () => {
   let fixture: ComponentFixture<DashboardComponent>;
   let fileServiceMock: Mocked<FileService>;
   let layoutServiceMock: Mocked<LayoutService>;
-  let syncEngineMock: any;
-  let connectionStatusMock: any;
-  let offlineCacheMock: any;
-  let folderServiceMock: any;
-  let notificationServiceMock: any;
-  let activityServiceMock: any;
-  let signalRServiceMock: any;
-  let uploadManagerMock: any;
-  let searchServiceMock: any;
-  let authServiceMock: any;
+  let syncEngineMock: SyncEngineService;
+  let connectionStatusMock: ConnectionStatusService;
+  let offlineCacheMock: OfflineCacheService;
+  let folderServiceMock: FolderService;
+  let notificationServiceMock: NotificationService;
+  let activityServiceMock: ActivityService;
+  let signalRServiceMock: SignalRService;
+  let uploadManagerMock: UploadManagerService;
+  let searchServiceMock: SearchService;
+  let authServiceMock: AuthService;
 
   beforeEach(async () => {
     fileServiceMock = { 
@@ -66,31 +66,31 @@ describe('DashboardComponent', () => {
       hasPendingOps: signal(false),
       pendingOpsCount: signal(0),
       refreshPendingOpsCount: vi.fn()
-    };
+    } as unknown as SyncEngineService;
 
     connectionStatusMock = {
       isOnline: signal(true),
       isOffline: signal(false)
-    };
+    } as unknown as ConnectionStatusService;
 
     offlineCacheMock = {
       getCachedFiles: vi.fn().mockResolvedValue([]),
       cacheFiles: vi.fn().mockResolvedValue(undefined)
-    };
+    } as unknown as OfflineCacheService;
 
     folderServiceMock = {
       createFolder: vi.fn(),
       getRootFolders: vi.fn().mockReturnValue(of([]))
-    };
+    } as unknown as FolderService;
 
     notificationServiceMock = {
       success: vi.fn(),
       error: vi.fn()
-    };
+    } as unknown as NotificationService;
 
     activityServiceMock = {
         getRecentActivity: vi.fn().mockReturnValue(of([]))
-    };
+    } as unknown as ActivityService;
 
     signalRServiceMock = {
       startConnection: vi.fn().mockResolvedValue(undefined),
@@ -100,19 +100,19 @@ describe('DashboardComponent', () => {
 
     uploadManagerMock = {
         queue: signal([])
-    };
+    } as unknown as UploadManagerService;
 
     searchServiceMock = {
         query: signal(''),
         suggestions: signal([]),
         updateQuery: vi.fn(),
         addToHistory: vi.fn()
-    };
+    } as unknown as SearchService;
 
     authServiceMock = {
         currentUser: signal({ username: 'Test User' }),
         logout: vi.fn()
-    };
+    } as unknown as AuthService;
 
     await TestBed.configureTestingModule({
       imports: [DashboardComponent, RouterTestingModule],

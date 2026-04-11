@@ -16,6 +16,7 @@ export interface UploadTask {
   uploadedChunks: number;
   totalChunks: number;
   uploadSpeed: number;
+  folderId?: string;
   error?: string;
 }
 
@@ -43,7 +44,7 @@ export class UploadManagerService extends BaseService {
   /**
    * Provisions a new transmission task in the local queue.
    */
-  public async addToQueue(file: File): Promise<string> {
+  public async addToQueue(file: File, folderId?: string): Promise<string> {
     const id = `TX_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`.toUpperCase();
     const chunks = await this.chunker.splitFileIntoChunks(file);
 
@@ -56,7 +57,8 @@ export class UploadManagerService extends BaseService {
       status: 'pending',
       uploadedChunks: 0,
       totalChunks: chunks.length,
-      uploadSpeed: 0
+      uploadSpeed: 0,
+      folderId
     };
 
     this.updateTask(task);
@@ -78,7 +80,7 @@ export class UploadManagerService extends BaseService {
 
       // Handshake with storage node
       const session = await lastValueFrom(
-        this.uploader.initiateUpload(task.file.name, task.file.size, task.totalChunks, task.file.type)
+        this.uploader.initiateUpload(task.id, task.file.size, task.totalChunks, task.file.name, task.folderId)
       );
 
       if (!session) throw new Error('HANDSHAKE_REJECTED');

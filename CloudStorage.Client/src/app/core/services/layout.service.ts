@@ -1,4 +1,7 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject, effect } from '@angular/core';
+import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { map } from 'rxjs/operators';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 export interface ContextMenuItem {
   label: string;
@@ -16,7 +19,7 @@ export interface ConfirmConfig {
   danger?: boolean;
   confirmLabel?: string;
   cancelLabel?: string;
-  action: () => void;
+  action: () => void | Promise<void> | import('rxjs').Observable<void>;
 }
 
 export interface PromptConfig {
@@ -37,6 +40,16 @@ export interface PromptConfig {
   providedIn: 'root'
 })
 export class LayoutService {
+  private readonly breakpointObserver = inject(BreakpointObserver);
+
+  // Responsive state
+  public readonly isMobile = toSignal(
+    this.breakpointObserver.observe([Breakpoints.Handset, Breakpoints.TabletPortrait]).pipe(
+      map(result => result.matches)
+    ),
+    { initialValue: false }
+  );
+
   private readonly _isSidebarOpen = signal<boolean>(false);
   public readonly isSidebarOpen = this._isSidebarOpen.asReadonly();
 
@@ -45,6 +58,21 @@ export class LayoutService {
 
   private readonly _isFileDetailsPanelOpen = signal<boolean>(false);
   public readonly isFileDetailsPanelOpen = this._isFileDetailsPanelOpen.asReadonly();
+
+  private readonly _uploadTrigger = signal<number>(0);
+  public readonly uploadTrigger = this._uploadTrigger.asReadonly();
+
+  private readonly _newFolderTrigger = signal<number>(0);
+  public readonly newFolderTrigger = this._newFolderTrigger.asReadonly();
+
+  public triggerGlobalUpload(): void {
+    this._uploadTrigger.update(v => v + 1);
+    this.openUploadModal();
+  }
+
+  public triggerNewFolder(): void {
+    this._newFolderTrigger.update(v => v + 1);
+  }
 
   private readonly _selectedFileId = signal<string | null>(null);
   public readonly selectedFileId = this._selectedFileId.asReadonly();
@@ -73,8 +101,23 @@ export class LayoutService {
   private readonly _promptModal = signal<(PromptConfig & { isOpen: boolean }) | null>(null);
   public readonly promptModal = this._promptModal.asReadonly();
 
+  constructor() {
+    // Automatically close sidebar when switching to desktop if it was open as a drawer
+    effect(() => {
+      if (!this.isMobile()) {
+        this._isSidebarOpen.set(true); // Default open on desktop
+      } else {
+        this._isSidebarOpen.set(false); // Default closed on mobile
+      }
+    });
+  }
+
   public toggleSidebar(): void {
     this._isSidebarOpen.update(v => !v);
+  }
+
+  public openSidebar(): void {
+    this._isSidebarOpen.set(true);
   }
 
   public closeSidebar(): void {
@@ -103,6 +146,7 @@ export class LayoutService {
     this._isNotificationDropdownOpen.update(v => !v);
     if (this._isNotificationDropdownOpen()) {
       this._isProfileMenuOpen.set(false);
+      if (this.isMobile()) this.closeSidebar();
     }
   }
 
@@ -114,6 +158,7 @@ export class LayoutService {
     this._isProfileMenuOpen.update(v => !v);
     if (this._isProfileMenuOpen()) {
       this._isNotificationDropdownOpen.set(false);
+      if (this.isMobile()) this.closeSidebar();
     }
   }
 
@@ -146,6 +191,7 @@ export class LayoutService {
     this._isContextMenuOpen.set(false);
     this._confirmModal.set(null);
     this._promptModal.set(null);
+    if (this.isMobile()) this.closeSidebar();
   }
 
   public openConfirm(config: ConfirmConfig): void {
@@ -164,4 +210,5 @@ export class LayoutService {
     this._promptModal.set(null);
   }
 }
+
 

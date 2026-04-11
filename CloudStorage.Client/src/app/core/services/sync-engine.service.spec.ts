@@ -8,6 +8,9 @@ import { ConnectionStatusService } from './connection-status.service';
 import { NotificationService } from './notification.service';
 import { AuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
+import { WritableSignal } from '@angular/core';
+import { SyncConflict } from '../models/sync.model';
+import { CachedFileMetadata } from './offline-cache.service';
 
 describe('SyncEngineService', () => {
   let service: SyncEngineService;
@@ -70,22 +73,24 @@ describe('SyncEngineService', () => {
     expect(offlineCacheMock.getLastSyncTimestamp).not.toHaveBeenCalled();
     expect(service.syncLog()[0].message).toContain('SYNC_ABORTED: System offline.');
   });
-
   it('should resolve a conflict', async () => {
     const fileId = 'f1';
-    const conflict = {
+    const conflict: SyncConflict = {
       fileId,
       fileName: 'conflict.txt',
       localVersionVector: 'v1',
       serverVersionVector: 'v2',
       serverSize: 200,
-      serverLastModified: new Date().toISOString()
+      serverLastModified: new Date().toISOString(),
+      localLastModified: new Date().toISOString(),
+      localSize: 100,
+      serverVersion: 2
     };
     
     // Setup initial conflict state
     // We need to use update because _conflicts is a private signal accessed via public readonly conflicts
-    // Since we are in a test, we can use (service as any)._conflicts.set
-    (service as any)._conflicts.set([conflict]);
+    // Since we are in a test, we can use a type-safe cast
+    (service as unknown as { _conflicts: WritableSignal<SyncConflict[]> })._conflicts.set([conflict]);
 
     const resolutionPromise = service.resolveConflict(fileId, 'KeepServer');
 
@@ -106,7 +111,7 @@ describe('SyncEngineService', () => {
   });
 
   it('should log messages and clear log', () => {
-    (service as any).log('info', 'TEST_LOG');
+    (service as unknown as { log: (type: string, message: string) => void }).log('info', 'TEST_LOG');
     expect(service.syncLog().length).toBe(1);
     expect(service.syncLog()[0].message).toBe('TEST_LOG');
 
@@ -125,7 +130,7 @@ describe('SyncEngineService', () => {
       lastModifiedAt: new Date().toISOString(),
       isShared: false,
       versionVector: null
-    } as any);
+    } as unknown as CachedFileMetadata);
 
     await service.simulateLocalEdit(fileId, fileName);
 

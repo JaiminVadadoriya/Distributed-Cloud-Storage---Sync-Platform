@@ -1,6 +1,13 @@
 @if (isOffline()) {
-  <div class="offline-banner">
-    <span class="offline-icon">⚠</span>
-    <span>You are offline. Changes will sync when connection is restored.</span>
+  <div class="fixed top-0 left-0 w-full z-[300] bg-rose-600 px-6 py-3 flex items-center justify-between border-b-2 border-editorial-text shadow-brutalist animate-in-fade">
+    <div class="flex items-center gap-4">
+      <div class="w-6 h-6 border-2 border-editorial-bg flex items-center justify-center font-mono text-[10px] font-bold text-editorial-bg animate-pulse">!</div>
+      <span class="font-mono text-[10px] font-extrabold uppercase tracking-[0.4em] text-editorial-bg">Network_Connection_Fault: SYSTEM_OFFLINE</span>
+    </div>
+    <div class="flex items-center gap-6">
+      <span class="font-mono text-[9px] uppercase tracking-widest text-editorial-bg/60 italic">Changes_Will_Queue_Locally</span>
+      <div class="h-4 w-[1px] bg-editorial-bg/20"></div>
+      <button class="font-mono text-[9px] uppercase tracking-[0.3em] font-extrabold text-editorial-bg hover:underline decoration-2 underline-offset-4">Retry_Handshake</button>
+    </div>
   </div>
 }

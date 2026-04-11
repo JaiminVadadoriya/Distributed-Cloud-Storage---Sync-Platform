@@ -26,16 +26,16 @@ describe('ParallelDownloadService', () => {
     service = TestBed.inject(ParallelDownloadService);
 
     // Mock window.showSaveFilePicker
-    (window as any).showSaveFilePicker = vi.fn().mockResolvedValue({
+    vi.stubGlobal('showSaveFilePicker', vi.fn().mockResolvedValue({
       createWritable: vi.fn().mockResolvedValue({
         write: vi.fn().mockResolvedValue(undefined),
         close: vi.fn().mockResolvedValue(undefined),
         abort: vi.fn().mockResolvedValue(undefined)
       })
-    });
+    }));
 
     // Mock fetch
-    global.fetch = vi.fn().mockResolvedValue({
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
       body: {
         getReader: vi.fn().mockReturnValue({
@@ -44,7 +44,7 @@ describe('ParallelDownloadService', () => {
             .mockResolvedValueOnce({ done: true, value: undefined })
         })
       }
-    });
+    }));
   });
 
   it('should be created', () => {
@@ -64,19 +64,19 @@ describe('ParallelDownloadService', () => {
     await service.downloadLargeFile('f1');
 
     expect(apiServiceMock.get).toHaveBeenCalledWith('/files/f1/download-link');
-    expect((window as any).showSaveFilePicker).toHaveBeenCalled();
-    expect(global.fetch).toHaveBeenCalledWith('http://sas');
+    expect((window as unknown as { showSaveFilePicker: unknown }).showSaveFilePicker).toHaveBeenCalled();
+    expect(fetch).toHaveBeenCalledWith('http://sas');
   });
 
   it('should throw error if browser not supported', async () => {
-    const original = (window as any).showSaveFilePicker;
-    delete (window as any).showSaveFilePicker;
+    vi.stubGlobal('showSaveFilePicker', undefined);
 
-    apiServiceMock.get.mockReturnValue(of({ success: true, data: { chunks: [] } }));
+    apiServiceMock.get.mockReturnValue(of({ success: true, data: { fileName: 'test.zip', chunks: [] } }));
 
     await expect(service.downloadLargeFile('f1')).rejects.toThrow(/BROWSER_UNSUPPORTED/);
 
-    (window as any).showSaveFilePicker = original;
+    // Restore for other tests
+    vi.unstubAllGlobals();
   });
 
   it('should set isLoading state correctly', async () => {

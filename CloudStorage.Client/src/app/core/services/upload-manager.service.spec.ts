@@ -125,4 +125,25 @@ describe('UploadManagerService', () => {
 
     expect(service.globalSpeed()).toBe(500);
   });
+
+  it('should pass parentFolderId to uploader when provided', async () => {
+    const file = new File(['test'], 'test.txt');
+    const folderId = 'folder-123';
+    chunkerMock.splitFileIntoChunks.mockResolvedValue([{ index: 0, data: file as unknown as Blob, hash: 'h1' }]);
+    
+    const mockSession: UploadSession = { sessionId: 's1', fileId: 'f1', uploadUrl: '/api/upload', parentFolderId: folderId };
+    uploaderMock.initiateUpload.mockReturnValue(of(mockSession));
+    uploaderMock.uploadChunk.mockReturnValue(of({ chunkId: 'c1', status: 'success', isDuplicate: false }));
+    uploaderMock.completeUpload.mockReturnValue(of({ 
+      fileId: 'f1', status: 'ready', 
+      metadata: { fileName: 'test.txt', size: 4, chunkCount: 1, contentType: 'text/plain' } 
+    }));
+
+    await service.addToQueue(file, folderId);
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    expect(uploaderMock.initiateUpload).toHaveBeenCalledWith(
+      expect.any(String), expect.any(Number), expect.any(Number), expect.any(String), folderId
+    );
+  });
 });

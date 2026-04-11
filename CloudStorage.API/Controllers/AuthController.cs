@@ -13,7 +13,6 @@ namespace CloudStorage.API.Controllers
     /// Inherits from BaseApiController for shared infrastructure.
     /// </summary>
     [Route("api/[controller]")]
-    [AllowAnonymous] // Override base [Authorize] — most auth endpoints are public
     [EnableRateLimiting("auth")]
     public class AuthController : BaseApiController
     {
@@ -40,6 +39,7 @@ namespace CloudStorage.API.Controllers
         });
 
         [HttpPost("login")]
+        [AllowAnonymous]
         public Task<IActionResult> Login(LoginDto dto) => ExecuteAsync(async () =>
         {
             var response = await _authService.LoginAsync(dto.Identifier, dto.Password);
@@ -50,6 +50,7 @@ namespace CloudStorage.API.Controllers
         });
 
         [HttpPost("refresh")]
+        [AllowAnonymous]
         public Task<IActionResult> Refresh(RefreshTokenDto dto) => ExecuteAsync(async () =>
         {
             var response = await _authService.RefreshTokenAsync(dto.RefreshToken);
@@ -60,7 +61,6 @@ namespace CloudStorage.API.Controllers
         });
 
         [HttpPost("logout")]
-        [Authorize]
         public Task<IActionResult> Logout(RefreshTokenDto dto) => ExecuteAsync(async () =>
         {
             await _authService.LogoutAsync(dto.RefreshToken);
@@ -68,6 +68,7 @@ namespace CloudStorage.API.Controllers
         });
 
         [HttpPost("password-reset-request")]
+        [AllowAnonymous]
         public Task<IActionResult> RequestPasswordReset(PasswordResetRequestDto dto) => ExecuteAsync(async () =>
         {
             var result = await _authService.RequestPasswordResetAsync(dto.Email);
@@ -75,6 +76,7 @@ namespace CloudStorage.API.Controllers
         });
 
         [HttpPost("password-reset")]
+        [AllowAnonymous]
         public Task<IActionResult> ResetPassword(PasswordResetDto dto) => ExecuteAsync(async () =>
         {
             await _authService.ResetPasswordAsync(dto.Token, dto.NewPassword);
@@ -82,7 +84,6 @@ namespace CloudStorage.API.Controllers
         });
 
         [HttpPut("profile")]
-        [Authorize]
         public Task<IActionResult> UpdateProfile(UpdateProfileDto dto) => ExecuteAsync(async () =>
         {
             var user = await _authService.UpdateProfileAsync(GetUserId(), dto);
@@ -90,7 +91,6 @@ namespace CloudStorage.API.Controllers
         });
 
         [HttpPut("change-password")]
-        [Authorize]
         public Task<IActionResult> ChangePassword(ChangePasswordDto dto) => ExecuteAsync(async () =>
         {
             await _authService.ChangePasswordAsync(GetUserId(), dto);
@@ -98,7 +98,6 @@ namespace CloudStorage.API.Controllers
         });
 
         [HttpGet("users/search")]
-        [Authorize]
         public Task<IActionResult> SearchUsers([FromQuery] string q) => ExecuteAsync(async () =>
         {
             var results = await _authService.SearchUsersAsync(q);

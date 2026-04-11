@@ -1,0 +1,176 @@
+version: '3.8'
+
+# Test Environment Docker Compose
+# Isolated from production/development environments for reliable test execution
+# Usage: docker-compose -f docker-compose.test.yml up -d
+
+services:
+  cloudstorage.api:
+    image: ${DOCKER_REGISTRY-}cloudstorageapi:test
+    build:
+      context: .
+      dockerfile: CloudStorage.API/Dockerfile
+      args:
+        BUILDKIT_CONTEXT_KEEP_GIT_DIR: 1
+    # No exposed ports - traffic only through NGINX
+    deploy:
+      replicas: 2  # Reduced from 3 for test environment
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Test
+      - ConnectionStrings__DefaultConnection=Host=postgres-test;Database=CloudStorageDb_Test;Username=postgres;Password=testpassword123
+      - Jwt__Key=TestKeyThatIsLongEnoughForHS256AlgorithmEncodingPurposes1234567890
+      - Jwt__Issuer=CloudStorageApiTest
+      - Jwt__Audience=CloudStorageClientsTest
+      - Storage__ChunkPath=/app/storage/chunks
+      - AzureBlob__ConnectionString=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite-test:10000/devstoreaccount1;
+      - Redis__ConnectionString=redis-test:6379
+      - RabbitMQ__HostName=rabbitmq-test
+      - RabbitMQ__UserName=guest
+      - RabbitMQ__Password=guest
+      - AzureBlob__ContainerName=cloudstorage-test-chunks
+      - Logging__LogLevel__Default=Information
+      - Logging__LogLevel__Microsoft=Warning
+    volumes:
+      - storage_data_test:/app/storage/chunks
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      azurite-test:
+        condition: service_started
+      redis-test:
+        condition: service_healthy
+      rabbitmq-test:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: on-failure
+    networks:
+      - cloudstorage-test-network
+
+  nginx-test:
+    image: nginx:alpine
+    ports:
+      - "5010:80"  # Different port from dev (5000) to avoid conflicts
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      cloudstorage.api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-O", "/dev/null", "-q", "http://localhost/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - cloudstorage-test-network
+
+  postgres-test:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: CloudStorageDb_Test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: testpassword123
+      PGDATA: /var/lib/postgresql/data/pgdata
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=128MB"
+      - "-c"
+      - "work_mem=2MB"
+      - "-c"
+      - "max_connections=100"
+      - "-c"
+      - "effective_cache_size=256MB"
+      - "-c"
+      - "fsync=off"  # Disable fsync for tests (faster, acceptable for test data)
+      - "-c"
+      - "full_page_writes=off"  # Speed up tests
+    ports:
+      - "5434:5432"  # Different port from dev (5433)
+    volumes:
+      - postgres_data_test:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - cloudstorage-test-network
+
+  redis-test:
+    image: redis:7-alpine
+    ports:
+      - "6380:6379"  # Different port from dev (6379)
+    volumes:
+      - redis_data_test:/data
+    command: >
+      redis-server
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - cloudstorage-test-network
+
+  rabbitmq-test:
+    image: rabbitmq:3-management-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5673:5672"  # Different port from dev (5672)
+      - "15673:15672"  # Management UI on different port
+    volumes:
+      - rabbitmq_data_test:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - cloudstorage-test-network
+
+  azurite-test:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    ports:
+      - "10010:10000"  # Different ports from dev
+      - "10011:10001"
+      - "10012:10002"
+    volumes:
+      - azurite_data_test:/data
+    command: >
+      azurite
+      --loose
+      --skipApiVersionCheck
+      --blobHost 0.0.0.0
+      --queueHost 0.0.0.0
+      --tableHost 0.0.0.0
+      --location /data
+    networks:
+      - cloudstorage-test-network
+
+volumes:
+  postgres_data_test:
+    driver: local
+  redis_data_test:
+    driver: local
+  rabbitmq_data_test:
+    driver: local
+  storage_data_test:
+    driver: local
+  azurite_data_test:
+    driver: local
+
+networks:
+  cloudstorage-test-network:
+    driver: bridge

@@ -13,7 +13,12 @@ import { UploadProgressComponent } from '../upload-progress/upload-progress.comp
     @if (layout.isUploadModalOpen()) {
       <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 lg:p-8">
         <!-- Backdrop -->
-        <div class="absolute inset-0 bg-editorial-bg/80 backdrop-blur-md" (click)="layout.closeUploadModal()"></div>
+        <div class="absolute inset-0 bg-editorial-bg/80 backdrop-blur-md" 
+             (click)="layout.closeUploadModal()"
+             (keydown.escape)="layout.closeUploadModal()"
+             tabindex="0"
+             role="button"
+             aria-label="Close Modal"></div>
         
         <!-- Modal Content -->
         <div class="relative w-full max-w-4xl bg-editorial-bg border-4 border-editorial-text shadow-[16px_16px_0px_rgba(0,0,0,1)] flex flex-col max-h-[90vh] overflow-hidden animate-in fade-in zoom-in-95 duration-200">

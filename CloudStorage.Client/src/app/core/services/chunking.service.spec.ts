@@ -6,6 +6,14 @@ describe('ChunkingService', () => {
   let service: ChunkingService;
 
   beforeEach(() => {
+    vi.stubGlobal('crypto', {
+      subtle: {
+        digest: vi.fn().mockImplementation(async () => {
+          return new Uint8Array(32).buffer; // Mock SHA-256 result
+        })
+      }
+    });
+
     TestBed.configureTestingModule({
       providers: [ChunkingService]
     });

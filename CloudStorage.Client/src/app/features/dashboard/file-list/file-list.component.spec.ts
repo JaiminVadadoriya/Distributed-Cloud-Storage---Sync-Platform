@@ -1,5 +1,5 @@
 import '../../../../test-setup';
-import { vi, describe, it, expect, beforeEach, type Mocked } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { signal, NO_ERRORS_SCHEMA, provideZonelessChangeDetection } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -16,20 +16,21 @@ import { UploadManagerService } from '../../../core/services/upload-manager.serv
 import { NotificationService } from '../../../core/services/notification.service';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
+import { FileItem } from '../../../core/models/file.model';
 
 describe('FileListComponent', () => {
   let component: FileListComponent;
   let fixture: ComponentFixture<FileListComponent>;
-  let mockFileService: Mocked<FileService>;
-  let mockFolderService: Mocked<FolderService>;
-  let mockConnectionStatus: Mocked<ConnectionStatusService>;
-  let mockOfflineCache: Mocked<OfflineCacheService>;
-  let mockSyncEngine: Mocked<SyncEngineService>;
-  let mockSearchService: Mocked<SearchService>;
-  let mockLayoutService: Mocked<LayoutService>;
-  let mockUploadManager: Mocked<UploadManagerService>;
-  let mockNotification: Mocked<NotificationService>;
-  let mockRouter: Mocked<Router>;
+  let mockFileService: FileService;
+  let mockFolderService: FolderService;
+  let mockConnectionStatus: ConnectionStatusService;
+  let mockOfflineCache: OfflineCacheService;
+  let mockSyncEngine: SyncEngineService;
+  let mockSearchService: SearchService;
+  let mockLayoutService: LayoutService;
+  let mockUploadManager: UploadManagerService;
+  let mockNotification: NotificationService;
+  let mockRouter: Router;
 
   beforeEach(async () => {
     mockFileService = {
@@ -37,49 +38,58 @@ describe('FileListComponent', () => {
       deleteFile: vi.fn().mockReturnValue(of(undefined)),
       renameFile: vi.fn().mockReturnValue(of(undefined)),
       isLoading: signal(false)
-    } as any;
+    } as unknown as FileService;
 
     mockFolderService = {
       getRootFolders: vi.fn().mockReturnValue(of([])),
       createFolder: vi.fn().mockReturnValue(of({}))
-    } as any;
+    } as unknown as FolderService;
 
     mockConnectionStatus = {
       isOnline: signal(true),
       isOffline: signal(false)
-    } as any;
+    } as unknown as ConnectionStatusService;
 
     mockOfflineCache = {
-      getCachedFiles: vi.fn().mockResolvedValue([])
-    } as any;
+      getCachedFiles: vi.fn().mockResolvedValue([]),
+      cacheFiles: vi.fn().mockResolvedValue(undefined)
+    } as unknown as OfflineCacheService;
 
     mockSyncEngine = {
       hasPendingOps: signal(false)
-    } as any;
+    } as unknown as SyncEngineService;
 
     mockSearchService = {
       query: signal(''),
-      suggestions: signal([])
-    } as any;
+      filters: signal({}),
+      suggestions: signal([]),
+      hasActiveFilters: signal(false),
+      updateQuery: vi.fn(),
+      updateFilters: vi.fn(),
+      clearFilters: vi.fn(),
+      addToHistory: vi.fn()
+    } as unknown as SearchService;
 
     mockLayoutService = {
       isContextMenuOpen: signal(false),
       openContextMenu: vi.fn(),
-      closeContextMenu: vi.fn()
-    } as any;
+      closeContextMenu: vi.fn(),
+      uploadTrigger: signal(0),
+      newFolderTrigger: signal(0)
+    } as unknown as LayoutService;
 
     mockUploadManager = {
       queue: signal([])
-    } as any;
+    } as unknown as UploadManagerService;
 
     mockNotification = {
       success: vi.fn(),
       error: vi.fn()
-    } as any;
+    } as unknown as NotificationService;
 
     mockRouter = {
       navigate: vi.fn()
-    } as any;
+    } as unknown as Router;
 
     await TestBed.configureTestingModule({
       imports: [FileListComponent],
@@ -130,9 +140,9 @@ describe('FileListComponent', () => {
        clientX: 100,
        clientY: 200,
        stopPropagation: vi.fn()
-    } as any;
+    } as unknown as MouseEvent;
     
-    component.onContextMenu(mockEvent, { id: 'f1', name: 'test.txt' } as any);
+    component.onContextMenu(mockEvent, { id: 'f1', name: 'test.txt' } as unknown as FileItem);
     
     expect(mockEvent.preventDefault).toHaveBeenCalled();
     expect(mockLayoutService.openContextMenu).toHaveBeenCalled();

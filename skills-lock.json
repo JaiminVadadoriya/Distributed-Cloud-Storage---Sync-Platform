@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "skills": {
+    "analyzing-dotnet-performance": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "f8626732348d66f4ffeab6935fb1c1f2f9921cbc2a3901cfc87e4dfe34a3b912"
+    },
+    "code-testing-agent": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "b665fff55ea2dba3bfa500f034a00cfd58a65964334475c519a4799d3aa5de59"
+    },
+    "configuring-opentelemetry-dotnet": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "a5dcb1d3e78dd20c3f537273e6861954e57e9ec33633c568917141e18b0e43eb"
+    },
+    "dotnet-trace-collect": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "e14f63744981468011f1759e99624df1f8163fa3363f7e09077ee71add791b0c"
+    },
+    "mcp-csharp-debug": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "000a5082e1d07b6bd6f43ec2ed2104dab115d81f0ed9dd0eb7fd264cbb6a6fc2"
+    },
+    "mcp-csharp-test": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "35b89bcdba42939b650bd363ac3286d02588de80ebda01f0b85683f5a1e1f5a4"
+    },
+    "migrate-dotnet10-to-dotnet11": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "e3007156547b7c001adace88989e917985b301912c69dccfa1c2a6d1b871d736"
+    },
+    "migrate-dotnet8-to-dotnet9": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "8af4037a6c7129b05a84fc79e0c3f8f504905a1886b5a1478330a1e70993706a"
+    },
+    "msbuild-modernization": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "0b34f7ce4367f03d7490c19a396102ea2d25b9376d4ddd32a82e452566b7fa61"
+    },
+    "msbuild-server": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "f62a651aea293196d833b9b0bd9b66aa4a95000e976f7aa16c2f16620cfd4b30"
+    },
+    "optimizing-ef-core-queries": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "0a0d0bb8844bb88e3067c4a47780c844960d09eeaa7f9dcdba6400e1b2e6f288"
+    },
+    "playwright-skill": {
+      "source": "testdino-hq/playwright-skill",
+      "sourceType": "github",
+      "computedHash": "631fed9e85f58772fff22e0f0e760c083c1cdf29809d05735584d51f6cc5b174"
+    },
+    "run-tests": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "7aba77cfd69dcc881c59fd09494a80e05745c2db08b88fc8b9edb18312abad31"
+    }
+  }
+}

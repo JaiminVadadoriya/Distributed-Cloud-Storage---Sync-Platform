@@ -15,7 +15,9 @@ import { CommonModule } from '@angular/common';
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
         <div class="p-10 border border-editorial-text/10 bg-editorial-text/[0.01] space-y-8 relative group overflow-hidden">
-          <div class="absolute inset-0 opacity-[0.02] grain-overlay select-none"></div>
+          <div class="grain-wrapper">
+            <div class="absolute inset-0 opacity-[0.02] grain-overlay select-none"></div>
+          </div>
           <div class="relative z-10 space-y-6">
             <h4 class="text-sm font-mono font-bold uppercase tracking-[0.3em] text-editorial-text pb-4 border-b border-editorial-text/10">Active_Protocol</h4>
             <div class="space-y-2">

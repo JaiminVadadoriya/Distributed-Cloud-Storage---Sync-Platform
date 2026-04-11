@@ -1,0 +1,51 @@
+<testsuites id="" name="" tests="6" failures="0" skipped="3" errors="1" time="51099.511481">
+<testsuite name="audit-remediation.spec.ts" timestamp="2026-04-10T16:49:15.226Z" hostname="chromium" tests="6" failures="0" skipped="3" time="51054.11" errors="1">
+<testcase name="Web Application Remediation Audit › Dashboard &amp; File Explorer › Task 1: File Explorer - Context Menu Missing" classname="audit-remediation.spec.ts" time="6418.129">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|test-results\audit-remediation-Web-Appl-4f20f-orer---Context-Menu-Missing-chromium-retry1\error-context.md]]
+
+[[ATTACHMENT|test-results\audit-remediation-Web-Appl-4f20f-orer---Context-Menu-Missing-chromium-retry1\trace.zip]]
+]]>
+</system-out>
+</testcase>
+<testcase name="Web Application Remediation Audit › Dashboard &amp; File Explorer › Task 2: File Explorer - Checkbox Selection Fails" classname="audit-remediation.spec.ts" time="17.174">
+</testcase>
+<testcase name="Web Application Remediation Audit › Dashboard &amp; File Explorer › Task 4: Search - Filtering Not Functional" classname="audit-remediation.spec.ts" time="44618.807">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|test-results\audit-remediation-Web-Appl-c81f0----Filtering-Not-Functional-chromium\error-context.md]]
+]]>
+</system-out>
+<error message="page.goto: Target page, context or browser has been closed" type="Error">
+<![CDATA[  [chromium] › audit-remediation.spec.ts:77:9 › Web Application Remediation Audit › Dashboard & File Explorer › Task 4: Search - Filtering Not Functional 
+
+    Error: page.goto: Target page, context or browser has been closed
+
+      42 |     if (await authenticatedPage.locator('app-prompt-modal, app-confirm-modal').isVisible()) {
+      43 |       await authenticatedPage.keyboard.press('Escape');
+    > 44 |       await authenticatedPage.waitForTimeout(200);
+         |                               ^
+      45 |     }
+      46 |   });
+      47 |
+        at D:\college\cloud-storage\CloudStorage.Client\e2e\audit-remediation.spec.ts:44:31
+
+    Error Context: ..\test-results\audit-remediation-Web-Appl-c81f0----Filtering-Not-Functional-chromium\error-context.md
+]]>
+</error>
+</testcase>
+<testcase name="Web Application Remediation Audit › Dashboard &amp; File Explorer › Task 5: New Folder - Lack of Naming Constraints" classname="audit-remediation.spec.ts">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Web Application Remediation Audit › Dashboard &amp; File Explorer › Task 7: Action Stability - Global Unresponsiveness" classname="audit-remediation.spec.ts">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Web Application Remediation Audit › Trash View › Task 3: Trash - Restore and Purge Actions Inactive" classname="audit-remediation.spec.ts">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+</testsuites>

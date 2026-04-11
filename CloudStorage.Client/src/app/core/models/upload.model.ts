@@ -2,6 +2,7 @@ export interface UploadSession {
   fileId: string;
   sessionId: string;
   uploadUrl: string;
+  parentFolderId?: string;
 }
 
 export interface ChunkUploadResponse {

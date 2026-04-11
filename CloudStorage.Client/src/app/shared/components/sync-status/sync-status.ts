@@ -9,42 +9,46 @@ import { ConnectionStatusService } from '../../../core/services/connection-statu
   imports: [CommonModule],
   template: `
     <div class="fixed bottom-8 right-8 z-[60] flex flex-col items-end gap-3 pointer-events-none">
-      <div class="px-5 py-3 bg-editorial-bg border border-editorial-text shadow-2xl flex items-center gap-4 pointer-events-auto transform transition-transform hover:-translate-y-1">
-        <div class="relative flex h-2 w-2">
+      <div class="px-6 py-4 bg-editorial-bg border-2 border-editorial-text shadow-brutalist flex items-center gap-6 pointer-events-auto transform transition-all hover:-translate-y-2 group overflow-hidden relative">
+        <div class="absolute inset-0 bg-editorial-text/[0.02] pointer-events-none group-hover:bg-editorial-text/[0.04]"></div>
+        
+        <div class="relative flex items-center">
           @if (isOffline()) {
-            <span class="absolute inline-flex h-full w-full rounded-full bg-rose-500 opacity-20"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+            <div class="h-1 w-6 bg-rose-600 animate-pulse"></div>
           } @else if (isSyncing()) {
-            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-editorial-text opacity-75"></span>
-            <span class="relative inline-flex rounded-full h-2 w-2 bg-editorial-text"></span>
+            <div class="h-1 w-6 bg-editorial-text animate-[shimmer_1s_infinite]"></div>
           } @else {
-             <span class="relative inline-flex rounded-full h-2 w-2 bg-editorial-text/20"></span>
+            <div class="h-1 w-6 bg-editorial-text/20"></div>
           }
         </div>
 
-        <div class="flex flex-col">
-          <span class="font-mono text-[10px] font-bold uppercase tracking-[0.3em] text-editorial-text leading-tight">
+        <div class="flex flex-col gap-1 relative z-10">
+          <span class="font-mono text-[10px] font-extrabold uppercase tracking-[0.4em] text-editorial-text leading-tight">
             {{ statusText() }}
           </span>
           @if (hasPendingOps()) {
-            <span animate.enter="animate-sync-enter"
-                  animate.leave="animate-sync-leave"
-                  class="font-mono text-[7px] uppercase tracking-widest text-editorial-text/40">
-              Queue: {{ pendingOpsCount() }} Operations
-            </span>
+            <div class="flex items-center gap-2 animate-in-fade">
+               <div class="w-2 h-2 border border-editorial-text/20 animate-spin"></div>
+               <span class="font-mono text-[7px] uppercase tracking-[0.5em] text-editorial-text/40 font-bold">
+                 RESOLVING: {{ pendingOpsCount() }} OPERATIONS
+               </span>
+            </div>
+          } @else if (!isOffline()) {
+             <span class="font-mono text-[7px] uppercase tracking-[0.5em] text-editorial-text/20 font-bold">SYSTEM_STABLE</span>
           }
         </div>
 
         @if (hasConflicts()) {
-          <div animate.enter="animate-sync-enter"
-               animate.leave="animate-sync-leave"
-               class="flex items-center gap-2">
-            <div class="h-8 w-[1px] bg-editorial-text/10 mx-2"></div>
-            <div class="flex items-center gap-2 px-3 py-1 bg-rose-500 text-white font-mono text-[8px] font-bold uppercase tracking-widest animate-pulse">
-              Conflict_Alert
+          <div class="flex items-center gap-2 animate-in-scale relative z-10">
+            <div class="h-10 w-[2px] bg-rose-500/20 mx-2"></div>
+            <div class="flex items-center gap-3 px-3 py-1.5 bg-rose-600 text-editorial-bg font-mono text-[9px] font-extrabold uppercase tracking-widest shadow-sm">
+              <span class="animate-pulse">CONFLICT_ALERT</span>
             </div>
           </div>
         }
+
+        <!-- Scanning bar animation -->
+        <div class="absolute top-0 left-0 w-full h-[1px] bg-editorial-text opacity-20 -translate-x-full group-hover:translate-x-full transition-transform duration-[2s] linear"></div>
       </div>
     </div>
   `,

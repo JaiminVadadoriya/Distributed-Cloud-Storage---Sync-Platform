@@ -48,8 +48,8 @@ import { BaseComponent } from '../../../core/models/base-component';
                 <input id="username" type="text" formControlName="username"
                   class="w-full px-0 py-4 bg-transparent border-b border-editorial-text/20 focus:border-editorial-text outline-none transition-all font-mono text-[11px] uppercase tracking-widest text-editorial-text placeholder:text-editorial-text/50"
                   [class.border-rose-500]="profileForm.get('username')?.invalid && profileForm.get('username')?.touched">
-                @if (profileForm.get('username')?.invalid && profileForm.get('username')?.touched) {
-                  <p class="text-[8px] font-mono uppercase tracking-widest text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
+                @if (profileForm.get('username')?.invalid && (profileForm.get('username')?.touched || profileForm.get('username')?.dirty)) {
+                  <p class="text-[8px] font-mono uppercase tracking-widest text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200" data-testid="username-error">
                     ERR: Field_Required
                   </p>
                 }
@@ -62,19 +62,19 @@ import { BaseComponent } from '../../../core/models/base-component';
                 <input id="email" type="email" formControlName="email"
                   class="w-full px-0 py-4 bg-transparent border-b border-editorial-text/20 focus:border-editorial-text outline-none transition-all font-mono text-[11px] uppercase tracking-widest text-editorial-text placeholder:text-editorial-text/50"
                   [class.border-rose-500]="profileForm.get('email')?.invalid && profileForm.get('email')?.touched">
-                @if (profileForm.get('email')?.invalid && profileForm.get('email')?.touched) {
-                  <p class="text-[8px] font-mono uppercase tracking-widest text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200">
+                @if (profileForm.get('email')?.invalid && (profileForm.get('email')?.touched || profileForm.get('email')?.dirty)) {
+                  <p class="text-[8px] font-mono uppercase tracking-widest text-rose-500 animate-in fade-in slide-in-from-top-1 duration-200" data-testid="email-error">
                     @if (profileForm.get('email')?.errors?.['required']) { ERR: Field_Required }
-                    @else if (profileForm.get('email')?.errors?.['email']) { ERR: Protocol_Invalid (Bad Email format) }
+                    @else if (profileForm.get('email')?.errors?.['email']) { ERR: Protocol_Invalid }
                   </p>
                 }
               </div>
             </div>
             
             <div class="pt-6">
-              <button type="submit" [disabled]="profileForm.pristine || profileForm.invalid || isBusy()"
+              <button type="submit" [disabled]="(profileForm.pristine && !isBusy()) || profileForm.invalid || isBusy()"
                 class="px-12 py-4 bg-editorial-text text-editorial-bg text-[10px] font-mono font-bold uppercase tracking-[0.3em] hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-10 grayscale">
-                @if (isBusy()) { [ COMMIT_ACTIVE ] } @else if (profileForm.invalid && profileForm.touched) { [ COMMIT_BLOCKED ] } @else { Commit_Changes }
+                @if (isBusy()) { [ COMMIT_ACTIVE ] } @else if (profileForm.invalid && (profileForm.touched || profileForm.dirty)) { [ COMMIT_BLOCKED ] } @else { Commit_Changes }
               </button>
             </div>
           </form>

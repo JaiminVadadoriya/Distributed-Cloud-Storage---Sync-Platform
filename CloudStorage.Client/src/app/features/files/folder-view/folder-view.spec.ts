@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach, type Mocked } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FolderView } from './folder-view';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -8,15 +8,14 @@ import { LayoutService } from '../../../core/services/layout.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { of, throwError } from 'rxjs';
 import { RouterTestingModule } from '@angular/router/testing';
-import { signal } from '@angular/core';
 
 describe('FolderView', () => {
   let component: FolderView;
   let fixture: ComponentFixture<FolderView>;
-  let folderServiceMock: any;
-  let fileServiceMock: any;
-  let layoutServiceMock: any;
-  let notificationServiceMock: any;
+  let folderServiceMock: FolderService;
+  let fileServiceMock: FileService;
+  let layoutServiceMock: LayoutService;
+  let notificationServiceMock: NotificationService;
   let router: Router;
 
   const mockFolder = {
@@ -47,23 +46,23 @@ describe('FolderView', () => {
       deleteFolder: vi.fn(),
       moveFolder: vi.fn(),
       shareFolder: vi.fn()
-    };
+    } as unknown as FolderService;
 
     fileServiceMock = {
       moveFile: vi.fn(),
       downloadFile: vi.fn(),
       shareFile: vi.fn(),
       deleteFile: vi.fn()
-    };
+    } as unknown as FileService;
 
     layoutServiceMock = {
       openContextMenu: vi.fn()
-    };
+    } as unknown as LayoutService;
 
     notificationServiceMock = {
       success: vi.fn(),
       error: vi.fn()
-    };
+    } as unknown as NotificationService;
 
     await TestBed.configureTestingModule({
       imports: [FolderView, RouterTestingModule],
@@ -99,7 +98,7 @@ describe('FolderView', () => {
   });
 
   it('should handle load error', () => {
-    folderServiceMock.getFolderById.mockReturnValue(throwError(() => new Error('API Error')));
+    vi.mocked(folderServiceMock.getFolderById).mockReturnValue(throwError(() => new Error('API Error')));
     fixture.detectChanges();
 
     expect(component.isBusy()).toBe(false);

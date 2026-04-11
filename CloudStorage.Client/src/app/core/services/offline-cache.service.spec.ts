@@ -6,11 +6,12 @@ describe('OfflineCacheService', () => {
   let service: OfflineCacheService;
 
   beforeEach(() => {
-    // Clear localStorage before each test
-    localStorage.clear();
-    (localStorage.getItem as any).mockClear();
-    (localStorage.setItem as any).mockClear();
-    (localStorage.removeItem as any).mockClear();
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn(),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+    });
 
     TestBed.configureTestingModule({
       providers: [OfflineCacheService]
@@ -27,12 +28,12 @@ describe('OfflineCacheService', () => {
     service.setLastSyncTimestamp(timestamp);
     expect(localStorage.setItem).toHaveBeenCalledWith('lastSyncTimestamp', timestamp);
 
-    (localStorage.getItem as any).mockReturnValue(timestamp);
+    vi.mocked(localStorage.getItem).mockReturnValue(timestamp);
     expect(service.getLastSyncTimestamp()).toBe(timestamp);
   });
 
   it('should return null if no sync timestamp is stored', () => {
-    (localStorage.getItem as any).mockReturnValue(null);
+    vi.mocked(localStorage.getItem).mockReturnValue(null);
     expect(service.getLastSyncTimestamp()).toBeNull();
   });
 });

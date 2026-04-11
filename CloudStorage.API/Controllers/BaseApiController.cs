@@ -43,6 +43,14 @@ namespace CloudStorage.API.Controllers
             {
                 return StatusCode(403, ApiResponse.Fail(ex.Message));
             }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(ApiResponse.Fail(ex.Message));
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ApiResponse.Fail(ex.Message));
+            }
             catch (Exception ex)
             {
                 return BadRequest(ApiResponse.Fail(ex.Message));

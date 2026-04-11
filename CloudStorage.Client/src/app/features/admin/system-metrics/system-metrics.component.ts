@@ -23,7 +23,9 @@ import { BaseComponent } from '../../../core/models/base-component';
       <div class="grid grid-cols-1 md:grid-cols-4 gap-px bg-editorial-text border border-editorial-text/10">
         @for (stat of stats(); track stat.label) {
           <div class="bg-editorial-bg p-8 space-y-10 group relative overflow-hidden transition-all hover:bg-editorial-text/[0.02]">
-            <div class="absolute inset-0 opacity-[0.02] grain-overlay"></div>
+            <div class="grain-wrapper">
+              <div class="absolute inset-0 opacity-[0.02] grain-overlay"></div>
+            </div>
             <div class="relative z-10 space-y-2">
               <h4 class="font-mono text-[9px] uppercase tracking-[0.4em] text-editorial-text/40 italic">{{ stat.label }}</h4>
               <div class="text-3xl font-sans font-bold tracking-tighter text-editorial-text uppercase">{{ stat.value }}</div>

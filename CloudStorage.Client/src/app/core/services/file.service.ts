@@ -253,6 +253,26 @@ export class FileService extends BaseService {
   }
 
   /**
+   * Fetches raw file content as text for supported text/code types.
+   */
+  public getFileContentAsText(fileId: string): Observable<string> {
+    const apiUrl = `/api/files/${fileId}/download`;
+    return this.http.get(apiUrl, { responseType: 'text' }).pipe(
+      catchError(this.handleError<string>('GET_FILE_CONTENT_TEXT', ''))
+    );
+  }
+
+  /**
+   * Fetches raw file data as a Blob for authenticated resource access.
+   */
+  public getFileBlob(fileId: string): Observable<Blob> {
+    const apiUrl = `/api/files/${fileId}/download`;
+    return this.http.get(apiUrl, { responseType: 'blob' }).pipe(
+      catchError(this.handleError<any>('GET_FILE_BLOB'))
+    );
+  }
+
+  /**
    * Retrieves a breakdown of storage usage by category.
    */
   public getStorageBreakdown(): Observable<StorageBreakdown[]> {

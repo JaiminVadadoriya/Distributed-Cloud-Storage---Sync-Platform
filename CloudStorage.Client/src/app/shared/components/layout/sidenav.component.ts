@@ -14,7 +14,11 @@ import { RouterModule } from '@angular/router';
         class="fixed inset-0 z-[60] bg-editorial-text/10 backdrop-blur-sm lg:hidden"
         animate.enter="fade-in"
         animate.leave="fade-out"
-        (click)="close.emit()">
+        (click)="closeSidenav.emit()"
+        (keydown.escape)="closeSidenav.emit()"
+        tabindex="0"
+        role="button"
+        aria-label="Close Navigation">
       </div>
     }
 
@@ -49,7 +53,7 @@ import { RouterModule } from '@angular/router';
           <a [routerLink]="item.link"
              routerLinkActive="bg-editorial-text text-editorial-bg"
              [routerLinkActiveOptions]="{exact: true}"
-             (click)="close.emit()"
+             (click)="closeSidenav.emit()"
              class="flex items-center gap-4 px-4 py-3 group transition-all hover:bg-editorial-text/5">
             <div class="w-1.5 h-1.5 rounded-none bg-editorial-text/20 group-hover:bg-editorial-text transition-colors"
                  [class.bg-editorial-bg]="isActive(item.link)"></div>
@@ -95,7 +99,7 @@ import { RouterModule } from '@angular/router';
 export class SidenavComponent {
   isOpen = input<boolean>(false);
   isDesktop = input<boolean>(false);
-  close = output<void>();
+  closeSidenav = output<void>();
 
   navItems = [
     { label: 'Overview_Root', link: '/dashboard' },

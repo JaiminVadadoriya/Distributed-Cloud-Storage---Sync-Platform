@@ -9,6 +9,7 @@
     ]
   },
   "include": [
-    "e2e/**/*.ts"
+    "e2e/**/*.ts",
+    "playwright.config.ts"
   ]
 }

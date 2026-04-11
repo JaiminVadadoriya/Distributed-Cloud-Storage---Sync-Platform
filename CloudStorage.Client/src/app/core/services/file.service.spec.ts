@@ -10,7 +10,7 @@ import { ParallelDownloadService } from './parallel-download.service';
 describe('FileService', () => {
   let service: FileService;
   let apiServiceMock: Mocked<ApiService>;
-  let parallelDownloadMock: any;
+  let parallelDownloadMock: ParallelDownloadService;
 
   beforeEach(() => {
     apiServiceMock = { 
@@ -23,7 +23,7 @@ describe('FileService', () => {
 
     parallelDownloadMock = {
       downloadLargeFile: vi.fn()
-    };
+    } as unknown as ParallelDownloadService;
 
     TestBed.configureTestingModule({
       imports: [HttpClientTestingModule],

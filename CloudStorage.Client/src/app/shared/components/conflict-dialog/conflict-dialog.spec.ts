@@ -1,7 +1,7 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ConflictDialogComponent } from './conflict-dialog.component';
-import { By } from '@angular/platform-browser';
+
 
 describe('ConflictDialogComponent', () => {
   let component: ConflictDialogComponent;
@@ -38,28 +38,36 @@ describe('ConflictDialogComponent', () => {
 
   it('should emit resolved event when Keep Local is clicked', () => {
     const spy = vi.spyOn(component.resolved, 'emit');
-    // Using text content to be more resilient
-    const buttons = fixture.debugElement.queryAll(By.css('button'));
-    const localBtn = buttons.find(b => b.nativeElement.textContent.includes('Sequence_Local'));
-    localBtn?.triggerEventHandler('click', null);
+    const root = fixture.nativeElement as HTMLElement;
+    const buttons = root.querySelectorAll('button');
+    const localBtn = Array.from(buttons).find(b => b.textContent?.includes('Keep Local'));
+    
+    localBtn?.click();
+    fixture.detectChanges();
 
     expect(spy).toHaveBeenCalledWith({ fileId: 'f1', resolution: 'KeepLocal' });
   });
 
   it('should emit resolved event when Keep Cloud is clicked', () => {
     const spy = vi.spyOn(component.resolved, 'emit');
-    const buttons = fixture.debugElement.queryAll(By.css('button'));
-    const cloudBtn = buttons.find(b => b.nativeElement.textContent.includes('Sequence_Cloud'));
-    cloudBtn?.triggerEventHandler('click', null);
+    const root = fixture.nativeElement as HTMLElement;
+    const buttons = root.querySelectorAll('button');
+    const cloudBtn = Array.from(buttons).find(b => b.textContent?.includes('Keep Server'));
+    
+    cloudBtn?.click();
+    fixture.detectChanges();
 
     expect(spy).toHaveBeenCalledWith({ fileId: 'f1', resolution: 'KeepServer' });
   });
 
   it('should emit closed event when Abort is clicked', () => {
     const spy = vi.spyOn(component.closed, 'emit');
-    const buttons = fixture.debugElement.queryAll(By.css('button'));
-    const abortBtn = buttons.find(b => b.nativeElement.textContent.includes('Abort_Resolution_Loop'));
-    abortBtn?.triggerEventHandler('click', null);
+    const root = fixture.nativeElement as HTMLElement;
+    const buttons = root.querySelectorAll('button');
+    const abortBtn = Array.from(buttons).find(b => b.textContent?.includes('Cancel Sync'));
+    
+    abortBtn?.click();
+    fixture.detectChanges();
 
     expect(spy).toHaveBeenCalled();
   });

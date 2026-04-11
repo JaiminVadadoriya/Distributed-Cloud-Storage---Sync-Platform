@@ -33,7 +33,9 @@ import { CommonModule } from '@angular/common';
         </header>
 
         <div class="relative h-48 border border-editorial-text/10 bg-editorial-text/[0.01] p-10 flex gap-4 items-end justify-between overflow-hidden">
-           <div class="absolute inset-0 opacity-[0.02] grain-overlay select-none"></div>
+           <div class="grain-wrapper">
+             <div class="absolute inset-0 opacity-[0.02] grain-overlay select-none"></div>
+           </div>
            @for (i of [1,2,3,4,5,6,7,8,9,10,11,12]; track i) {
              <div class="flex-1 bg-editorial-text/10 transition-all duration-700 group hover:bg-editorial-text relative pt-12" [style.height.%]="i * 8">
                 <div class="absolute -top-12 left-0 w-full text-center font-mono text-[8px] opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Node_{{ i }}</div>

@@ -54,6 +54,12 @@ namespace CloudStorage.Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
+        public virtual async Task DeleteRangeAsync(IEnumerable<T> entities)
+        {
+            _dbSet.RemoveRange(entities);
+            await _context.SaveChangesAsync();
+        }
+
         public virtual async Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate)
         {
             return await _dbSet.AnyAsync(predicate);
