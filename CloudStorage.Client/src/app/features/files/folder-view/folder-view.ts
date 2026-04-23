@@ -11,6 +11,7 @@ import { DragDropModule, CdkDragDrop } from '@angular/cdk/drag-drop';
 import { LayoutService } from '../../../core/services/layout.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { formatBytes } from '../../../core/utils/format.utils';
+import { UploadManagerService } from '../../../core/services/upload-manager.service';
 
 @Component({
   selector: 'app-folder-view',
@@ -26,12 +27,22 @@ export class FolderView extends BaseComponent implements OnInit {
   private fileService = inject(FileService);
   private layoutService = inject(LayoutService);
   private notificationService = inject(NotificationService);
+  private uploadManager = inject(UploadManagerService);
 
   folderId = signal<string | null>(null);
   folder = signal<Folder | null>(null);
   files = signal<FileItem[]>([]);
   subFolders = signal<Folder[]>([]);
   breadcrumbs = signal<{ id: string | null; name: string }[]>([]);
+  
+  constructor() {
+    super();
+    this.uploadManager.uploadCompleted$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      this.loadFolder();
+    });
+  }
 
   ngOnInit() {
     this.route.params.pipe(takeUntil(this.destroy$)).subscribe(params => {

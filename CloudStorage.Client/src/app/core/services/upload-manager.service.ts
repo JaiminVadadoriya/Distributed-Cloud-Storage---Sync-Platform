@@ -3,7 +3,7 @@ import { ChunkingService } from './chunking.service';
 import { UploadService } from './upload.service';
 import { FileChunk } from '../models/upload.model';
 import { BaseService } from '../models/base-service';
-import { lastValueFrom } from 'rxjs';
+import { lastValueFrom, Subject } from 'rxjs';
 
 export interface UploadTask {
   id: string;
@@ -34,8 +34,10 @@ export class UploadManagerService extends BaseService {
   private readonly _tasks = signal<Map<string, UploadTask>>(new Map());
   private readonly _activeCount = signal<number>(0);
   private readonly MAX_CONCURRENT = 3;
+  private readonly uploadCompletedSubject = new Subject<UploadTask>();
 
   public readonly queue = computed(() => Array.from(this._tasks().values()));
+  public readonly uploadCompleted$ = this.uploadCompletedSubject.asObservable();
   
   public readonly globalSpeed = computed(() => 
     this.queue().reduce((acc, t) => acc + (t.status === 'uploading' ? t.uploadSpeed : 0), 0)
@@ -79,8 +81,9 @@ export class UploadManagerService extends BaseService {
       this.updateTask({ ...task, status: 'uploading' });
 
       // Handshake with storage node
+      const fileHash = await this.chunker.calculateFileHash(task.file);
       const session = await lastValueFrom(
-        this.uploader.initiateUpload(task.id, task.file.size, task.totalChunks, task.file.name, task.folderId)
+        this.uploader.initiateUpload(task.file.name, task.file.size, task.totalChunks, task.file.type || 'application/octet-stream', fileHash, task.folderId)
       );
 
       if (!session) throw new Error('HANDSHAKE_REJECTED');
@@ -95,7 +98,9 @@ export class UploadManagerService extends BaseService {
       // Atomic commit
       console.log(`[TX_MGR] Finalizing session: ${session.sessionId}`);
       await lastValueFrom(this.uploader.completeUpload(session.sessionId));
-      this.updateTask({ ...updatedTask, status: 'complete', uploadedChunks: task.totalChunks });
+      const completedTask: UploadTask = { ...updatedTask, status: 'complete', uploadedChunks: task.totalChunks };
+      this.updateTask(completedTask);
+      this.uploadCompletedSubject.next(completedTask);
 
     } catch (err: unknown) {
       const error = err instanceof Error ? err : new Error('TRANSMISSION_FAULT');

@@ -59,6 +59,15 @@ export interface AdminStats {
   storageTrend: number;
   storageHistory: number[];
   trafficHistory: number[];
+  regionalTraffic: RegionalNode[];
+}
+
+export interface RegionalNode {
+  id: string;
+  x: number;
+  y: number;
+  intensity: number;
+  regionName: string;
 }
 
 export interface AdminAuditFilter {
@@ -84,7 +93,7 @@ export class AdminService extends BaseService {
     const payload = {
       username: user.username,
       email: user.email,
-      password: (user as any).password, // Explicitly pass password from form
+      password: (user as Partial<AdminUser> & { password?: string }).password, // Explicitly pass password from form
       role: user.role,
       initialQuota: user.storageQuota
     };

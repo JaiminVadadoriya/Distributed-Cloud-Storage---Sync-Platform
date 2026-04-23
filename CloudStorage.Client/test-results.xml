@@ -1,51 +1,87 @@
-<testsuites id="" name="" tests="6" failures="0" skipped="3" errors="1" time="51099.511481">
-<testsuite name="audit-remediation.spec.ts" timestamp="2026-04-10T16:49:15.226Z" hostname="chromium" tests="6" failures="0" skipped="3" time="51054.11" errors="1">
-<testcase name="Web Application Remediation Audit › Dashboard &amp; File Explorer › Task 1: File Explorer - Context Menu Missing" classname="audit-remediation.spec.ts" time="6418.129">
+<testsuites id="" name="" tests="1" failures="1" skipped="0" errors="0" time="42.913683000000006">
+<testsuite name="file-upload-and-preview.spec.ts" timestamp="2026-04-12T18:05:12.652Z" hostname="chromium" tests="1" failures="1" skipped="0" time="37.605" errors="0">
+<testcase name="File Upload &amp; Preview Flow › should complete full upload lifecycle and preview the file" classname="file-upload-and-preview.spec.ts" time="37.605">
 <system-out>
 <![CDATA[
-[[ATTACHMENT|test-results\audit-remediation-Web-Appl-4f20f-orer---Context-Menu-Missing-chromium-retry1\error-context.md]]
+[[ATTACHMENT|test-results\file-upload-and-preview-Fi-a0ab6-ecycle-and-preview-the-file-chromium\test-failed-1.png]]
 
-[[ATTACHMENT|test-results\audit-remediation-Web-Appl-4f20f-orer---Context-Menu-Missing-chromium-retry1\trace.zip]]
+[[ATTACHMENT|test-results\file-upload-and-preview-Fi-a0ab6-ecycle-and-preview-the-file-chromium\error-context.md]]
+
+[[ATTACHMENT|test-results\file-upload-and-preview-Fi-a0ab6-ecycle-and-preview-the-file-chromium-retry1\test-failed-1.png]]
+
+[[ATTACHMENT|test-results\file-upload-and-preview-Fi-a0ab6-ecycle-and-preview-the-file-chromium-retry1\error-context.md]]
+
+[[ATTACHMENT|test-results\file-upload-and-preview-Fi-a0ab6-ecycle-and-preview-the-file-chromium-retry1\trace.zip]]
 ]]>
 </system-out>
-</testcase>
-<testcase name="Web Application Remediation Audit › Dashboard &amp; File Explorer › Task 2: File Explorer - Checkbox Selection Fails" classname="audit-remediation.spec.ts" time="17.174">
-</testcase>
-<testcase name="Web Application Remediation Audit › Dashboard &amp; File Explorer › Task 4: Search - Filtering Not Functional" classname="audit-remediation.spec.ts" time="44618.807">
-<system-out>
-<![CDATA[
-[[ATTACHMENT|test-results\audit-remediation-Web-Appl-c81f0----Filtering-Not-Functional-chromium\error-context.md]]
+<failure message="expect(locator).toBeVisible() failed" type="expect.toBeVisible">
+<![CDATA[  [chromium] › file-upload-and-preview.spec.ts:12:7 › File Upload & Preview Flow › should complete full upload lifecycle and preview the file 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('upload-test.json').first()
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 15000ms
+      - waiting for getByText('upload-test.json').first()
+
+
+      145 |     // NO RELOAD: Verification that reactive refresh works
+      146 |     const fileLocator = page.getByText(testFile.name).first();
+    > 147 |     await expect(fileLocator).toBeVisible({ timeout: 15000 });
+          |                               ^
+      148 |
+      149 |     // Open for preview
+      150 |     await page.getByText(testFile.name).dblclick();
+        at D:\college\cloud-storage\CloudStorage.Client\e2e\file-upload-and-preview.spec.ts:147:31
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\file-upload-and-preview-Fi-a0ab6-ecycle-and-preview-the-file-chromium\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\file-upload-and-preview-Fi-a0ab6-ecycle-and-preview-the-file-chromium\error-context.md
+
+    Retry #1 ───────────────────────────────────────────────────────────────────────────────────────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByText('upload-test.json').first()
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" with timeout 15000ms
+      - waiting for getByText('upload-test.json').first()
+
+
+      145 |     // NO RELOAD: Verification that reactive refresh works
+      146 |     const fileLocator = page.getByText(testFile.name).first();
+    > 147 |     await expect(fileLocator).toBeVisible({ timeout: 15000 });
+          |                               ^
+      148 |
+      149 |     // Open for preview
+      150 |     await page.getByText(testFile.name).dblclick();
+        at D:\college\cloud-storage\CloudStorage.Client\e2e\file-upload-and-preview.spec.ts:147:31
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ..\test-results\file-upload-and-preview-Fi-a0ab6-ecycle-and-preview-the-file-chromium-retry1\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ..\test-results\file-upload-and-preview-Fi-a0ab6-ecycle-and-preview-the-file-chromium-retry1\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ..\test-results\file-upload-and-preview-Fi-a0ab6-ecycle-and-preview-the-file-chromium-retry1\trace.zip
+    Usage:
+
+        npx playwright show-trace ..\test-results\file-upload-and-preview-Fi-a0ab6-ecycle-and-preview-the-file-chromium-retry1\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
 ]]>
-</system-out>
-<error message="page.goto: Target page, context or browser has been closed" type="Error">
-<![CDATA[  [chromium] › audit-remediation.spec.ts:77:9 › Web Application Remediation Audit › Dashboard & File Explorer › Task 4: Search - Filtering Not Functional 
-
-    Error: page.goto: Target page, context or browser has been closed
-
-      42 |     if (await authenticatedPage.locator('app-prompt-modal, app-confirm-modal').isVisible()) {
-      43 |       await authenticatedPage.keyboard.press('Escape');
-    > 44 |       await authenticatedPage.waitForTimeout(200);
-         |                               ^
-      45 |     }
-      46 |   });
-      47 |
-        at D:\college\cloud-storage\CloudStorage.Client\e2e\audit-remediation.spec.ts:44:31
-
-    Error Context: ..\test-results\audit-remediation-Web-Appl-c81f0----Filtering-Not-Functional-chromium\error-context.md
-]]>
-</error>
-</testcase>
-<testcase name="Web Application Remediation Audit › Dashboard &amp; File Explorer › Task 5: New Folder - Lack of Naming Constraints" classname="audit-remediation.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Web Application Remediation Audit › Dashboard &amp; File Explorer › Task 7: Action Stability - Global Unresponsiveness" classname="audit-remediation.spec.ts">
-<skipped>
-</skipped>
-</testcase>
-<testcase name="Web Application Remediation Audit › Trash View › Task 3: Trash - Restore and Purge Actions Inactive" classname="audit-remediation.spec.ts">
-<skipped>
-</skipped>
+</failure>
 </testcase>
 </testsuite>
 </testsuites>

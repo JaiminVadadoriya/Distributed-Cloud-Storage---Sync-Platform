@@ -14,7 +14,8 @@ describe('UploadManagerService', () => {
   beforeEach(() => {
     chunkerMock = {
       splitFileIntoChunks: vi.fn(),
-      getChunkSize: vi.fn().mockReturnValue(1024)
+      getChunkSize: vi.fn().mockReturnValue(1024),
+      calculateFileHash: vi.fn().mockResolvedValue('mock-hash')
     } as unknown as Mocked<ChunkingService>;
     uploaderMock = {
       initiateUpload: vi.fn(),
@@ -143,7 +144,7 @@ describe('UploadManagerService', () => {
     await new Promise(resolve => setTimeout(resolve, 100));
 
     expect(uploaderMock.initiateUpload).toHaveBeenCalledWith(
-      expect.any(String), expect.any(Number), expect.any(Number), expect.any(String), folderId
+      expect.any(String), expect.any(Number), expect.any(Number), expect.any(String), expect.any(String), folderId
     );
   });
 });

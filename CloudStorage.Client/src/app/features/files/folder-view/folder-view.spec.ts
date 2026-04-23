@@ -8,6 +8,7 @@ import { LayoutService } from '../../../core/services/layout.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { of, throwError } from 'rxjs';
 import { RouterTestingModule } from '@angular/router/testing';
+import { UploadManagerService } from '../../../core/services/upload-manager.service';
 
 describe('FolderView', () => {
   let component: FolderView;
@@ -16,6 +17,7 @@ describe('FolderView', () => {
   let fileServiceMock: FileService;
   let layoutServiceMock: LayoutService;
   let notificationServiceMock: NotificationService;
+  let uploadManagerMock: UploadManagerService;
   let router: Router;
 
   const mockFolder = {
@@ -25,15 +27,15 @@ describe('FolderView', () => {
     createdAt: '2023-01-01T00:00:00Z',
     path: [{ id: 'root', name: 'My Files' }],
     subFolders: [{ id: 'f2', name: 'Vacation', parentId: 'f1', createdAt: '' }],
-    files: [{ 
-      id: 'file1', 
-      name: 'sunset.jpg', 
-      size: 1024, 
-      modified: new Date(), 
-      lastModifiedAt: '2023-01-01T00:00:00Z', 
-      type: 'image/jpeg', 
-      owner: 'me', 
-      versionVector: null 
+    files: [{
+      id: 'file1',
+      name: 'sunset.jpg',
+      size: 1024,
+      modified: new Date(),
+      lastModifiedAt: '2023-01-01T00:00:00Z',
+      type: 'image/jpeg',
+      owner: 'me',
+      versionVector: null
     }]
   };
 
@@ -64,6 +66,10 @@ describe('FolderView', () => {
       error: vi.fn()
     } as unknown as NotificationService;
 
+    uploadManagerMock = {
+      uploadCompleted$: of(undefined)
+    } as unknown as UploadManagerService;
+
     await TestBed.configureTestingModule({
       imports: [FolderView, RouterTestingModule],
       providers: [
@@ -74,7 +80,8 @@ describe('FolderView', () => {
         { provide: FolderService, useValue: folderServiceMock },
         { provide: FileService, useValue: fileServiceMock },
         { provide: LayoutService, useValue: layoutServiceMock },
-        { provide: NotificationService, useValue: notificationServiceMock }
+        { provide: NotificationService, useValue: notificationServiceMock },
+        { provide: UploadManagerService, useValue: uploadManagerMock }
       ]
     }).compileComponents();
 
@@ -94,7 +101,7 @@ describe('FolderView', () => {
     expect(component.folder()).toEqual(mockFolder);
     expect(component.files().length).toBe(1);
     // root + pathology segment + current folder
-    expect(component.breadcrumbs().length).toBe(3); 
+    expect(component.breadcrumbs().length).toBe(3);
   });
 
   it('should handle load error', () => {

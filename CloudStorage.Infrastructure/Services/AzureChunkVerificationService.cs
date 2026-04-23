@@ -26,7 +26,7 @@ namespace CloudStorage.Infrastructure.Services
             {
                 var blobName = $"{fileId}/{i}.chunk";
                 var exists = await _sasService.ChunkBlobExistsAsync(blobName);
-                
+
                 if (!exists)
                 {
                     _logger.LogWarning("Chunk verification failed: Missing chunk blob {BlobName}", blobName);

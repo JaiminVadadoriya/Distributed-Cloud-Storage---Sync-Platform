@@ -89,7 +89,7 @@ import { TrafficMapComponent } from '../../../shared/components/traffic-map/traf
       <!-- Regional Traffic Map -->
       <section class="space-y-6">
         <h2 class="font-mono text-[10px] uppercase tracking-[0.5em] text-editorial-text/40 pb-4 border-b border-editorial-text/10">Production_Global_Telemetry</h2>
-        <app-traffic-map></app-traffic-map>
+        <app-traffic-map [externalNodes]="stats()?.regionalTraffic ?? null"></app-traffic-map>
       </section>
 
       <!-- Quick Actions + Health Snapshot -->
@@ -204,7 +204,7 @@ export class AdminDashboardComponent extends BaseComponent implements OnInit {
 
   ngOnInit() {
     this.isBusy.set(true);
-    
+
     forkJoin({
       stats: this.adminService.getAdminStats(),
       health: this.adminService.getSystemHealth()
@@ -228,14 +228,14 @@ export class AdminDashboardComponent extends BaseComponent implements OnInit {
 
   kpis(s: AdminStats) {
     return [
-      { label: 'Total_Users', value: s.totalUsers.toLocaleString(), sub: `${s.activeUsersLast24h} active`, trend: s.usersTrend, spark: [10, 15, 8, 22, 19, 25, 30] },
-      { label: 'Suspended', value: s.suspendedUsers.toLocaleString(), sub: 'accounts', trend: 0, spark: [2, 5, 3, 1, 0, 1, 1] },
-      { label: 'Total_Files', value: s.totalFiles.toLocaleString(), sub: null, trend: s.filesTrend, spark: [80, 85, 92, 88, 95, 102, 110] },
-      { label: 'New_This_Week', value: `+${s.newUsersThisWeek}`, sub: 'users', trend: 20, spark: [0, 2, 5, 8, 12, 15, 20] },
+      { label: 'Total_Users', value: s.totalUsers.toLocaleString(), sub: `${s.activeUsersLast24h} active`, trend: s.usersTrend, spark: s.trafficHistory }, // Use traffic history as proxy for user activity
+      { label: 'Suspended', value: s.suspendedUsers.toLocaleString(), sub: 'accounts', trend: 0, spark: [] },
+      { label: 'Total_Files', value: s.totalFiles.toLocaleString(), sub: null, trend: s.filesTrend, spark: [] },
+      { label: 'New_This_Week', value: `+${s.newUsersThisWeek}`, sub: 'users', trend: 0, spark: [] },
       { label: 'Storage_Used', value: formatBytes(s.totalStorageUsed), sub: formatBytes(s.totalStorageLimit) + ' cap', trend: s.storageTrend, spark: s.storageHistory },
-      { label: 'Uploads_Today', value: s.uploadsToday.toLocaleString(), sub: 'file ops', trend: -8, spark: [120, 110, 130, 95, 105, 80, 75] },
-      { label: 'Downloads_Today', value: s.downloadsToday.toLocaleString(), sub: 'file ops', trend: 15, spark: [200, 250, 230, 280, 310, 350, 400] },
-      { label: 'Active_Sessions', value: s.activeSessionsNow.toLocaleString(), sub: 'online now', trend: 3, spark: s.trafficHistory },
+      { label: 'Uploads_Today', value: s.uploadsToday.toLocaleString(), sub: 'file ops', trend: 0, spark: [] },
+      { label: 'Downloads_Today', value: s.downloadsToday.toLocaleString(), sub: 'file ops', trend: 0, spark: [] },
+      { label: 'Active_Sessions', value: s.activeSessionsNow.toLocaleString(), sub: 'online now', trend: 0, spark: s.trafficHistory },
     ];
   }
 

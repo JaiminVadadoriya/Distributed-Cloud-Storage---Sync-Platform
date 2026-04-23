@@ -13,7 +13,7 @@ namespace CloudStorage.Infrastructure.Services
         public ChunkStorageService(IConfiguration configuration)
         {
             _storageBasePath = configuration["Storage:ChunkPath"] ?? "/app/storage/chunks";
-            
+
             // Ensure base directory exists
             if (!Directory.Exists(_storageBasePath))
             {
@@ -24,17 +24,17 @@ namespace CloudStorage.Infrastructure.Services
         public async Task<string> SaveChunkAsync(Guid fileId, int chunkIndex, Stream chunkData)
         {
             var fileDirectory = Path.Combine(_storageBasePath, fileId.ToString());
-            
+
             if (!Directory.Exists(fileDirectory))
             {
                 Directory.CreateDirectory(fileDirectory);
             }
 
             var chunkPath = Path.Combine(fileDirectory, $"{chunkIndex}.chunk");
-            
+
             using var fileStream = new FileStream(chunkPath, FileMode.Create, FileAccess.Write);
             await chunkData.CopyToAsync(fileStream);
-            
+
             return chunkPath;
         }
 

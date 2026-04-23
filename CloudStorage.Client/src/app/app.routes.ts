@@ -78,10 +78,12 @@ export const routes: Routes = [
       },
       { 
         path: 'system-metrics', 
+        canActivate: [adminGuard],
         loadComponent: () => import('./features/admin/system-metrics/system-metrics.component').then(m => m.SystemMetricsComponent) 
       },
       { 
         path: 'analytics', 
+        canActivate: [adminGuard],
         loadComponent: () => import('./features/admin/usage-analytics/usage-analytics.component').then(m => m.UsageAnalyticsComponent) 
       },
       { 

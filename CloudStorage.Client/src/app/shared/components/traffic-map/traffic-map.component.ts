@@ -1,8 +1,9 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RegionalNode } from '../../../core/services/admin.service';
 
 interface TrafficNode {
-  id: number;
+  id: string | number;
   x: number;
   y: number;
   intensity: number;
@@ -19,7 +20,7 @@ interface TrafficNode {
       
       <!-- Label -->
       <div class="absolute top-4 left-4 font-mono text-[8px] uppercase tracking-[0.4em] text-editorial-text/30 z-10 italic">
-        Geographic_Load_Distribution / Realtime
+        Geographic_Load_Distribution / {{ externalNodes() ? 'Production_Live' : 'Simulated' }}
       </div>
       
       <!-- Dots -->
@@ -70,6 +71,9 @@ interface TrafficNode {
   `]
 })
 export class TrafficMapComponent implements OnInit {
+  // Input for API-driven nodes
+  externalNodes = input<RegionalNode[] | null>(null);
+  
   nodes = signal<TrafficNode[]>([]);
   
   connections = computed(() => {
@@ -85,7 +89,18 @@ export class TrafficMapComponent implements OnInit {
   });
 
   ngOnInit() {
-    this.generateNodes();
+    const external = this.externalNodes();
+    if (external && external.length > 0) {
+      this.nodes.set(external.map(n => ({
+        id: n.id,
+        x: n.x,
+        y: n.y,
+        intensity: n.intensity
+      })));
+    } else {
+      this.generateNodes();
+    }
+
     // Slowly jitter nodes
     setInterval(() => {
       this.nodes.update(ns => ns.map(n => ({
@@ -98,8 +113,8 @@ export class TrafficMapComponent implements OnInit {
   }
 
   private generateNodes() {
-    const ns: { id: number, x: number, y: number, intensity: number }[] = [];
-    // Roughly mimic world continents for "production" feel
+    const ns: TrafficNode[] = [];
+    // Roughly mimic world continents for simulated feel if API data is missing
     const clusters = [
       { x: 200, y: 150, count: 8 }, // NA
       { x: 300, y: 350, count: 4 }, // SA

@@ -24,6 +24,7 @@ namespace CloudStorage.Domain.Entities
         public DateTime? LastLoginAt { get; set; }
         public bool IsActive { get; set; } = true;
         public string Role { get; set; } = "User"; // e.g., "Admin", "User"
+        public long StorageQuota { get; set; } = 5368709120; // 5GB default
 
         // Navigation properties
         public virtual ICollection<RefreshToken> RefreshTokens { get; set; }

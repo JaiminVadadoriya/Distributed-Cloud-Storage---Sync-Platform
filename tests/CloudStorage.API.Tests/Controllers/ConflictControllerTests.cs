@@ -43,7 +43,7 @@ namespace CloudStorage.API.Tests.Controllers
                 ClientVersionVector = "1:1"
             };
             var expectedResult = new ConflictCheckResponseDto { HasConflict = false };
-            
+
             _mockConflictService.Setup(s => s.CheckConflictAsync(request.FileId, request.ClientVersionVector))
                 .ReturnsAsync(expectedResult);
 
@@ -111,7 +111,7 @@ namespace CloudStorage.API.Tests.Controllers
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
             Assert.NotNull(notFoundResult.Value);
         }
-        
+
         [Fact]
         public async Task ResolveConflict_ReturnsBadRequest_OnGenericException()
         {

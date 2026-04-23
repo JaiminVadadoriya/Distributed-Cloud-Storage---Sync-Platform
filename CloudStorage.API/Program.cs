@@ -11,9 +11,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using CloudStorage.API.Extensions;
-using CloudStorage.API.Hubs;
 using CloudStorage.API.Services;
+using CloudStorage.Domain.Entities;
+using CloudStorage.API.Hubs;
+using CloudStorage.API.Extensions;
 using StackExchange.Redis;
 using Microsoft.AspNetCore.ResponseCompression;
 using Prometheus;
@@ -33,6 +34,7 @@ Console.WriteLine("CloudStorage API System Starting... Version: 2.0-Scalable");
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddHttpContextAccessor();
 
 // Response compression
 builder.Services.AddResponseCompression(options =>
@@ -65,15 +67,27 @@ if (!string.IsNullOrEmpty(dbConnectionString) && !dbConnectionString.Contains("M
     dbConnectionString += "Maximum Pool Size=100;Minimum Pool Size=10;Connection Idle Lifetime=300;";
 }
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+if (!builder.Environment.IsEnvironment("Testing"))
 {
-    options.UseNpgsql(dbConnectionString, npgsqlOptions => 
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
     {
-        npgsqlOptions.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorCodesToAdd: null);
+        options.UseNpgsql(dbConnectionString, npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorCodesToAdd: null);
+        });
+        // Suppress the warning about collections without setters which can block migrations in EF Core 10
+        options.ConfigureWarnings(w => w.Ignore(new EventId(10103, "Microsoft.EntityFrameworkCore.Model.CollectionWithoutSetter")));
     });
-    // Suppress the warning about collections without setters which can block migrations in EF Core 10
-    options.ConfigureWarnings(w => w.Ignore(new EventId(10103, "Microsoft.EntityFrameworkCore.Model.CollectionWithoutSetter")));
-});
+}
+else
+{
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    {
+        // For testing, the provider will be overridden in WebApplicationFactory, 
+        // but we need to pre-configure warnings here as well if ApplyMigrations uses them.
+        options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
+    });
+}
 
 // Repository registration
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
@@ -107,7 +121,7 @@ builder.Services.AddHostedService<BackgroundWorkerService>();
 // Redis and Caching Configuration
 var redisConnectionString = builder.Configuration["Redis:ConnectionString"] ?? "redis:6379";
 
-builder.Services.AddSingleton<IConnectionMultiplexer>(sp => 
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     ConnectionMultiplexer.Connect(redisConnectionString));
 
 builder.Services.AddStackExchangeRedisCache(options =>
@@ -122,7 +136,7 @@ builder.Services.AddSignalR()
     .AddStackExchangeRedis(redisConnectionString);
 
 // Storage & Azure configuration
-var blobConnectionString = builder.Configuration["AzureBlob:ConnectionString"] 
+var blobConnectionString = builder.Configuration["AzureBlob:ConnectionString"]
     ?? "UseDevelopmentStorage=true";
 builder.Services.AddSingleton(x => new BlobServiceClient(blobConnectionString));
 builder.Services.AddScoped<IBlobSasService, BlobSasService>();
@@ -148,7 +162,7 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] 
+            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]
                 ?? throw new InvalidOperationException("Jwt:Key is missing")))
     };
 
@@ -285,6 +299,47 @@ app.MapHub<FileStorageHub>("/hubs/storage");
 app.MapMetrics(); // Exposes /metrics
 app.MapHealthChecks("/health");
 
-app.ApplyMigrations(); // Manual migration recommended for distributed setups
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.ApplyMigrations(); // Manual migration recommended for distributed setups
+
+    // Seed test users if explicitly requested (useful for persona-based E2E tests against Real DB)
+    app.ApplyMigrations(); // Manual migration recommended for distributed setups
+
+    // Seed test users if explicitly requested (useful for persona-based E2E tests against Real DB)
+    if (app.Configuration["SEED_TEST_USERS"] == "true")
+    {
+        using var scope = app.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        if (!db.Users.Any(u => u.Email == "admin@cloud.io"))
+        {
+            Console.WriteLine("Seeding Admin User for E2E Tests...");
+            db.Users.Add(new User
+            {
+                Username = "admin",
+                Email = "admin@cloud.io",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
+                Role = "Admin",
+                IsActive = true
+            });
+        }
+
+        if (!db.Users.Any(u => u.Email == "user@test.com"))
+        {
+            Console.WriteLine("Seeding Standard User for E2E Tests...");
+            db.Users.Add(new User
+            {
+                Username = "user",
+                Email = "user@test.com",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("User123!"),
+                Role = "User",
+                IsActive = true
+            });
+        }
+
+        db.SaveChanges();
+    }
+}
 
 app.Run();

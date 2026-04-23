@@ -29,7 +29,7 @@ namespace CloudStorage.Domain.Tests.Entities
             var id = Guid.NewGuid();
             var userId = 1;
             var now = DateTime.UtcNow;
-            
+
             // Act
             var device = new Device
             {
@@ -55,7 +55,7 @@ namespace CloudStorage.Domain.Tests.Entities
         {
             // Arrange
             var user = new User { Id = 1, Username = "testuser" };
-            
+
             // Act
             var device = new Device
             {

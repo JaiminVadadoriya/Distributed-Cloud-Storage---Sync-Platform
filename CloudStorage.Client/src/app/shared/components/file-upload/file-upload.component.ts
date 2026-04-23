@@ -1,5 +1,6 @@
-import { Component, EventEmitter, Output, HostListener, signal, inject, effect } from '@angular/core';
+import { Component, EventEmitter, Output, HostListener, signal, inject, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LayoutService } from '../../../core/services/layout.service';
 
 export interface FileUploadEvent {
@@ -63,6 +64,7 @@ export interface FileUploadEvent {
   `
 })
 export class FileUploadComponent {
+  @Input() listenToGlobal = true;
   @Output() filesSelected = new EventEmitter<FileUploadEvent[]>();
 
   private layoutService = inject(LayoutService);
@@ -72,9 +74,11 @@ export class FileUploadComponent {
   readonly maxFileSize = 50 * 1024 * 1024 * 1024; // 50GB
 
   constructor() {
-    // Listen for global upload trigger
-    effect(() => {
-      if (this.layoutService.uploadTrigger() > 0) {
+    // Listen for global upload trigger only if enabled
+    this.layoutService.uploadTrigger$.pipe(
+      takeUntilDestroyed()
+    ).subscribe(() => {
+      if (this.listenToGlobal) {
         this.triggerUpload();
       }
     });

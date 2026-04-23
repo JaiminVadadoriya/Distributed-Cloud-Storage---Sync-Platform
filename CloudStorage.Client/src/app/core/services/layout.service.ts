@@ -1,4 +1,5 @@
 import { Injectable, signal, inject, effect } from '@angular/core';
+import { Subject } from 'rxjs';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { map } from 'rxjs/operators';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -59,19 +60,19 @@ export class LayoutService {
   private readonly _isFileDetailsPanelOpen = signal<boolean>(false);
   public readonly isFileDetailsPanelOpen = this._isFileDetailsPanelOpen.asReadonly();
 
-  private readonly _uploadTrigger = signal<number>(0);
-  public readonly uploadTrigger = this._uploadTrigger.asReadonly();
+  private readonly _uploadTrigger = new Subject<void>();
+  public readonly uploadTrigger$ = this._uploadTrigger.asObservable();
 
-  private readonly _newFolderTrigger = signal<number>(0);
-  public readonly newFolderTrigger = this._newFolderTrigger.asReadonly();
+  private readonly _newFolderTrigger = new Subject<void>();
+  public readonly newFolderTrigger$ = this._newFolderTrigger.asObservable();
 
   public triggerGlobalUpload(): void {
-    this._uploadTrigger.update(v => v + 1);
+    this._uploadTrigger.next();
     this.openUploadModal();
   }
 
   public triggerNewFolder(): void {
-    this._newFolderTrigger.update(v => v + 1);
+    this._newFolderTrigger.next();
   }
 
   private readonly _selectedFileId = signal<string | null>(null);
@@ -101,6 +102,7 @@ export class LayoutService {
   private readonly _promptModal = signal<(PromptConfig & { isOpen: boolean }) | null>(null);
   public readonly promptModal = this._promptModal.asReadonly();
 
+
   constructor() {
     // Automatically close sidebar when switching to desktop if it was open as a drawer
     effect(() => {
@@ -110,6 +112,7 @@ export class LayoutService {
         this._isSidebarOpen.set(false); // Default closed on mobile
       }
     });
+
   }
 
   public toggleSidebar(): void {
@@ -209,6 +212,7 @@ export class LayoutService {
   public closePrompt(): void {
     this._promptModal.set(null);
   }
+
 }
 
 

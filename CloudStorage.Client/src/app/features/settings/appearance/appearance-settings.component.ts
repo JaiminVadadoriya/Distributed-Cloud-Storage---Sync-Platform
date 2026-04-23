@@ -21,8 +21,8 @@ import { ThemeService, AtmosphereTheme, InterfaceDensity } from '../../../core/s
             <button (click)="themeService.setTheme(theme.id)"
               class="group relative aspect-[1.8/1] p-10 border transition-all flex flex-col justify-end text-left overflow-hidden active:scale-[0.98]"
               [class]="themeService.theme() === theme.id ? 
-                (theme.id === 'light' ? 'border-editorial-text bg-editorial-text/[0.03]' : 
-                 theme.id === 'dark' ? 'border-editorial-text bg-editorial-text text-editorial-bg' : 
+                (theme.id === 'clinical' ? 'border-editorial-text bg-editorial-text/[0.03]' : 
+                 theme.id === 'mono' ? 'border-editorial-text bg-editorial-text text-editorial-bg' : 
                  'border-editorial-text bg-editorial-text/5 backdrop-blur-xl outline outline-2 outline-editorial-text') : 
                 'border-editorial-text/10 hover:border-editorial-text/40 text-editorial-text'">
               
@@ -33,11 +33,11 @@ import { ThemeService, AtmosphereTheme, InterfaceDensity } from '../../../core/s
               
               @if (themeService.theme() === theme.id) {
                 <div class="absolute top-6 right-6 w-3 h-3 transition-transform duration-500 animate-in-scale"
-                     [class]="theme.id === 'dark' ? 'bg-editorial-bg' : 'bg-editorial-text'"></div>
+                     [class]="theme.id === 'mono' ? 'bg-editorial-bg' : 'bg-editorial-text'"></div>
               }
               
               <!-- Background pattern for specific themes -->
-              @if (theme.id === 'glass') {
+              @if (theme.id === 'blur') {
                 <div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_1px_1px,currentColor_1px,transparent_0)] bg-[size:20px_20px]"></div>
               }
             </button>
@@ -86,14 +86,15 @@ export class AppearanceSettingsComponent {
   themeService = inject(ThemeService);
 
   themes: { id: AtmosphereTheme; label: string }[] = [
-    { id: 'light', label: 'Clinical_White' },
-    { id: 'dark', label: 'Deep_Mono' },
-    { id: 'glass', label: 'Translucent_Blur' },
+    { id: 'clinical', label: 'Clinical_White' },
+    { id: 'mono', label: 'Deep_Mono' },
+    { id: 'blur', label: 'Translucent_Blur' },
   ];
 
   densityOptions: { id: InterfaceDensity; label: string; description: string }[] = [
-    { id: 'editorial', label: 'Maximal_Whitespace', description: 'Priority: Typography & Focus' },
-    { id: 'premium', label: 'Balanced_Entropy', description: 'Standard: Aesthetic Utility' },
-    { id: 'compact', label: 'Technical_Density', description: 'Utility: Data Overhead' },
+    { id: 'maximal', label: 'Maximal_Whitespace', description: 'Priority: Typography & Focus' },
+    { id: 'balanced', label: 'Balanced_Entropy', description: 'Standard: Aesthetic Utility' },
+    { id: 'technical', label: 'Technical_Density', description: 'Utility: Data Overhead' },
   ];
+
 }

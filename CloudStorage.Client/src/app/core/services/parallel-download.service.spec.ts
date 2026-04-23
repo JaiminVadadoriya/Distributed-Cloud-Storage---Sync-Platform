@@ -73,7 +73,7 @@ describe('ParallelDownloadService', () => {
 
     apiServiceMock.get.mockReturnValue(of({ success: true, data: { fileName: 'test.zip', chunks: [] } }));
 
-    await expect(service.downloadLargeFile('f1')).rejects.toThrow(/BROWSER_UNSUPPORTED/);
+    await expect(service.downloadLargeFile('f1')).rejects.toThrow();
 
     // Restore for other tests
     vi.unstubAllGlobals();

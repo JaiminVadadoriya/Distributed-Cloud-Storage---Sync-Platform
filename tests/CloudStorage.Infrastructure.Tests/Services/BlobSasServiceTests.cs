@@ -102,10 +102,10 @@ namespace CloudStorage.Infrastructure.Tests.Services
             // Assert
             Assert.Equal(fakeSasUri.ToString(), result.SasUrl);
             Assert.Equal(expectedBlobName, result.BlobName);
-            
+
             // Check expiry is roughly what we expect (30 mins from now)
             var expectedExpiry = DateTime.UtcNow.AddMinutes(30);
-            Assert.True((result.ExpiresAt - expectedExpiry).Duration() < TimeSpan.FromSeconds(5), 
+            Assert.True((result.ExpiresAt - expectedExpiry).Duration() < TimeSpan.FromSeconds(5),
                 "Expiry time is not within the expected range (+30 mins)");
         }
     }

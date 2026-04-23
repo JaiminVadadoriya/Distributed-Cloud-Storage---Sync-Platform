@@ -32,37 +32,37 @@ namespace CloudStorage.Application.Tests.Services
             var baseline = DateTime.UtcNow.AddHours(-1);
 
             // Changed file
-            var file1 = new FileMetadata 
-            { 
-                Id = Guid.NewGuid(), 
-                FileName = "new.txt", 
-                OwnerId = userId, 
-                CreatedAt = DateTime.UtcNow, 
+            var file1 = new FileMetadata
+            {
+                Id = Guid.NewGuid(),
+                FileName = "new.txt",
+                OwnerId = userId,
+                CreatedAt = DateTime.UtcNow,
                 LastModifiedAt = DateTime.UtcNow,
                 Status = UploadStatus.Complete,
                 IsDeleted = false
             };
-            
+
             // Deleted file
-            var file2 = new FileMetadata 
-            { 
-                Id = Guid.NewGuid(), 
-                FileName = "deleted.txt", 
-                OwnerId = userId, 
-                CreatedAt = baseline.AddHours(-1), 
+            var file2 = new FileMetadata
+            {
+                Id = Guid.NewGuid(),
+                FileName = "deleted.txt",
+                OwnerId = userId,
+                CreatedAt = baseline.AddHours(-1),
                 LastModifiedAt = DateTime.UtcNow, // Deleted recently
-                IsDeleted = true 
+                IsDeleted = true
             };
 
             // Old file (should not be included)
-            var file3 = new FileMetadata 
-            { 
-                Id = Guid.NewGuid(), 
-                FileName = "old.txt", 
-                OwnerId = userId, 
-                CreatedAt = baseline.AddHours(-2), 
+            var file3 = new FileMetadata
+            {
+                Id = Guid.NewGuid(),
+                FileName = "old.txt",
+                OwnerId = userId,
+                CreatedAt = baseline.AddHours(-2),
                 LastModifiedAt = baseline.AddHours(-1),
-                IsDeleted = false 
+                IsDeleted = false
             };
 
             _context.FileMetadata.AddRange(file1, file2, file3);

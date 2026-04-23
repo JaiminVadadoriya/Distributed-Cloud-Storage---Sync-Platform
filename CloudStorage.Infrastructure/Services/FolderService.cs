@@ -16,7 +16,7 @@ namespace CloudStorage.Infrastructure.Services
         private readonly IActivityService _activityService;
 
         public FolderService(
-            IFolderRepository folderRepository, 
+            IFolderRepository folderRepository,
             ICacheService cache,
             IActivityService activityService)
         {
@@ -53,11 +53,11 @@ namespace CloudStorage.Infrastructure.Services
             };
 
             await _folderRepository.AddAsync(folder);
-            
+
             await _activityService.LogActivityAsync(userId, "CREATE", "FOLDER", folder.Id.ToString(), $"Folder '{folder.Name}' was created.");
 
             await _cache.RemoveByPrefixAsync($"stats:{userId}");
-            
+
             return MapToDto(folder);
         }
 
@@ -70,7 +70,7 @@ namespace CloudStorage.Infrastructure.Services
             folder.Name = newName;
             folder.LastModifiedAt = DateTime.UtcNow;
             await _folderRepository.UpdateAsync(folder);
-            
+
             await _activityService.LogActivityAsync(userId, "RENAME", "FOLDER", folderId.ToString(), $"Folder renamed to '{newName}'.");
 
             return MapToDto(folder);
@@ -89,7 +89,7 @@ namespace CloudStorage.Infrastructure.Services
             folder.ParentFolderId = newParentId;
             folder.LastModifiedAt = DateTime.UtcNow;
             await _folderRepository.UpdateAsync(folder);
-            
+
             await _activityService.LogActivityAsync(userId, "MOVE", "FOLDER", folderId.ToString(), "Folder was moved.");
 
             return MapToDto(folder);

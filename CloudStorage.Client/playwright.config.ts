@@ -105,7 +105,7 @@ export default defineConfig({
     : '**/*.spec.ts',
   
   /* Run tests in files in parallel */
-  fullyParallel: false,
+  fullyParallel: true,
   
   /* Fail the build on CI if you accidentally left test.only in the source code */
   forbidOnly: !!isCI,
@@ -113,33 +113,33 @@ export default defineConfig({
   /* Retry strategy */
   retries: isCI ? 2 : isDebug ? 0 : 1,
   
-  /* Parallel workers */
-  workers: 1,
+  /* Parallel workers - set to undefined to use max available for speed */
+  workers: process.env['CI'] ? 1 : undefined,
   
   /* Global timeout for each test in milliseconds */
-  timeout: testMode === 'real' ? 90000 : testMode === 'performance' ? 180000 : 60000,
+  timeout: testMode === 'mock' ? 30000 : testMode === 'real' ? 90000 : testMode === 'performance' ? 180000 : 60000,
   
-  /* Maximum time each action such as `click()` can take. Defaults to 0 (no limit). */
-  actionTimeout: 30000,
-  navigationTimeout: 60000,
   
   /* Expect timeout */
   expect: {
-    timeout: 10000,
+    timeout: testMode === 'mock' ? 8000 : 10000,
   },
   
-  /* Reporter to use */
+  /* Reporter to use - use dot for faster console output during parallel runs */
   reporter: [
     ['html', { outputFolder: 'playwright-report' }],
     ['json', { outputFile: 'test-results.json' }],
-    ['junit', { outputFile: 'test-results.xml' }],
-    ['list'],
+    ['dot'],
   ],
   
   /* Shared settings for all the projects */
   use: {
     /* Base URL for frontend app */
     baseURL: frontendUrl,
+    
+    /* Action & Navigation timeouts */
+    actionTimeout: testMode === 'mock' ? 8000 : 30000,
+    navigationTimeout: testMode === 'mock' ? 20000 : 60000,
     
     /* Screenshots and videos */
     screenshot: isDebug ? 'off' : 'only-on-failure',

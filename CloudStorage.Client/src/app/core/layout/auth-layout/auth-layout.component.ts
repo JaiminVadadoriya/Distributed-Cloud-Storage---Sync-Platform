@@ -19,6 +19,6 @@ export class AuthLayoutComponent {
 
   public toggleTheme(): void {
     const current = this.themeService.theme();
-    this.themeService.setTheme(current === 'light' ? 'dark' : 'light');
+    this.themeService.setTheme(current === 'clinical' ? 'mono' : 'clinical');
   }
 }

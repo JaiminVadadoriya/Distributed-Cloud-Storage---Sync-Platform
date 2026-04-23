@@ -15,15 +15,27 @@ namespace CloudStorage.Application.DTOs
         public int DownloadsToday { get; set; }
         public int NewUsersThisWeek { get; set; }
         public int ActiveSessionsNow { get; set; }
-        
+
         // Trends (percentage change)
         public double FilesTrend { get; set; }
         public double UsersTrend { get; set; }
         public double StorageTrend { get; set; }
-        
+
         // History for sparklines (last 7 points)
         public List<double> StorageHistory { get; set; } = new();
         public List<double> TrafficHistory { get; set; } = new();
+
+        // Geographic Telemetry
+        public List<RegionalNodeDto> RegionalTraffic { get; set; } = new();
+    }
+
+    public class RegionalNodeDto
+    {
+        public string Id { get; set; } = string.Empty;
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Intensity { get; set; }
+        public string RegionName { get; set; } = string.Empty;
     }
 
     public class AdminUserManagementDto

@@ -27,5 +27,12 @@ namespace CloudStorage.Infrastructure.Repositories
                 .Where(f => f.OwnerId == userId && f.ParentFolderId == null)
                 .ToListAsync();
         }
+
+        public async Task<IEnumerable<Folder>> GetAllUserFoldersAsync(int userId)
+        {
+            return await _dbSet
+                .Where(f => f.OwnerId == userId)
+                .ToListAsync();
+        }
     }
 }

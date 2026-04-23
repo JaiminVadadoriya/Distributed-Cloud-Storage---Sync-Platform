@@ -6,6 +6,7 @@ import { FileService } from '../../../core/services/file.service';
 import { FileItem } from '../../../core/models/file.model';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { takeUntil } from 'rxjs/operators';
+import { FfmpegService } from '../../../core/services/ffmpeg.service';
 
 @Component({
   selector: 'app-file-preview',
@@ -41,9 +42,18 @@ import { takeUntil } from 'rxjs/operators';
               <img [src]="previewUrl()" [alt]="fileData.name" class="max-w-full max-h-[70vh] object-contain">
             }
             @case ('video') {
-              <video controls class="max-w-full max-h-[70vh] w-full" [src]="previewUrl()">
-                Your browser does not support video playback.
-              </video>
+              @if (ffmpeg.isProcessing()) {
+                <div class="flex flex-col items-center gap-4 p-12">
+                  <div class="w-64 h-1 bg-editorial-text/10 overflow-hidden relative">
+                    <div class="absolute inset-0 bg-editorial-text transition-all duration-300" [style.width.%]="ffmpeg.progress()"></div>
+                  </div>
+                  <span class="font-mono text-[9px] uppercase tracking-[0.2em] text-editorial-text/40">Transcoding_Format: {{ ffmpeg.progress() }}%</span>
+                </div>
+              } @else {
+                <video controls class="max-w-full max-h-[70vh] w-full" [src]="previewUrl()">
+                  Your browser does not support video playback.
+                </video>
+              }
             }
             @case ('audio') {
               <div class="p-12 w-full max-w-lg">
@@ -164,6 +174,7 @@ export class FilePreviewComponent extends BaseComponent implements OnInit, OnDes
   private router = inject(Router);
   private fileService = inject(FileService);
   private sanitizer = inject(DomSanitizer);
+  public ffmpeg = inject(FfmpegService);
 
   file = signal<FileItem | null>(null);
   previewUrl = signal<string>('');
@@ -230,9 +241,29 @@ export class FilePreviewComponent extends BaseComponent implements OnInit, OnDes
         } else if (['image', 'video', 'audio', 'pdf'].includes(type)) {
           this.fileService.getFileBlob(fileId).pipe(takeUntil(this.destroy$)).subscribe({
             next: (blob) => {
-              this.currentObjectUrl = URL.createObjectURL(blob);
-              this.previewUrl.set(this.currentObjectUrl);
-              this.isBusy.set(false);
+              const ext = this.getExtension();
+              const nativeVideoSupport = ['mp4', 'webm', 'ogg'].includes(ext);
+
+              if (type === 'video' && !nativeVideoSupport) {
+                // Trigger client-side transcode
+                this.ffmpeg.transcode(blob, this.file()?.name || 'input.mov').pipe(takeUntil(this.destroy$)).subscribe({
+                  next: (transcodedBlob) => {
+                    this.currentObjectUrl = URL.createObjectURL(transcodedBlob);
+                    this.previewUrl.set(this.currentObjectUrl);
+                    this.isBusy.set(false);
+                  },
+                  error: () => {
+                    console.error('Transcoding failed, falling back to raw blob');
+                    this.currentObjectUrl = URL.createObjectURL(blob);
+                    this.previewUrl.set(this.currentObjectUrl);
+                    this.isBusy.set(false);
+                  }
+                });
+              } else {
+                this.currentObjectUrl = URL.createObjectURL(blob);
+                this.previewUrl.set(this.currentObjectUrl);
+                this.isBusy.set(false);
+              }
             },
             error: () => {
               console.error('Error fetching file blob for preview');

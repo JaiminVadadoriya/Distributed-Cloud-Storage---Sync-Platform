@@ -9,5 +9,6 @@ namespace CloudStorage.Domain.Interfaces
     {
         Task<Folder?> GetWithContentsAsync(Guid id);
         Task<IEnumerable<Folder>> GetUserRootFoldersAsync(int userId);
+        Task<IEnumerable<Folder>> GetAllUserFoldersAsync(int userId);
     }
 }

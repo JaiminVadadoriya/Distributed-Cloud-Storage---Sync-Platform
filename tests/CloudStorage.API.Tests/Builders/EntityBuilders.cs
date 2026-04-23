@@ -1,17 +1,19 @@
 using CloudStorage.Domain.Entities;
 using System;
+using System.Collections.Generic;
 
-namespace CloudStorage.API.Tests.Builders
+namespace CloudStorage.Tests.Builders
 {
     /// <summary>
     /// Fluent builder for creating test User entities with sensible defaults.
     /// </summary>
     public class UserBuilder
     {
-        private int _id = 1;
+        private int _id = 0; // Default to 0 for EF Core to handle identity
         private string _username = "testuser";
         private string _email = "test@example.com";
-        private string _passwordHash = "hashedpassword123"; // In real tests, use actual hash
+        private string _passwordHash = BCrypt.Net.BCrypt.HashPassword("Password123!");
+        private string _role = "User";
         private bool _emailVerified = true;
         private DateTime? _lastLoginAt = DateTime.UtcNow.AddDays(-1);
         private bool _isActive = true;
@@ -37,6 +39,24 @@ namespace CloudStorage.API.Tests.Builders
         public UserBuilder WithPasswordHash(string passwordHash)
         {
             _passwordHash = passwordHash;
+            return this;
+        }
+
+        public UserBuilder WithPassword(string clearTextPassword)
+        {
+            _passwordHash = BCrypt.Net.BCrypt.HashPassword(clearTextPassword);
+            return this;
+        }
+
+        public UserBuilder WithRole(string role)
+        {
+            _role = role;
+            return this;
+        }
+
+        public UserBuilder Admin()
+        {
+            _role = "Admin";
             return this;
         }
 
@@ -66,10 +86,15 @@ namespace CloudStorage.API.Tests.Builders
                 Username = _username,
                 Email = _email,
                 PasswordHash = _passwordHash,
+                Role = _role,
                 EmailVerified = _emailVerified,
                 LastLoginAt = _lastLoginAt,
                 IsActive = _isActive,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                RefreshTokens = new List<RefreshToken>(),
+                Devices = new List<Device>(),
+                FilePermissions = new List<FilePermission>(),
+                Notifications = new List<Notification>()
             };
         }
     }
@@ -84,7 +109,6 @@ namespace CloudStorage.API.Tests.Builders
         private string _contentType = "text/plain";
         private long _size = 1024;
         private int _version = 1;
-        private Guid? _parentVersionId;
         private int _chunkCount = 1;
         private string _hash = "abc123def456";
         private int _ownerId = 1;
@@ -93,6 +117,7 @@ namespace CloudStorage.API.Tests.Builders
         private UploadStatus _status = UploadStatus.Complete;
         private int _uploadedChunks = 1;
         private string _uploadSessionId = Guid.NewGuid().ToString();
+        private string? _versionVector;
 
         public FileMetadataBuilder WithId(Guid id)
         {
@@ -162,6 +187,12 @@ namespace CloudStorage.API.Tests.Builders
             return this;
         }
 
+        public FileMetadataBuilder WithVersionVector(string? versionVector)
+        {
+            _versionVector = versionVector;
+            return this;
+        }
+
         public FileMetadata Build()
         {
             return new FileMetadata
@@ -171,7 +202,6 @@ namespace CloudStorage.API.Tests.Builders
                 ContentType = _contentType,
                 Size = _size,
                 Version = _version,
-                ParentVersionId = _parentVersionId,
                 ChunkCount = _chunkCount,
                 Hash = _hash,
                 OwnerId = _ownerId,
@@ -181,6 +211,7 @@ namespace CloudStorage.API.Tests.Builders
                 UploadedChunks = _uploadedChunks,
                 UploadSessionId = _uploadSessionId,
                 StoragePath = $"/storage/{_ownerId}/{_id}.bin",
+                VersionVector = _versionVector,
                 CreatedAt = DateTime.UtcNow,
                 LastModifiedAt = DateTime.UtcNow,
                 LastSyncedAt = _status == UploadStatus.Complete ? DateTime.UtcNow : null,

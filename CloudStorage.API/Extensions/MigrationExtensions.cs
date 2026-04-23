@@ -22,16 +22,30 @@ namespace CloudStorage.API.Extensions
                 {
                     Console.WriteLine($"Applying migrations (attempt {i + 1}/{retries})...");
                     dbContext.Database.Migrate();
-                    
-                    // Seed Admin User Role
-                    var adminUser = dbContext.Users.FirstOrDefault(u => u.Username == "admin");
-                    if (adminUser != null && adminUser.Role != "Admin")
+
+                    // Seed Admin User
+                    var adminUser = dbContext.Users.FirstOrDefault(u => u.Email == "admin@cloud.io" || u.Username == "admin");
+                    if (adminUser == null)
                     {
-                        Console.WriteLine("Seeding Admin role for user 'admin'...");
+                        Console.WriteLine("Seeding Admin user (admin@cloud.io)...");
+                        dbContext.Users.Add(new User
+                        {
+                            Username = "admin",
+                            Email = "admin@cloud.io",
+                            PasswordHash = BCrypt.Net.BCrypt.HashPassword("admin123"),
+                            Role = "Admin",
+                            IsActive = true,
+                            CreatedAt = DateTime.UtcNow
+                        });
+                        dbContext.SaveChanges();
+                    }
+                    else if (adminUser.Role != "Admin")
+                    {
+                        Console.WriteLine("Updating Admin role for user...");
                         adminUser.Role = "Admin";
                         dbContext.SaveChanges();
                     }
-                    
+
                     Console.WriteLine("Migrations and seeding applied successfully.");
                     return;
                 }

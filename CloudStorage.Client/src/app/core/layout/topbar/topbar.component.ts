@@ -5,10 +5,11 @@ import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
 import { LayoutService } from '../../services/layout.service';
 import { SearchService } from '../../services/search.service';
+import { ThemeService, AtmosphereTheme, InterfaceDensity } from '../../services/theme.service';
 import { BaseComponent } from '../../models/base-component';
 
 /**
- * TopbarComponent handles the global search, notifications, and profile management.
+ * TopbarComponent handles the global search, notifications, and atmosphere management.
  */
 @Component({
   selector: 'app-topbar',
@@ -32,9 +33,29 @@ import { BaseComponent } from '../../models/base-component';
 export class TopbarComponent extends BaseComponent {
   public authService = inject(AuthService);
   public layoutService = inject(LayoutService);
+  public themeService = inject(ThemeService);
   public searchService = inject(SearchService);
   public notificationService = inject(NotificationService);
   private router = inject(Router);
+
+  public showAtmosphereMenu = false;
+
+  public toggleAtmosphereMenu(): void {
+    this.showAtmosphereMenu = !this.showAtmosphereMenu;
+    if (this.showAtmosphereMenu) {
+      this.layoutService.closeAllOverlays();
+    }
+  }
+
+  public setAtmosphere(theme: AtmosphereTheme): void {
+    this.themeService.setTheme(theme);
+    this.showAtmosphereMenu = false;
+  }
+
+  public setDensity(density: InterfaceDensity): void {
+    this.themeService.setDensity(density);
+    this.showAtmosphereMenu = false;
+  }
 
   public toggleSidebar(): void {
     this.layoutService.toggleSidebar();

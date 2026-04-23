@@ -4932,11 +4932,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "d:\\college\\cloud-storage\\CloudStorage.API\\CloudStorage.API.csproj",
+      "projectUniqueName": "D:\\college\\cloud-storage\\CloudStorage.API\\CloudStorage.API.csproj",
       "projectName": "CloudStorage.API",
-      "projectPath": "d:\\college\\cloud-storage\\CloudStorage.API\\CloudStorage.API.csproj",
+      "projectPath": "D:\\college\\cloud-storage\\CloudStorage.API\\CloudStorage.API.csproj",
       "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-      "outputPath": "d:\\college\\cloud-storage\\CloudStorage.API\\obj\\",
+      "outputPath": "D:\\college\\cloud-storage\\CloudStorage.API\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -4957,8 +4957,8 @@
         "net10.0": {
           "targetAlias": "net10.0",
           "projectReferences": {
-            "d:\\college\\cloud-storage\\CloudStorage.Application\\CloudStorage.Application.csproj": {
-              "projectPath": "d:\\college\\cloud-storage\\CloudStorage.Application\\CloudStorage.Application.csproj"
+            "D:\\college\\cloud-storage\\CloudStorage.Application\\CloudStorage.Application.csproj": {
+              "projectPath": "D:\\college\\cloud-storage\\CloudStorage.Application\\CloudStorage.Application.csproj"
             },
             "D:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj": {
               "projectPath": "D:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj"
@@ -4976,7 +4976,7 @@
         "auditLevel": "low",
         "auditMode": "all"
       },
-      "SdkAnalysisLevel": "10.0.100"
+      "SdkAnalysisLevel": "10.0.200"
     },
     "frameworks": {
       "net10.0": {
@@ -5068,7 +5068,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json",
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json",
         "packagesToPrune": {
           "Microsoft.AspNetCore": "(,10.0.32767]",
           "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",

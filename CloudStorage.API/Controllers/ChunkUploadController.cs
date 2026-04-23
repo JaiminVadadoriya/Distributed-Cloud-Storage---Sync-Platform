@@ -4,6 +4,7 @@ using CloudStorage.Application.DTOs;
 using CloudStorage.Application.Interfaces;
 using CloudStorage.Domain.Entities;
 using CloudStorage.Domain.Interfaces;
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -70,6 +71,7 @@ namespace CloudStorage.API.Controllers
                 ContentType = dto.ContentType,
                 Size = dto.FileSize,
                 ChunkCount = dto.TotalChunks,
+                Hash = dto.Hash,
                 OwnerId = userId,
                 UploadSessionId = sessionId,
                 Status = UploadStatus.InProgress,
@@ -108,6 +110,20 @@ namespace CloudStorage.API.Controllers
 
             var isDuplicate = await _deduplication.IsChunkDuplicateAsync(request.Hash);
             string storagePath;
+
+            // Verify integrity before persistence
+            using (var checkStream = request.Chunk.OpenReadStream())
+            {
+                using var sha256 = SHA256.Create();
+                var computedHashBytes = await sha256.ComputeHashAsync(checkStream);
+                var computedHash = BitConverter.ToString(computedHashBytes).Replace("-", "").ToLowerInvariant();
+
+                if (!string.Equals(computedHash, request.Hash, StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.WriteLine($"[TX_ERR] Integrity Mismatch | Session: {request.SessionId} | Index: {request.ChunkIndex} | Client: {request.Hash} | Server: {computedHash}");
+                    return BadRequest(ApiResponse.Fail("CHUNK_CORRUPTION_DETECTED: Computed hash does not match provided hash."));
+                }
+            }
 
             if (isDuplicate)
             {

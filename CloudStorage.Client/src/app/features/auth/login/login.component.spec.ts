@@ -62,7 +62,7 @@ describe('LoginComponent', () => {
     component.loginForm.controls['identifier'].setValue('user');
     component.loginForm.controls['password'].setValue('pass');
     
-    authServiceMock.login.mockReturnValue(of({ accessToken: 'a', refreshToken: 'b', user: { id: '1', username: 'u', email: 'e' }}));
+    authServiceMock.login.mockReturnValue(of({ accessToken: 'a', refreshToken: 'b', user: { id: 1, username: 'u', email: 'e', role: 'user' }}));
     
     component.onSubmit();
     

@@ -62,8 +62,7 @@ test.describe('CloudStorage E2E Suite', () => {
         });
       });
 
-      await page.goto('/dashboard');
-      await page.waitForLoadState('domcontentloaded');
+      await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
       await page.waitForSelector('div[data-testid^="file-item-"]', { timeout: 30000 });
     });
 
@@ -197,8 +196,7 @@ test.describe('CloudStorage E2E Suite', () => {
       // Attach restoreCalled to the page object for the test to access
       (page as any)._restoreCalled = () => restoreCalled;
 
-      await page.goto('/trash');
-      await page.waitForLoadState('networkidle');
+      await page.goto('/trash', { waitUntil: 'domcontentloaded' });
       // Ensure Trash row is present before proceeding
       await page.waitForSelector('div[data-testid="trash-row-t1"]', { state: 'visible', timeout: 30000 });
     });
@@ -213,7 +211,7 @@ test.describe('CloudStorage E2E Suite', () => {
       await restoreBtn.waitFor({ state: 'visible' });
       await restoreBtn.click({ force: true });
       
-      await expect(page.locator('body')).toContainText('RESTORE', { timeout: 15000 });
+      await expect(page.locator('body')).toContainText('RESTORE', { timeout: 10000 });
       expect((page as any)._restoreCalled()).toBe(true);
     });
   });

@@ -44,7 +44,8 @@ export class FileService extends BaseService {
       modified: new Date(f.createdAt),
       owner: f.isShared ? 'Shared' : 'me',
       versionVector: f.versionVector ?? null,
-      lastModifiedAt: f.lastModifiedAt ?? f.createdAt
+      lastModifiedAt: f.lastModifiedAt ?? f.createdAt,
+      folderId: f.folderId
     };
   }
 
@@ -65,6 +66,16 @@ export class FileService extends BaseService {
     return this.api.delete<ApiResponse<void>>('/files/all').pipe(
       map(() => void 0),
       catchError(this.handleError<void>('PURGE_ALL_FILES'))
+    );
+  }
+
+  /**
+   * Comprehensive destruction protocol for all user data.
+   */
+  public purgeDrive(): Observable<void> {
+    return this.api.post<ApiResponse<void>>('/files/purge', {}).pipe(
+      map(() => void 0),
+      catchError(this.handleError<void>('FULL_DRIVE_PURGE_FAILURE'))
     );
   }
 
@@ -268,7 +279,7 @@ export class FileService extends BaseService {
   public getFileBlob(fileId: string): Observable<Blob> {
     const apiUrl = `/api/files/${fileId}/download`;
     return this.http.get(apiUrl, { responseType: 'blob' }).pipe(
-      catchError(this.handleError<any>('GET_FILE_BLOB'))
+      catchError(this.handleError<Blob>('GET_FILE_BLOB'))
     );
   }
 

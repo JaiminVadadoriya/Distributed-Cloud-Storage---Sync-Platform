@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "LGTslMCUT9U=",
+  "dgSpecHash": "RHr5JAWjI0A=",
   "success": true,
-  "projectFilePath": "d:\\college\\cloud-storage\\tests\\CloudStorage.Application.Tests\\CloudStorage.Application.Tests.csproj",
+  "projectFilePath": "D:\\college\\cloud-storage\\tests\\CloudStorage.Application.Tests\\CloudStorage.Application.Tests.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Lenovo\\.nuget\\packages\\azure.core\\1.50.0\\azure.core.1.50.0.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\azure.storage.blobs\\12.27.0\\azure.storage.blobs.12.27.0.nupkg.sha512",

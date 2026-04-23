@@ -57,11 +57,11 @@ namespace CloudStorage.Application.Tests.Services
             var fileId = Guid.NewGuid();
             var chunkIndex = 0;
             var data = new MemoryStream(new byte[] { 1, 2, 3 });
-            
+
             var properties = BlobsModelFactory.BlobProperties(isServerEncrypted: true);
             var responseMock = new Mock<Response<BlobProperties>>();
             responseMock.Setup(r => r.Value).Returns(properties);
-            
+
             _blobClientMock
                 .Setup(c => c.GetPropertiesAsync(null, default))
                 .ReturnsAsync(responseMock.Object);
@@ -84,11 +84,11 @@ namespace CloudStorage.Application.Tests.Services
             var chunkIndex = 0;
 
             _blobClientMock.Setup(c => c.ExistsAsync(default)).ReturnsAsync(Response.FromValue(true, null!));
-            
+
             var properties = BlobsModelFactory.BlobProperties(isServerEncrypted: true);
             var responseMock = new Mock<Response<BlobProperties>>();
             responseMock.Setup(r => r.Value).Returns(properties);
-            
+
             _blobClientMock
                 .Setup(c => c.GetPropertiesAsync(null, default))
                 .ReturnsAsync(responseMock.Object);

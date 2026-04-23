@@ -17,7 +17,7 @@ namespace CloudStorage.API.Hubs
                 // Group connections by userId so a user receives updates across all their devices
                 await Groups.AddToGroupAsync(Context.ConnectionId, $"user_{userId}");
             }
-            
+
             await base.OnConnectedAsync();
         }
 
@@ -28,7 +28,7 @@ namespace CloudStorage.API.Hubs
             {
                 await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"user_{userId}");
             }
-            
+
             await base.OnDisconnectedAsync(exception);
         }
     }

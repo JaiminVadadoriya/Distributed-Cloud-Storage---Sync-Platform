@@ -15,7 +15,7 @@ namespace CloudStorage.Domain.Entities
         public string Hash { get; set; } = string.Empty;
         public string StoragePath { get; set; } = string.Empty;
         public string? BlobUrl { get; set; }
-        
+
         // Deduplication support
         public bool IsDuplicate { get; set; }
         public string? DuplicateSourceId { get; set; }

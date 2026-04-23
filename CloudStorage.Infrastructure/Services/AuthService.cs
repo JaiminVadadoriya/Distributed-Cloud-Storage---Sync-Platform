@@ -178,7 +178,7 @@ namespace CloudStorage.Infrastructure.Services
             // Update user's password
             var user = resetToken.User;
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
-            
+
             // Mark token as used
             resetToken.IsUsed = true;
             resetToken.UsedAt = DateTime.UtcNow;
@@ -267,7 +267,7 @@ namespace CloudStorage.Infrastructure.Services
         {
             var jwtKey = _configuration["Jwt:Key"];
             if (string.IsNullOrEmpty(jwtKey)) throw new Exception("JWT Key is missing from configuration");
-             
+
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 

@@ -228,36 +228,113 @@ import { LayoutService } from '../../../core/services/layout.service';
     <!-- Quota Modal -->
     <app-modal [isOpen]="isQuotaModalOpen" title="Quota_Calibration" (closed)="isQuotaModalOpen = false">
       @if (selectedUser(); as u) {
-        <div class="space-y-10 py-4">
-          <div class="flex justify-between items-end border-b border-editorial-text/10 pb-6">
-             <div class="space-y-1">
-                <h4 class="font-mono text-[11px] font-bold text-editorial-text uppercase tracking-widest">Active_Node: {{ u.username }}</h4>
-                <p class="font-mono text-[9px] text-editorial-text/40 uppercase tracking-widest">Current_Cap: {{ formatBytes(u.storageQuota) }}</p>
+        <div class="space-y-12 py-8">
+          <div class="flex justify-between items-end border-b-4 border-editorial-text/10 pb-8">
+             <div class="space-y-2">
+                <h4 class="font-mono text-xs font-black text-editorial-text uppercase tracking-widest">Active_Node: {{ u.username }}</h4>
+                <div class="flex items-center gap-4">
+                  <div class="w-2 h-2 bg-editorial-text/20"></div>
+                  <p class="font-mono text-[10px] text-editorial-text/40 uppercase tracking-widest font-bold">Current_Cap: {{ formatBytes(u.storageQuota) }}</p>
+                </div>
              </div>
-             <div class="font-mono text-[40px] font-black text-editorial-text/5 tracking-tighter">{{ quotaInGB }}GB</div>
+             <div class="flex flex-col items-end">
+                <div class="font-mono text-5xl font-black text-editorial-text tracking-tighter">{{ quotaInGB }}GB</div>
+                <div class="h-1 w-12 bg-editorial-text mt-1"></div>
+             </div>
           </div>
-          <div class="space-y-6">
-             <label for="quota-range" class="font-mono text-[9px] uppercase tracking-widest text-editorial-text/40 ml-4 italic">Storage_Capacity_GB</label>
-             <input id="quota-range" type="range" min="1" max="100" [(ngModel)]="quotaInGB" class="w-full h-1 bg-editorial-text/10 appearance-none cursor-pointer accent-editorial-text" />
-             <div class="flex justify-between font-mono text-[8px] text-editorial-text/30 uppercase tracking-[0.3em]">
-                <span>1GB</span>
-                <span>50GB</span>
-                <span>100GB</span>
+
+          <div class="space-y-10">
+             <div class="flex items-center justify-between">
+               <label for="quota-range" class="font-mono text-[10px] uppercase tracking-[0.3em] text-editorial-text/40 font-black italic flex items-center gap-4">
+                 <span class="w-1.5 h-1.5 bg-editorial-text/20"></span>
+                 Storage_Capacity_GB
+               </label>
+               <div class="font-mono text-[9px] uppercase tracking-widest text-editorial-text/20">Calibration_Mode: ACTIVE</div>
+             </div>
+
+             <div class="relative group">
+                <input id="quota-range" type="range" min="1" max="100" [(ngModel)]="quotaInGB" 
+                       class="calibration-slider w-full cursor-pointer appearance-none bg-transparent">
+                
+                <div class="flex justify-between mt-6 px-1">
+                   @for (mark of [1, 50, 100]; track mark) {
+                     <div class="flex flex-col items-center gap-2">
+                        <div class="w-0.5 h-2 bg-editorial-text/20"></div>
+                        <span class="font-mono text-[9px] text-editorial-text/30 font-bold tracking-widest">{{ mark }}GB</span>
+                     </div>
+                   }
+                </div>
+             </div>
+
+             <div class="p-8 border-2 border-editorial-text/5 bg-editorial-text/[0.02] flex items-start gap-6">
+                <div class="w-1.5 h-1.5 mt-1 bg-editorial-text/20 animate-pulse"></div>
+                <p class="font-mono text-[10px] uppercase tracking-widest text-editorial-text/40 font-bold leading-relaxed">
+                  System Audit: New storage allocation will be provisioned across all node clusters immediately upon commitment. Standard billing cycles apply.
+                </p>
              </div>
           </div>
         </div>
       }
       @if (selectedUser(); as u) {
         <div footer class="flex justify-end gap-6 w-full">
-           <button (click)="isQuotaModalOpen = false" class="px-8 py-3 font-mono text-[9px] uppercase tracking-widest text-editorial-text/40 hover:text-editorial-text transition-all">Abort</button>
+           <button (click)="isQuotaModalOpen = false" class="px-8 py-3 font-mono text-[9px] uppercase tracking-widest text-editorial-text/40 hover:text-editorial-text transition-all font-black border-2 border-transparent hover:border-editorial-text/10">Abort_Sequence</button>
            <button (click)="submitQuotaUpdate()" [disabled]="isBusy()"
-                   class="px-12 py-3 bg-editorial-text text-editorial-bg font-sans font-black text-[10px] uppercase italic tracking-widest hover:tracking-[0.2em] transition-all">
-              Apply_Configuration
+                   class="px-12 py-4 bg-editorial-text text-editorial-bg font-sans font-black text-xs uppercase italic tracking-widest hover:tracking-[0.2em] transition-all relative group overflow-hidden shadow-brutalist disabled:opacity-30">
+              <span class="relative z-10">Apply_Configuration</span>
+              <div class="absolute inset-0 bg-white/10 -translate-x-full group-hover:translate-x-0 transition-transform duration-500"></div>
            </button>
         </div>
       }
     </app-modal>
-  `
+  `,
+  styles: [`
+    .calibration-slider::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 4px;
+      background: rgba(26, 26, 26, 0.1);
+      border: none;
+    }
+
+    .calibration-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 24px;
+      width: 24px;
+      background: #1A1A1A;
+      margin-top: -10px;
+      border: 4px solid #1A1A1A;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .calibration-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+      background: #FFFFFF;
+      box-shadow: 4px 4px 0 #1A1A1A;
+    }
+
+    .calibration-slider::-moz-range-track {
+      width: 100%;
+      height: 4px;
+      background: rgba(26, 26, 26, 0.1);
+      border: none;
+    }
+
+    .calibration-slider::-moz-range-thumb {
+      height: 24px;
+      width: 24px;
+      background: #1A1A1A;
+      border: 4px solid #1A1A1A;
+      cursor: pointer;
+      border-radius: 0;
+      transition: all 0.2s ease;
+    }
+
+    .calibration-slider::-moz-range-thumb:hover {
+      transform: scale(1.1);
+      background: #FFFFFF;
+      box-shadow: 4px 4px 0 #1A1A1A;
+    }
+  `]
 })
 export class UserManagementComponent extends BaseComponent implements OnInit {
   private adminService = inject(AdminService);

@@ -1,8 +1,9 @@
-<div class="flex h-full flex-col justify-between py-10 px-6 overflow-y-auto custom-scrollbar">
+<div class="flex h-full flex-col justify-between py-10 px-6 overflow-y-auto custom-scrollbar" role="navigation" aria-label="Main Navigation">
   <!-- Logo Area -->
-  <div class="px-2 mb-16 flex items-center gap-5 group cursor-default">
+  <div class="px-2 mb-16 flex items-center gap-5 group cursor-default" aria-label="CloudStorage Brand">
     <div
-      class="w-12 h-12 rounded-none bg-editorial-text flex items-center justify-center text-editorial-bg font-extrabold text-2xl shadow-brutalist group-hover:scale-105 transition-transform duration-500">
+      class="w-12 h-12 rounded-none bg-editorial-text flex items-center justify-center text-editorial-bg font-extrabold text-2xl shadow-brutalist group-hover:scale-105 transition-transform duration-500"
+      aria-hidden="true">
       C
     </div>
     <div class="flex flex-col">
@@ -16,30 +17,30 @@
 
   <!-- Navigation -->
   <nav class="flex-1 space-y-4">
-    <a routerLink="/dashboard" routerLinkActive="border-l-4 border-editorial-text font-black translate-x-1 !opacity-100"
+    <a routerLink="/dashboard" routerLinkActive="border-l-4 border-editorial-text font-black translate-x-1 !opacity-100" [ariaCurrentWhenActive]="'page'"
        (click)="layoutService.isMobile() ? layoutService.closeSidebar() : null"
-       class="flex items-center gap-5 px-6 py-4 rounded-none text-editorial-text/40 hover:bg-editorial-text/5 hover:text-editorial-text transition-all group opacity-80 hover:opacity-100 relative overflow-hidden active:scale-[0.98]">
+       class="flex items-center gap-5 px-6 py-4 rounded-none text-editorial-text/60 hover:bg-editorial-text/5 hover:text-editorial-text transition-all group opacity-80 hover:opacity-100 relative overflow-hidden active:scale-[0.98]">
       <div class="w-1.5 h-1.5 bg-current opacity-20 group-hover:opacity-100 transition-opacity"></div>
       <span class="font-sans uppercase tracking-[0.2em] text-[12px] font-extrabold">Dashboard</span>
     </a>
 
-    <a routerLink="/files" routerLinkActive="border-l-4 border-editorial-text font-black translate-x-1 !opacity-100"
+    <a routerLink="/files" routerLinkActive="border-l-4 border-editorial-text font-black translate-x-1 !opacity-100" [ariaCurrentWhenActive]="'page'"
        (click)="layoutService.isMobile() ? layoutService.closeSidebar() : null"
-       class="flex items-center gap-5 px-6 py-4 rounded-none text-editorial-text/40 hover:bg-editorial-text/5 hover:text-editorial-text transition-all group opacity-80 hover:opacity-100 relative overflow-hidden active:scale-[0.98]">
+       class="flex items-center gap-5 px-6 py-4 rounded-none text-editorial-text/60 hover:bg-editorial-text/5 hover:text-editorial-text transition-all group opacity-80 hover:opacity-100 relative overflow-hidden active:scale-[0.98]">
       <div class="w-1.5 h-1.5 bg-current opacity-20 group-hover:opacity-100 transition-opacity"></div>
       <span class="font-sans uppercase tracking-[0.2em] text-[12px] font-extrabold">My_Archive</span>
     </a>
 
-    <a routerLink="/shared" routerLinkActive="border-l-4 border-editorial-text font-black translate-x-1 !opacity-100"
+    <a routerLink="/shared" routerLinkActive="border-l-4 border-editorial-text font-black translate-x-1 !opacity-100" [ariaCurrentWhenActive]="'page'"
        (click)="layoutService.isMobile() ? layoutService.closeSidebar() : null"
-       class="flex items-center gap-5 px-6 py-4 rounded-none text-editorial-text/40 hover:bg-editorial-text/5 hover:text-editorial-text transition-all group opacity-80 hover:opacity-100 relative overflow-hidden active:scale-[0.98]">
+       class="flex items-center gap-5 px-6 py-4 rounded-none text-editorial-text/60 hover:bg-editorial-text/5 hover:text-editorial-text transition-all group opacity-80 hover:opacity-100 relative overflow-hidden active:scale-[0.98]">
       <div class="w-1.5 h-1.5 bg-current opacity-20 group-hover:opacity-100 transition-opacity"></div>
       <span class="font-sans uppercase tracking-[0.2em] text-[12px] font-extrabold">Network</span>
     </a>
 
-    <a routerLink="/recent" routerLinkActive="border-l-4 border-editorial-text font-black translate-x-1 !opacity-100"
+    <a routerLink="/recent" routerLinkActive="border-l-4 border-editorial-text font-black translate-x-1 !opacity-100" [ariaCurrentWhenActive]="'page'"
        (click)="layoutService.isMobile() ? layoutService.closeSidebar() : null"
-       class="flex items-center gap-5 px-6 py-4 rounded-none text-editorial-text/40 hover:bg-editorial-text/5 hover:text-editorial-text transition-all group opacity-80 hover:opacity-100 relative overflow-hidden active:scale-[0.98]">
+       class="flex items-center gap-5 px-6 py-4 rounded-none text-editorial-text/60 hover:bg-editorial-text/5 hover:text-editorial-text transition-all group opacity-80 hover:opacity-100 relative overflow-hidden active:scale-[0.98]">
       <div class="w-1.5 h-1.5 bg-current opacity-20 group-hover:opacity-100 transition-opacity"></div>
       <span class="font-sans uppercase tracking-[0.2em] text-[12px] font-extrabold">History</span>
     </a>
@@ -56,17 +57,19 @@
       <span class="font-sans uppercase tracking-[0.2em] text-[12px] font-extrabold">Purge_Bin</span>
     </a>
 
-    <div class="pt-8 pb-4 px-6 flex items-center gap-4">
-      <div class="h-[2px] bg-editorial-text/10 w-12"></div>
-      <span class="font-mono text-[8px] uppercase tracking-[0.4em] text-editorial-text/20 font-bold">Admin</span>
-    </div>
+    @if (isAdmin()) {
+      <div class="pt-8 pb-4 px-6 flex items-center gap-4">
+        <div class="h-[2px] bg-editorial-text/10 w-12"></div>
+        <span class="font-mono text-[8px] uppercase tracking-[0.4em] text-editorial-text/20 font-bold">Admin</span>
+      </div>
 
-    <a routerLink="/admin"
-       (click)="layoutService.isMobile() ? layoutService.closeSidebar() : null"
-       class="flex items-center gap-5 px-6 py-4 rounded-none text-editorial-text/40 hover:bg-editorial-text/5 hover:text-editorial-text transition-all group opacity-80 hover:opacity-100 relative overflow-hidden active:scale-[0.98]">
-      <div class="w-1.5 h-1.5 bg-current opacity-20 group-hover:opacity-100 transition-opacity"></div>
-      <span class="font-sans uppercase tracking-[0.2em] text-[12px] font-extrabold">Control_Plane</span>
-    </a>
+      <a routerLink="/admin"
+         (click)="layoutService.isMobile() ? layoutService.closeSidebar() : null"
+         class="flex items-center gap-5 px-6 py-4 rounded-none text-editorial-text/40 hover:bg-editorial-text/5 hover:text-editorial-text transition-all group opacity-80 hover:opacity-100 relative overflow-hidden active:scale-[0.98]">
+        <div class="w-1.5 h-1.5 bg-current opacity-20 group-hover:opacity-100 transition-opacity"></div>
+        <span class="font-sans uppercase tracking-[0.2em] text-[12px] font-extrabold">Control_Plane</span>
+      </a>
+    }
   </nav>
 
   <!-- Bottom Section: Storage & Settings -->
@@ -74,7 +77,12 @@
     <!-- Storage Usage -->
     @if (stats(); as currentStats) {
       <div class="px-2">
-        <div class="p-6 rounded-none border-2 border-editorial-text/10 bg-editorial-text/[0.02] space-y-4 relative overflow-hidden">
+        <div class="p-6 rounded-none border-2 border-editorial-text/20 bg-editorial-text/[0.04] space-y-4 relative overflow-hidden" 
+             role="meter" 
+             [attr.aria-valuenow]="getPercentage(currentStats.totalStorageBytes, currentStats.maxStorageBytes)"
+             aria-valuemin="0" 
+             aria-valuemax="100"
+             [attr.aria-label]="'Storage usage: ' + getPercentage(currentStats.totalStorageBytes, currentStats.maxStorageBytes) + '%'">
           <div
             class="flex items-center justify-between font-mono uppercase tracking-[0.3em] text-[10px] text-editorial-text/40 font-bold relative z-10">
             <span>VOL_CAPACITY</span>

@@ -3,13 +3,13 @@
     "configFile": "D:\\college\\cloud-storage\\CloudStorage.Client\\playwright.config.ts",
     "rootDir": "D:/college/cloud-storage/CloudStorage.Client/e2e",
     "forbidOnly": false,
-    "fullyParallel": false,
+    "fullyParallel": true,
     "globalSetup": "D:\\college\\cloud-storage\\CloudStorage.Client\\e2e\\utils\\global-setup.ts",
     "globalTeardown": null,
     "globalTimeout": 0,
     "grep": {},
     "grepInvert": null,
-    "maxFailures": 1,
+    "maxFailures": 0,
     "metadata": {
       "actualWorkers": 1
     },
@@ -29,7 +29,7 @@
         "testMatch": [
           "**/*.spec.ts"
         ],
-        "timeout": 0
+        "timeout": 30000
       },
       {
         "outputDir": "D:/college/cloud-storage/CloudStorage.Client/test-results",
@@ -45,7 +45,7 @@
         "testMatch": [
           "**/*.spec.ts"
         ],
-        "timeout": 0
+        "timeout": 30000
       },
       {
         "outputDir": "D:/college/cloud-storage/CloudStorage.Client/test-results",
@@ -61,7 +61,7 @@
         "testMatch": [
           "**/*.spec.ts"
         ],
-        "timeout": 0
+        "timeout": 30000
       }
     ],
     "quiet": false,
@@ -79,13 +79,7 @@
         }
       ],
       [
-        "junit",
-        {
-          "outputFile": "test-results.xml"
-        }
-      ],
-      [
-        "list",
+        "dot",
         null
       ]
     ],
@@ -98,7 +92,7 @@
     "updateSnapshots": "missing",
     "updateSourceMethod": "patch",
     "version": "1.59.1",
-    "workers": 1,
+    "workers": 6,
     "webServer": {
       "command": "npm run start",
       "url": "http://localhost:4200",
@@ -108,129 +102,47 @@
   },
   "suites": [
     {
-      "title": "audit-remediation.spec.ts",
-      "file": "audit-remediation.spec.ts",
+      "title": "file-explorer.e2e.spec.ts",
+      "file": "file-explorer.e2e.spec.ts",
       "column": 0,
       "line": 0,
       "specs": [],
       "suites": [
         {
-          "title": "Web Application Remediation Audit",
-          "file": "audit-remediation.spec.ts",
-          "line": 4,
+          "title": "CloudStorage E2E Suite",
+          "file": "file-explorer.e2e.spec.ts",
+          "line": 3,
           "column": 6,
           "specs": [],
           "suites": [
             {
-              "title": "Dashboard & File Explorer",
-              "file": "audit-remediation.spec.ts",
-              "line": 42,
+              "title": "CloudStorage Remediation Audit",
+              "file": "file-explorer.e2e.spec.ts",
+              "line": 55,
               "column": 8,
               "specs": [
                 {
-                  "title": "Task 1: File Explorer - Context Menu Missing",
+                  "title": "Phase 1: Context menu and F2 Rename",
                   "ok": true,
                   "tags": [],
                   "tests": [
                     {
-                      "timeout": 90000,
+                      "timeout": 30000,
                       "annotations": [],
                       "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
+                      "projectId": "firefox",
+                      "projectName": "firefox",
                       "results": [
                         {
                           "workerIndex": 0,
                           "parallelIndex": 0,
                           "status": "passed",
-                          "duration": 2139058,
+                          "duration": 32241,
                           "errors": [],
                           "stdout": [],
                           "stderr": [],
                           "retry": 0,
-                          "startTime": "2026-04-10T16:49:20.501Z",
-                          "annotations": [],
-                          "attachments": []
-                        },
-                        {
-                          "workerIndex": 1,
-                          "parallelIndex": 0,
-                          "status": "failed",
-                          "duration": 4279071,
-                          "error": {
-                            "message": "Error: locator.isVisible: Target page, context or browser has been closed",
-                            "stack": "Error: locator.isVisible: Target page, context or browser has been closed\n    at D:\\college\\cloud-storage\\CloudStorage.Client\\e2e\\audit-remediation.spec.ts:42:80",
-                            "location": {
-                              "file": "D:\\college\\cloud-storage\\CloudStorage.Client\\e2e\\audit-remediation.spec.ts",
-                              "column": 80,
-                              "line": 42
-                            },
-                            "snippet": "\u001b[0m \u001b[90m 40 |\u001b[39m\n \u001b[90m 41 |\u001b[39m     \u001b[90m// Reset modals\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 42 |\u001b[39m     \u001b[36mif\u001b[39m (\u001b[36mawait\u001b[39m authenticatedPage\u001b[33m.\u001b[39mlocator(\u001b[32m'app-prompt-modal, app-confirm-modal'\u001b[39m)\u001b[33m.\u001b[39misVisible()) {\n \u001b[90m    |\u001b[39m                                                                                \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 43 |\u001b[39m       \u001b[36mawait\u001b[39m authenticatedPage\u001b[33m.\u001b[39mkeyboard\u001b[33m.\u001b[39mpress(\u001b[32m'Escape'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 44 |\u001b[39m       \u001b[36mawait\u001b[39m authenticatedPage\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m200\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 45 |\u001b[39m     }\u001b[0m"
-                          },
-                          "errors": [
-                            {
-                              "location": {
-                                "file": "D:\\college\\cloud-storage\\CloudStorage.Client\\e2e\\audit-remediation.spec.ts",
-                                "column": 80,
-                                "line": 42
-                              },
-                              "message": "Error: locator.isVisible: Target page, context or browser has been closed\n\n  40 |\n  41 |     // Reset modals\n> 42 |     if (await authenticatedPage.locator('app-prompt-modal, app-confirm-modal').isVisible()) {\n     |                                                                                ^\n  43 |       await authenticatedPage.keyboard.press('Escape');\n  44 |       await authenticatedPage.waitForTimeout(200);\n  45 |     }\n    at D:\\college\\cloud-storage\\CloudStorage.Client\\e2e\\audit-remediation.spec.ts:42:80"
-                            }
-                          ],
-                          "stdout": [],
-                          "stderr": [],
-                          "retry": 1,
-                          "startTime": "2026-04-11T05:49:25.713Z",
-                          "annotations": [],
-                          "attachments": [
-                            {
-                              "name": "error-context",
-                              "contentType": "text/markdown",
-                              "path": "D:\\college\\cloud-storage\\CloudStorage.Client\\test-results\\audit-remediation-Web-Appl-4f20f-orer---Context-Menu-Missing-chromium-retry1\\error-context.md"
-                            },
-                            {
-                              "name": "trace",
-                              "contentType": "application/zip",
-                              "path": "D:\\college\\cloud-storage\\CloudStorage.Client\\test-results\\audit-remediation-Web-Appl-4f20f-orer---Context-Menu-Missing-chromium-retry1\\trace.zip"
-                            }
-                          ],
-                          "errorLocation": {
-                            "file": "D:\\college\\cloud-storage\\CloudStorage.Client\\e2e\\audit-remediation.spec.ts",
-                            "column": 80,
-                            "line": 42
-                          }
-                        }
-                      ],
-                      "status": "flaky"
-                    }
-                  ],
-                  "id": "bb0f847d6010989e02a1-45db1457c5893baf520d",
-                  "file": "audit-remediation.spec.ts",
-                  "line": 55,
-                  "column": 9
-                },
-                {
-                  "title": "Task 2: File Explorer - Checkbox Selection Fails",
-                  "ok": true,
-                  "tags": [],
-                  "tests": [
-                    {
-                      "timeout": 90000,
-                      "annotations": [],
-                      "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
-                      "results": [
-                        {
-                          "workerIndex": 0,
-                          "parallelIndex": 0,
-                          "status": "passed",
-                          "duration": 17174,
-                          "errors": [],
-                          "stdout": [],
-                          "stderr": [],
-                          "retry": 0,
-                          "startTime": "2026-04-10T17:25:02.778Z",
+                          "startTime": "2026-04-13T15:54:03.020Z",
                           "annotations": [],
                           "attachments": []
                         }
@@ -238,196 +150,153 @@
                       "status": "expected"
                     }
                   ],
-                  "id": "bb0f847d6010989e02a1-e7a323b5564c952e0e71",
-                  "file": "audit-remediation.spec.ts",
-                  "line": 68,
+                  "id": "81ee59c0f5add5348cae-51a0402c7b214602cb5c",
+                  "file": "file-explorer.e2e.spec.ts",
+                  "line": 69,
                   "column": 9
                 },
                 {
-                  "title": "Task 4: Search - Filtering Not Functional",
-                  "ok": false,
+                  "title": "Phase 2: Search filters folders and files",
+                  "ok": true,
                   "tags": [],
                   "tests": [
                     {
-                      "timeout": 90000,
+                      "timeout": 30000,
                       "annotations": [],
                       "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
+                      "projectId": "firefox",
+                      "projectName": "firefox",
                       "results": [
                         {
                           "workerIndex": 0,
                           "parallelIndex": 0,
-                          "status": "failed",
-                          "duration": 44618807,
-                          "error": {
-                            "message": "Error: page.goto: Target page, context or browser has been closed",
-                            "stack": "Error: page.goto: Target page, context or browser has been closed\n    at D:\\college\\cloud-storage\\CloudStorage.Client\\e2e\\audit-remediation.spec.ts:44:31",
-                            "location": {
-                              "file": "D:\\college\\cloud-storage\\CloudStorage.Client\\e2e\\audit-remediation.spec.ts",
-                              "column": 31,
-                              "line": 44
-                            },
-                            "snippet": "\u001b[0m \u001b[90m 42 |\u001b[39m     \u001b[36mif\u001b[39m (\u001b[36mawait\u001b[39m authenticatedPage\u001b[33m.\u001b[39mlocator(\u001b[32m'app-prompt-modal, app-confirm-modal'\u001b[39m)\u001b[33m.\u001b[39misVisible()) {\n \u001b[90m 43 |\u001b[39m       \u001b[36mawait\u001b[39m authenticatedPage\u001b[33m.\u001b[39mkeyboard\u001b[33m.\u001b[39mpress(\u001b[32m'Escape'\u001b[39m)\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 44 |\u001b[39m       \u001b[36mawait\u001b[39m authenticatedPage\u001b[33m.\u001b[39mwaitForTimeout(\u001b[35m200\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                               \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 45 |\u001b[39m     }\n \u001b[90m 46 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 47 |\u001b[39m\u001b[0m"
-                          },
-                          "errors": [
-                            {
-                              "location": {
-                                "file": "D:\\college\\cloud-storage\\CloudStorage.Client\\e2e\\audit-remediation.spec.ts",
-                                "column": 31,
-                                "line": 44
-                              },
-                              "message": "Error: page.goto: Target page, context or browser has been closed\n\n  42 |     if (await authenticatedPage.locator('app-prompt-modal, app-confirm-modal').isVisible()) {\n  43 |       await authenticatedPage.keyboard.press('Escape');\n> 44 |       await authenticatedPage.waitForTimeout(200);\n     |                               ^\n  45 |     }\n  46 |   });\n  47 |\n    at D:\\college\\cloud-storage\\CloudStorage.Client\\e2e\\audit-remediation.spec.ts:44:31"
-                            }
-                          ],
-                          "stdout": [],
-                          "stderr": [],
-                          "retry": 0,
-                          "startTime": "2026-04-10T17:25:20.078Z",
-                          "annotations": [],
-                          "attachments": [
-                            {
-                              "name": "error-context",
-                              "contentType": "text/markdown",
-                              "path": "D:\\college\\cloud-storage\\CloudStorage.Client\\test-results\\audit-remediation-Web-Appl-c81f0----Filtering-Not-Functional-chromium\\error-context.md"
-                            }
-                          ],
-                          "errorLocation": {
-                            "file": "D:\\college\\cloud-storage\\CloudStorage.Client\\e2e\\audit-remediation.spec.ts",
-                            "column": 31,
-                            "line": 44
-                          }
-                        },
-                        {
-                          "workerIndex": -1,
-                          "parallelIndex": -1,
-                          "status": "skipped",
-                          "duration": 0,
+                          "status": "passed",
+                          "duration": 22994,
                           "errors": [],
                           "stdout": [],
                           "stderr": [],
-                          "retry": 1,
-                          "startTime": "2026-04-11T07:00:48.893Z",
+                          "retry": 0,
+                          "startTime": "2026-04-13T15:54:37.202Z",
                           "annotations": [],
                           "attachments": []
                         }
                       ],
-                      "status": "unexpected"
+                      "status": "expected"
                     }
                   ],
-                  "id": "bb0f847d6010989e02a1-078fcf82c4b94b663ea8",
-                  "file": "audit-remediation.spec.ts",
-                  "line": 77,
+                  "id": "81ee59c0f5add5348cae-765b45472e0cf9fe1d17",
+                  "file": "file-explorer.e2e.spec.ts",
+                  "line": 121,
                   "column": 9
                 },
                 {
-                  "title": "Task 5: New Folder - Lack of Naming Constraints",
+                  "title": "Phase 3: Folder name validation",
                   "ok": true,
                   "tags": [],
                   "tests": [
                     {
-                      "timeout": 0,
+                      "timeout": 30000,
                       "annotations": [],
                       "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
+                      "projectId": "firefox",
+                      "projectName": "firefox",
                       "results": [
                         {
-                          "workerIndex": -1,
-                          "parallelIndex": -1,
-                          "status": "skipped",
-                          "duration": 0,
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 5867,
                           "errors": [],
                           "stdout": [],
                           "stderr": [],
                           "retry": 0,
-                          "startTime": "2026-04-11T05:49:17.037Z",
+                          "startTime": "2026-04-13T15:55:00.239Z",
                           "annotations": [],
                           "attachments": []
                         }
                       ],
-                      "status": "skipped"
+                      "status": "expected"
                     }
                   ],
-                  "id": "bb0f847d6010989e02a1-53941f349c626989eb96",
-                  "file": "audit-remediation.spec.ts",
-                  "line": 89,
+                  "id": "81ee59c0f5add5348cae-4e9646beaac55e2c3a81",
+                  "file": "file-explorer.e2e.spec.ts",
+                  "line": 130,
                   "column": 9
                 },
                 {
-                  "title": "Task 7: Action Stability - Global Unresponsiveness",
+                  "title": "Phase 4: Sync status remains responsive",
                   "ok": true,
                   "tags": [],
                   "tests": [
                     {
-                      "timeout": 0,
+                      "timeout": 30000,
                       "annotations": [],
                       "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
+                      "projectId": "firefox",
+                      "projectName": "firefox",
                       "results": [
                         {
-                          "workerIndex": -1,
-                          "parallelIndex": -1,
-                          "status": "skipped",
-                          "duration": 0,
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 25738,
                           "errors": [],
                           "stdout": [],
                           "stderr": [],
                           "retry": 0,
-                          "startTime": "2026-04-11T05:49:17.037Z",
+                          "startTime": "2026-04-13T15:55:06.140Z",
                           "annotations": [],
                           "attachments": []
                         }
                       ],
-                      "status": "skipped"
+                      "status": "expected"
                     }
                   ],
-                  "id": "bb0f847d6010989e02a1-09e1deb2fafb90a94ff4",
-                  "file": "audit-remediation.spec.ts",
-                  "line": 109,
+                  "id": "81ee59c0f5add5348cae-f1415a1ed725db12429c",
+                  "file": "file-explorer.e2e.spec.ts",
+                  "line": 163,
                   "column": 9
                 }
               ]
             },
             {
-              "title": "Trash View",
-              "file": "audit-remediation.spec.ts",
-              "line": 124,
+              "title": "Trash Management",
+              "file": "file-explorer.e2e.spec.ts",
+              "line": 168,
               "column": 8,
               "specs": [
                 {
-                  "title": "Task 3: Trash - Restore and Purge Actions Inactive",
+                  "title": "Phase 2: Trash actions trigger network calls",
                   "ok": true,
                   "tags": [],
                   "tests": [
                     {
-                      "timeout": 0,
+                      "timeout": 30000,
                       "annotations": [],
                       "expectedStatus": "passed",
-                      "projectId": "chromium",
-                      "projectName": "chromium",
+                      "projectId": "firefox",
+                      "projectName": "firefox",
                       "results": [
                         {
-                          "workerIndex": -1,
-                          "parallelIndex": -1,
-                          "status": "skipped",
-                          "duration": 0,
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "passed",
+                          "duration": 24168,
                           "errors": [],
                           "stdout": [],
                           "stderr": [],
                           "retry": 0,
-                          "startTime": "2026-04-11T05:49:17.037Z",
+                          "startTime": "2026-04-13T15:55:31.909Z",
                           "annotations": [],
                           "attachments": []
                         }
                       ],
-                      "status": "skipped"
+                      "status": "expected"
                     }
                   ],
-                  "id": "bb0f847d6010989e02a1-3fedbabd99f522755510",
-                  "file": "audit-remediation.spec.ts",
-                  "line": 148,
+                  "id": "81ee59c0f5add5348cae-3a55e800950f4896b2ab",
+                  "file": "file-explorer.e2e.spec.ts",
+                  "line": 204,
                   "column": 9
                 }
               ]
@@ -437,17 +306,13 @@
       ]
     }
   ],
-  "errors": [
-    {
-      "message": "\u001b[31mTesting stopped early after 1 maximum allowed failures.\u001b[39m"
-    }
-  ],
+  "errors": [],
   "stats": {
-    "startTime": "2026-04-10T16:49:14.066Z",
-    "duration": 51099511.481,
-    "expected": 1,
-    "skipped": 3,
-    "unexpected": 1,
-    "flaky": 1
+    "startTime": "2026-04-13T15:53:59.558Z",
+    "duration": 117631.625,
+    "expected": 5,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
   }
 }

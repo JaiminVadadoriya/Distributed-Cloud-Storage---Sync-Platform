@@ -32,7 +32,7 @@ namespace CloudStorage.Domain.Tests.Entities
             var userId = 10;
             var grantedBy = 1;
             var now = DateTime.UtcNow;
-            
+
             // Act
             var permission = new FilePermission
             {

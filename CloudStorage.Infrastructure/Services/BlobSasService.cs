@@ -37,7 +37,7 @@ namespace CloudStorage.Infrastructure.Services
                 StartsOn = DateTimeOffset.UtcNow.AddMinutes(-1), // Account for clock skew
                 ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(_sasExpiryMinutes)
             };
-            
+
             sasBuilder.SetPermissions(BlobSasPermissions.Write);
 
             var sasUri = blobClient.GenerateSasUri(sasBuilder);
@@ -65,7 +65,7 @@ namespace CloudStorage.Infrastructure.Services
             };
 
             sasBuilder.SetPermissions(BlobSasPermissions.Read);
-            
+
             // Helpful for browser download filename if the user navigates directly
             if (!string.IsNullOrEmpty(fileName))
             {

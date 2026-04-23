@@ -38,7 +38,7 @@ namespace CloudStorage.API.Controllers
             var files = await _fileRepository.GetUserFilesAsync(userId, true);
             var trashFiles = files.Where(f => f.IsDeleted);
 
-            var response = trashFiles.Select(f => new 
+            var response = trashFiles.Select(f => new
             {
                 id = f.Id,
                 originalId = f.Id,

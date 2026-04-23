@@ -57,7 +57,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
             var fileId = Guid.NewGuid();
             var chunkIndex = 0;
             var sasResponse = new SasUploadUrlResponseDto { SasUrl = "https://test.sas.url" };
-            
+
             _mockSasService.Setup(x => x.GenerateChunkUploadSasAsync(fileId, chunkIndex))
                 .ReturnsAsync(sasResponse);
 
@@ -76,10 +76,10 @@ namespace CloudStorage.Infrastructure.Tests.Services
             var fileId = Guid.NewGuid();
             var chunkIndex = 1;
             using var stream = new MemoryStream();
-            
+
             var fakeUri = new Uri("https://test.blob.core.windows.net/test-container/blob.chunk");
             _mockBlobClient.SetupGet(x => x.Uri).Returns(fakeUri);
-            
+
             _mockBlobClient.Setup(x => x.UploadAsync(stream, true, It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync(Response.FromValue((BlobContentInfo)null!, null!));
 

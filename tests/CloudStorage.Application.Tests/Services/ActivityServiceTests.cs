@@ -28,11 +28,11 @@ namespace CloudStorage.Application.Tests.Services
             await _activityService.LogActivityAsync(1, "UPLOAD", "File", "f1", "Uploaded test.txt");
 
             // Assert
-            _activityRepoMock.Verify(r => r.AddAsync(It.Is<ActivityLog>(l => 
-                l.UserId == 1 && 
-                l.Action == "UPLOAD" && 
-                l.EntityType == "File" && 
-                l.EntityId == "f1" && 
+            _activityRepoMock.Verify(r => r.AddAsync(It.Is<ActivityLog>(l =>
+                l.UserId == 1 &&
+                l.Action == "UPLOAD" &&
+                l.EntityType == "File" &&
+                l.EntityId == "f1" &&
                 l.Details == "Uploaded test.txt")), Times.Once);
         }
 

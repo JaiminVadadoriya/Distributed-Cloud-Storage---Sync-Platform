@@ -28,7 +28,7 @@ namespace CloudStorage.API.Controllers
         private readonly INotificationService _notificationService;
 
         public FilesController(
-            IFileService fileService, 
+            IFileService fileService,
             IChunkStorageService chunkStorage,
             IBlobSasService sasService,
             INotificationService notificationService)
@@ -176,7 +176,7 @@ namespace CloudStorage.API.Controllers
 
                     long chunkLen = chunk.Size;
                     long chunkAbsoluteStart = bytesSkipped;
-                    long chunkAbsoluteEnd   = bytesSkipped + chunkLen - 1;
+                    long chunkAbsoluteEnd = bytesSkipped + chunkLen - 1;
 
                     if (chunkAbsoluteEnd < rangeStart)
                     {
@@ -186,7 +186,7 @@ namespace CloudStorage.API.Controllers
 
                     if (chunkAbsoluteStart > rangeEnd) break;
 
-                    long offsetInChunk  = Math.Max(0, rangeStart - chunkAbsoluteStart);
+                    long offsetInChunk = Math.Max(0, rangeStart - chunkAbsoluteStart);
                     long bytesFromChunk = Math.Min(chunkLen - offsetInChunk,
                                                    serveLength - bytesWritten);
 
@@ -248,6 +248,15 @@ namespace CloudStorage.API.Controllers
             return Ok(ApiResponse.Ok("All files deleted successfully"));
         });
 
+        [HttpPost("purge")]
+        public Task<IActionResult> PurgeDrive() => ExecuteAsync(async () =>
+        {
+            var userId = GetUserId();
+            await _fileService.PurgeUserDriveAsync(userId);
+            await _notificationService.NotifyAllFilesDeletedAsync(userId); // Use existing notification for refresh
+            return Ok(ApiResponse.Ok("Drive purged successfully"));
+        });
+
         [HttpPost("{id:guid}/permissions")]
         [HttpPost("{id:guid}/share")]
         public Task<IActionResult> GrantPermission(Guid id, FilePermissionDto dto) => ExecuteAsync(async () =>
@@ -295,9 +304,9 @@ namespace CloudStorage.API.Controllers
                 var sasUrl = await _sasService.GenerateDownloadSasUrlAsync(blobName, file.FileName);
                 chunkDtos.Add(new { index = index++, size = chunk.Size, sasUrl });
             }
-            
-            return Ok(ApiResponse<object>.Ok(new 
-            { 
+
+            return Ok(ApiResponse<object>.Ok(new
+            {
                 fileName = file.FileName,
                 totalSize = file.Size,
                 contentType = file.ContentType,

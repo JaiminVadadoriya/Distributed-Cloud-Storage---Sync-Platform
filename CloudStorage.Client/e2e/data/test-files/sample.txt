@@ -1,0 +1,3 @@
+This is a simple text file for preview testing.
+It has multiple lines to check the pre tag formatting.
+CloudStorage.Client Preview Test Package.

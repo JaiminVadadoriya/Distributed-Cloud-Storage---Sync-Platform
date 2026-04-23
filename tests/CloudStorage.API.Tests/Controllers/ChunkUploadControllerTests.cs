@@ -37,9 +37,9 @@ namespace CloudStorage.API.Tests.Controllers
             _mockNotificationService = new Mock<INotificationService>();
             _mockMessageQueue = new Mock<IMessageQueue>();
             _controller = new ChunkUploadController(
-                _mockFileRepo.Object, 
+                _mockFileRepo.Object,
                 _mockChunkRepo.Object,
-                _mockChunkStorage.Object, 
+                _mockChunkStorage.Object,
                 _mockDeduplication.Object,
                 _mockSasService.Object,
                 _mockVerificationService.Object,
@@ -80,10 +80,16 @@ namespace CloudStorage.API.Tests.Controllers
         {
             // Arrange
             var sessionId = "session1";
+            var fileData = new byte[100];
+            new Random().NextBytes(fileData);
+            
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var computedHash = BitConverter.ToString(sha256.ComputeHash(fileData)).Replace("-", "").ToLowerInvariant();
+
             var file = new FileMetadata { Id = Guid.NewGuid(), OwnerId = _testUserId, UploadSessionId = sessionId };
             var chunkFile = new Mock<IFormFile>();
-            chunkFile.Setup(f => f.Length).Returns(100);
-            chunkFile.Setup(f => f.OpenReadStream()).Returns(new System.IO.MemoryStream());
+            chunkFile.Setup(f => f.Length).Returns(fileData.Length);
+            chunkFile.Setup(f => f.OpenReadStream()).Returns(new System.IO.MemoryStream(fileData));
 
             _mockFileRepo.Setup(x => x.GetBySessionIdAsync(sessionId)).ReturnsAsync(file);
             _mockDeduplication.Setup(x => x.IsChunkDuplicateAsync(It.IsAny<string>())).ReturnsAsync(false);
@@ -93,12 +99,12 @@ namespace CloudStorage.API.Tests.Controllers
                 .ReturnsAsync(new ChunkRegistry());
 
             // Act
-            var request = new ChunkUploadController.UploadChunkRequestDto 
+            var request = new ChunkUploadController.UploadChunkRequestDto
             {
                 Chunk = chunkFile.Object,
                 SessionId = sessionId,
                 ChunkIndex = 0,
-                Hash = "hash"
+                Hash = computedHash
             };
             var result = await _controller.UploadChunk(request);
 
@@ -114,10 +120,10 @@ namespace CloudStorage.API.Tests.Controllers
         {
             // Arrange
             var sessionId = "session1";
-            var file = new FileMetadata 
-            { 
-                Id = Guid.NewGuid(), 
-                OwnerId = _testUserId, 
+            var file = new FileMetadata
+            {
+                Id = Guid.NewGuid(),
+                OwnerId = _testUserId,
                 UploadSessionId = sessionId,
                 ChunkCount = 2,
                 UploadedChunks = 2,
@@ -142,10 +148,10 @@ namespace CloudStorage.API.Tests.Controllers
         {
             // Arrange
             var sessionId = "session1";
-            var file = new FileMetadata 
-            { 
-                Id = Guid.NewGuid(), 
-                OwnerId = _testUserId, 
+            var file = new FileMetadata
+            {
+                Id = Guid.NewGuid(),
+                OwnerId = _testUserId,
                 UploadSessionId = sessionId,
                 ChunkCount = 5,
                 UploadedChunks = 2

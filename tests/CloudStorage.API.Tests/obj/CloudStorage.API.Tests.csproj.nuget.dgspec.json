@@ -35,8 +35,8 @@
               "d:\\college\\cloud-storage\\CloudStorage.Application\\CloudStorage.Application.csproj": {
                 "projectPath": "d:\\college\\cloud-storage\\CloudStorage.Application\\CloudStorage.Application.csproj"
               },
-              "D:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj": {
-                "projectPath": "D:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj"
+              "d:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj": {
+                "projectPath": "d:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj"
               }
             }
           }
@@ -51,7 +51,7 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.100"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net10.0": {
@@ -143,7 +143,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",
@@ -605,7 +605,7 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.100"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net10.0": {
@@ -626,7 +626,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",
@@ -944,7 +944,7 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.100"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net10.0": {
@@ -965,7 +965,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",
@@ -1243,14 +1243,14 @@
         }
       }
     },
-    "D:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj": {
+    "d:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj",
+        "projectUniqueName": "d:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj",
         "projectName": "CloudStorage.Infrastructure",
-        "projectPath": "D:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj",
+        "projectPath": "d:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj",
         "packagesPath": "C:\\Users\\Lenovo\\.nuget\\packages\\",
-        "outputPath": "D:\\college\\cloud-storage\\CloudStorage.Infrastructure\\obj\\",
+        "outputPath": "d:\\college\\cloud-storage\\CloudStorage.Infrastructure\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -1287,7 +1287,7 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.100"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net10.0": {
@@ -1346,7 +1346,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.CSharp": "(,4.7.32767]",
             "Microsoft.VisualBasic": "(,10.4.32767]",
@@ -1655,8 +1655,8 @@
               "d:\\college\\cloud-storage\\CloudStorage.API\\CloudStorage.API.csproj": {
                 "projectPath": "d:\\college\\cloud-storage\\CloudStorage.API\\CloudStorage.API.csproj"
               },
-              "D:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj": {
-                "projectPath": "D:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj"
+              "d:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj": {
+                "projectPath": "d:\\college\\cloud-storage\\CloudStorage.Infrastructure\\CloudStorage.Infrastructure.csproj"
               }
             }
           }
@@ -1671,12 +1671,16 @@
           "auditLevel": "low",
           "auditMode": "all"
         },
-        "SdkAnalysisLevel": "10.0.100"
+        "SdkAnalysisLevel": "10.0.200"
       },
       "frameworks": {
         "net10.0": {
           "targetAlias": "net10.0",
           "dependencies": {
+            "BCrypt.Net-Next": {
+              "target": "Package",
+              "version": "[4.1.0, )"
+            },
             "Microsoft.AspNetCore.Mvc.Testing": {
               "target": "Package",
               "version": "[10.0.0-preview.2.25163.8, )"
@@ -1700,6 +1704,10 @@
             "Moq": {
               "target": "Package",
               "version": "[4.20.72, )"
+            },
+            "Npgsql.EntityFrameworkCore.PostgreSQL": {
+              "target": "Package",
+              "version": "[10.0.1, )"
             },
             "coverlet.collector": {
               "target": "Package",
@@ -1733,7 +1741,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.103/PortableRuntimeIdentifierGraph.json",
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json",
           "packagesToPrune": {
             "Microsoft.AspNetCore": "(,10.0.32767]",
             "Microsoft.AspNetCore.Antiforgery": "(,10.0.32767]",

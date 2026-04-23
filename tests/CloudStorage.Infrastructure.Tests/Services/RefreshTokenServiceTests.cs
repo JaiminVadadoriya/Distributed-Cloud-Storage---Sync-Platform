@@ -77,7 +77,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
             // Assert
             var afterGeneration = DateTime.UtcNow;
             var expectedExpiration = beforeGeneration.AddDays(7);
-            
+
             Assert.True(result.ExpiresAt >= expectedExpiration.AddSeconds(-1));
             Assert.True(result.ExpiresAt <= afterGeneration.AddDays(7).AddSeconds(1));
         }
@@ -151,7 +151,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
         {
             // Arrange
             var token = await _service.GenerateRefreshTokenAsync(_testUser.Id);
-            
+
             // Manually expire the token
             var dbToken = await _context.RefreshTokens.FindAsync(token.Id);
             dbToken!.ExpiresAt = DateTime.UtcNow.AddDays(-1);
@@ -162,7 +162,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
 
             // Assert
             Assert.Null(result);
-            
+
             // Verify token was revoked
             var revokedToken = await _context.RefreshTokens.FindAsync(token.Id);
             Assert.True(revokedToken!.IsRevoked);
@@ -198,7 +198,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
             // Arrange
             var token = await _service.GenerateRefreshTokenAsync(_testUser.Id);
             await _service.RevokeTokenAsync(token.Token);
-            
+
             var firstRevokedToken = await _context.RefreshTokens.FindAsync(token.Id);
             var firstRevokedAt = firstRevokedToken!.RevokedAt;
 
@@ -267,7 +267,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
             // Arrange
             var token1 = await _service.GenerateRefreshTokenAsync(_testUser.Id);
             await _service.RevokeTokenAsync(token1.Token);
-            
+
             var firstRevokedToken = await _context.RefreshTokens.FindAsync(token1.Id);
             var firstRevokedAt = firstRevokedToken!.RevokedAt;
 

@@ -67,12 +67,7 @@ namespace CloudStorage.Infrastructure.Services
 
         public async Task<Stream> GetChunkAsync(string storagePath)
         {
-            var uri = new Uri(storagePath);
-            // The storagePath is expected to be the full Blob URI in the proxy case, or just the blob mapping.
-            // For robustness, extract blob name assuming storagePath ends with {containerName}/{blobName}.
-            var pathParts = storagePath.Split($"{_containerName}/");
-            var blobName = pathParts.Length > 1 ? pathParts[1] : uri.Segments[^2] + uri.Segments[^1];
-            
+            var blobName = GetBlobName(storagePath);
             var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
             var blobClient = containerClient.GetBlobClient(blobName);
 
@@ -82,14 +77,44 @@ namespace CloudStorage.Infrastructure.Services
 
         public async Task DeleteChunkAsync(string storagePath)
         {
-            var uri = new Uri(storagePath);
-            var pathParts = storagePath.Split($"{_containerName}/");
-            var blobName = pathParts.Length > 1 ? pathParts[1] : uri.Segments[^2] + uri.Segments[^1];
-            
+            var blobName = GetBlobName(storagePath);
             var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
             var blobClient = containerClient.GetBlobClient(blobName);
 
             await blobClient.DeleteIfExistsAsync();
+        }
+
+        private string GetBlobName(string storagePath)
+        {
+            if (string.IsNullOrEmpty(storagePath)) return string.Empty;
+
+            // 1. Handle custom internal marker protocol
+            if (storagePath.StartsWith("azure://", StringComparison.OrdinalIgnoreCase))
+            {
+                return storagePath.Substring(8);
+            }
+
+            // 2. Handle full HTTP/HTTPS URIs
+            if (Uri.TryCreate(storagePath, UriKind.Absolute, out var uri) && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+            {
+                // Extract blob name assuming storagePath ends with {containerName}/{blobName}
+                var containerPattern = $"{_containerName}/";
+                var index = storagePath.IndexOf(containerPattern, StringComparison.OrdinalIgnoreCase);
+                if (index >= 0)
+                {
+                    return storagePath.Substring(index + containerPattern.Length);
+                }
+
+                // Fallback: use last two segments if possible
+                if (uri.Segments.Length >= 2)
+                {
+                    return uri.Segments[^2].TrimEnd('/') + "/" + uri.Segments[^1];
+                }
+                return uri.Segments[^1];
+            }
+
+            // 3. Fallback: treat as raw blob name
+            return storagePath;
         }
 
         /// <summary>

@@ -43,7 +43,7 @@ import { UploadProgressComponent } from '../upload-progress/upload-progress.comp
                 <span class="text-[9px] font-mono font-bold uppercase tracking-widest text-editorial-text/40">01_Source_Selection</span>
                 <div class="h-px flex-1 bg-editorial-text/10"></div>
               </div>
-              <app-file-upload (filesSelected)="onFilesDropped($event)"></app-file-upload>
+              <app-file-upload [listenToGlobal]="false" (filesSelected)="onFilesDropped($event)"></app-file-upload>
             </section>
 
             <!-- QUEUE STATUS -->

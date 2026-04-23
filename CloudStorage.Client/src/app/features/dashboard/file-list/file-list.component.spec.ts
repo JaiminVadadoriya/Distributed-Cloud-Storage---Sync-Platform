@@ -15,7 +15,7 @@ import { LayoutService } from '../../../core/services/layout.service';
 import { UploadManagerService } from '../../../core/services/upload-manager.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { Router } from '@angular/router';
-import { of } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { FileItem } from '../../../core/models/file.model';
 
 describe('FileListComponent', () => {
@@ -74,12 +74,14 @@ describe('FileListComponent', () => {
       isContextMenuOpen: signal(false),
       openContextMenu: vi.fn(),
       closeContextMenu: vi.fn(),
-      uploadTrigger: signal(0),
-      newFolderTrigger: signal(0)
+      openPrompt: vi.fn(),
+      uploadTrigger$: new Subject<void>(),
+      newFolderTrigger$: new Subject<void>()
     } as unknown as LayoutService;
 
     mockUploadManager = {
-      queue: signal([])
+      queue: signal([]),
+      uploadCompleted$: new Subject<void>()
     } as unknown as UploadManagerService;
 
     mockNotification = {

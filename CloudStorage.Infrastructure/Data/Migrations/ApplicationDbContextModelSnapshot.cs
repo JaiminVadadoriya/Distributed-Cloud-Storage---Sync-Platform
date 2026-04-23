@@ -47,6 +47,9 @@ namespace CloudStorage.Infrastructure.Data.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<string>("IpAddress")
+                        .HasColumnType("text");
+
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("timestamp with time zone");
 
@@ -535,6 +538,9 @@ namespace CloudStorage.Infrastructure.Data.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)")
                         .HasDefaultValue("User");
+
+                    b.Property<long>("StorageQuota")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Username")
                         .IsRequired()

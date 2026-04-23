@@ -1,7 +1,7 @@
 import { Injectable, signal, effect } from '@angular/core';
 
-export type AtmosphereTheme = 'light' | 'dark' | 'glass';
-export type InterfaceDensity = 'editorial' | 'premium' | 'compact';
+export type AtmosphereTheme = 'clinical' | 'mono' | 'blur';
+export type InterfaceDensity = 'maximal' | 'balanced' | 'technical';
 
 @Injectable({
   providedIn: 'root'
@@ -21,11 +21,13 @@ export class ThemeService {
       const root = document.documentElement;
       
       // Clean up old classes
-      root.classList.remove('theme-light', 'theme-dark', 'theme-glass', 'dark');
+      root.classList.remove('theme-clinical', 'theme-mono', 'theme-blur', 'dark');
       
       // Apply new theme
       root.classList.add(`theme-${currentTheme}`);
-      if (currentTheme === 'dark' || currentTheme === 'glass') {
+      
+      // Mono and Blur both count as 'dark' base for generic components
+      if (currentTheme === 'mono' || currentTheme === 'blur') {
         root.classList.add('dark');
       }
       
@@ -37,7 +39,7 @@ export class ThemeService {
       const currentDensity = this.density();
       const root = document.documentElement;
       
-      root.classList.remove('density-editorial', 'density-premium', 'density-compact');
+      root.classList.remove('density-maximal', 'density-balanced', 'density-technical');
       root.classList.add(`density-${currentDensity}`);
       
       localStorage.setItem(this.DENSITY_KEY, currentDensity);
@@ -54,17 +56,18 @@ export class ThemeService {
 
   private getInitialTheme(): AtmosphereTheme {
     const saved = localStorage.getItem(this.THEME_KEY) as AtmosphereTheme;
-    if (saved && ['light', 'dark', 'glass'].includes(saved)) {
+    if (saved && ['clinical', 'mono', 'blur'].includes(saved)) {
       return saved;
     }
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'mono' : 'clinical';
   }
 
   private getInitialDensity(): InterfaceDensity {
     const saved = localStorage.getItem(this.DENSITY_KEY) as InterfaceDensity;
-    if (saved && ['editorial', 'premium', 'compact'].includes(saved)) {
+    if (saved && ['maximal', 'balanced', 'technical'].includes(saved)) {
       return saved;
     }
-    return 'premium';
+    return 'balanced';
   }
 }
+

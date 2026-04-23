@@ -27,7 +27,7 @@ namespace CloudStorage.API.Tests.Controllers
             // Arrange
             var dto = new RegisterDto { Username = "test", Email = "test@example.com", Password = "password" };
             var user = new User { Id = 1, Username = dto.Username, Email = dto.Email };
-            
+
             _mockAuthService.Setup(x => x.RegisterAsync(It.IsAny<User>(), dto.Password))
                 .ReturnsAsync(user);
 
@@ -66,7 +66,7 @@ namespace CloudStorage.API.Tests.Controllers
         {
             // Arrange
             var dto = new LoginDto { Identifier = "test@example.com", Password = "wrong" };
-            
+
             _mockAuthService.Setup(x => x.LoginAsync(dto.Identifier, dto.Password))
                 .ReturnsAsync((LoginResponseDto?)null);
 
@@ -101,7 +101,7 @@ namespace CloudStorage.API.Tests.Controllers
         {
             // Arrange
             var dto = new RefreshTokenDto { RefreshToken = "invalid-token" };
-            
+
             _mockAuthService.Setup(x => x.RefreshTokenAsync(dto.RefreshToken))
                 .ReturnsAsync((LoginResponseDto?)null);
 

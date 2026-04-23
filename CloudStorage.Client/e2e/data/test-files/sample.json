@@ -1,0 +1,13 @@
+{
+  "status": "success",
+  "message": "JSON preview working",
+  "data": [
+    1,
+    2,
+    3
+  ],
+  "metadata": {
+    "version": "1.0",
+    "author": "Antigravity"
+  }
+}

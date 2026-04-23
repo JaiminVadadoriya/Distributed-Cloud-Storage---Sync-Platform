@@ -122,7 +122,7 @@ namespace CloudStorage.Infrastructure.Repositories
         public async Task<IEnumerable<FileMetadata>> SearchAsync(int userId, string query)
         {
             return await _dbSet
-                .Where(f => f.OwnerId == userId && !f.IsDeleted && 
+                .Where(f => f.OwnerId == userId && !f.IsDeleted &&
                             EF.Functions.ILike(f.FileName, $"%{query}%"))
                 .OrderByDescending(f => f.CreatedAt)
                 .ToListAsync();

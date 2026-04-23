@@ -32,7 +32,7 @@ namespace CloudStorage.Domain.Tests.Entities
             var tokenString = "some-random-token-string";
             var now = DateTime.UtcNow;
             var expires = now.AddDays(7);
-            
+
             // Act
             var token = new RefreshToken
             {
@@ -60,7 +60,7 @@ namespace CloudStorage.Domain.Tests.Entities
         {
             // Arrange
             var user = new User { Id = 1, Username = "testuser" };
-            
+
             // Act
             var token = new RefreshToken
             {

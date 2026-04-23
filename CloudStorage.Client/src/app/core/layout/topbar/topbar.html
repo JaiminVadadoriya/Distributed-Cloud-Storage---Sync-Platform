@@ -117,6 +117,79 @@
       }
     </div>
 
+    <!-- Atmosphere & Density Control -->
+    <div class="relative">
+      <button (click)="toggleAtmosphereMenu()" 
+        aria-label="Adjust System Atmosphere"
+        data-testid="atmosphere-toggle-btn"
+        class="p-2 text-editorial-text/40 hover:text-editorial-text transition-all focus:outline-none active:scale-90 group relative">
+        <div class="relative w-5 h-5 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M12 2a7 7 0 1 0 10 10"/>
+          </svg>
+        </div>
+        <div class="absolute inset-0 border border-editorial-text/0 group-hover:border-editorial-text/20 transition-all pointer-events-none"></div>
+      </button>
+
+      <!-- Atmosphere Menu Dropdown -->
+      @if (showAtmosphereMenu) {
+        <div class="animate-in-fade absolute right-0 top-full mt-2 w-72 bg-editorial-bg border border-editorial-border shadow-brutalist z-50 p-4 space-y-6">
+          
+          <!-- Mode Selection -->
+          <div class="space-y-3">
+            <span class="text-[8px] font-mono font-bold uppercase tracking-[0.3em] text-editorial-text/40">Mode_Selection</span>
+            <div class="grid grid-cols-1 gap-1">
+              <button (click)="setAtmosphere('clinical')" 
+                class="flex items-center justify-between px-3 py-2.5 font-mono text-[9px] uppercase tracking-widest transition-colors w-full text-left"
+                [class]="themeService.theme() === 'clinical' ? 'bg-editorial-text text-editorial-bg' : 'text-editorial-text/70 hover:bg-editorial-text/5'">
+                <span>CLINICAL_WHITE</span>
+                @if (themeService.theme() === 'clinical') { <span class="w-1 h-1 bg-current"></span> }
+              </button>
+              <button (click)="setAtmosphere('mono')" 
+                class="flex items-center justify-between px-3 py-2.5 font-mono text-[9px] uppercase tracking-widest transition-colors w-full text-left"
+                [class]="themeService.theme() === 'mono' ? 'bg-editorial-text text-editorial-bg' : 'text-editorial-text/70 hover:bg-editorial-text/5'">
+                <span>DEEP_MONO</span>
+                @if (themeService.theme() === 'mono') { <span class="w-1 h-1 bg-current"></span> }
+              </button>
+              <button (click)="setAtmosphere('blur')" 
+                class="flex items-center justify-between px-3 py-2.5 font-mono text-[9px] uppercase tracking-widest transition-colors w-full text-left"
+                [class]="themeService.theme() === 'blur' ? 'bg-editorial-text text-editorial-bg' : 'text-editorial-text/70 hover:bg-editorial-text/5'">
+                <span>TRANSLUCENT_BLUR</span>
+                @if (themeService.theme() === 'blur') { <span class="w-1 h-1 bg-current"></span> }
+              </button>
+            </div>
+          </div>
+
+          <!-- Density Selection -->
+          <div class="space-y-3">
+            <span class="text-[8px] font-mono font-bold uppercase tracking-[0.3em] text-editorial-text/40">Density_Configuration</span>
+            <div class="grid grid-cols-1 gap-1">
+              <button (click)="setDensity('maximal')" 
+                class="flex flex-col px-3 py-2.5 transition-colors w-full text-left group/opt"
+                [class]="themeService.density() === 'maximal' ? 'bg-editorial-text' : 'hover:bg-editorial-text/5'">
+                <span class="font-mono text-[9px] uppercase tracking-widest mb-0.5" [class]="themeService.density() === 'maximal' ? 'text-editorial-bg' : 'text-editorial-text'">MAXIMAL_WHITESPACE</span>
+                <span class="font-mono text-[7px] uppercase tracking-tighter opacity-40" [class]="themeService.density() === 'maximal' ? 'text-editorial-bg' : 'text-editorial-text'">Priority: Typography & Focus</span>
+              </button>
+              <button (click)="setDensity('balanced')" 
+                class="flex flex-col px-3 py-2.5 transition-colors w-full text-left group/opt"
+                [class]="themeService.density() === 'balanced' ? 'bg-editorial-text' : 'hover:bg-editorial-text/5'">
+                <span class="font-mono text-[9px] uppercase tracking-widest mb-0.5" [class]="themeService.density() === 'balanced' ? 'text-editorial-bg' : 'text-editorial-text'">BALANCED_ENTROPY</span>
+                <span class="font-mono text-[7px] uppercase tracking-tighter opacity-40" [class]="themeService.density() === 'balanced' ? 'text-editorial-bg' : 'text-editorial-text'">Standard: Aesthetic Utility</span>
+              </button>
+              <button (click)="setDensity('technical')" 
+                class="flex flex-col px-3 py-2.5 transition-colors w-full text-left group/opt"
+                [class]="themeService.density() === 'technical' ? 'bg-editorial-text' : 'hover:bg-editorial-text/5'">
+                <span class="font-mono text-[9px] uppercase tracking-widest mb-0.5" [class]="themeService.density() === 'technical' ? 'text-editorial-bg' : 'text-editorial-text'">TECHNICAL_DENSITY</span>
+                <span class="font-mono text-[7px] uppercase tracking-tighter opacity-40" [class]="themeService.density() === 'technical' ? 'text-editorial-bg' : 'text-editorial-text'">Utility: Data Overhead</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      }
+    </div>
+
+
     <!-- Profile Menu -->
     <div class="relative">
       <button (click)="layoutService.toggleProfileMenu()" 

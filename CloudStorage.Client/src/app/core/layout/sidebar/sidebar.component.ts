@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { LayoutService } from '../../services/layout.service';
 import { FileService } from '../../services/file.service';
+import { AuthService } from '../../services/auth.service';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { computed } from '@angular/core';
 import { BaseComponent } from '../../models/base-component';
 import { formatBytes } from '../../utils/format.utils';
 
@@ -17,7 +19,10 @@ import { formatBytes } from '../../utils/format.utils';
 export class SidebarComponent extends BaseComponent {
   public layoutService = inject(LayoutService);
   private fileService = inject(FileService);
+  private authService = inject(AuthService);
+  
   public stats = toSignal(this.fileService.getDashboardStats());
+  public isAdmin = computed(() => this.authService.currentUser()?.role === 'Admin');
 
   public closeSidebar(): void {
     this.layoutService.closeSidebar();

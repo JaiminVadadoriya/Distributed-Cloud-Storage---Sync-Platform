@@ -4,51 +4,79 @@ using CloudStorage.Infrastructure.Data;
 using System;
 using System.Threading.Tasks;
 using Xunit;
+using Npgsql;
 
 namespace CloudStorage.API.Tests.Fixtures
 {
     /// <summary>
-    /// Provides test database context using SQLite for isolated test execution
-    /// with automatic schema creation and cleanup.
+    /// Provides test database context for integrated test execution.
+    /// Supports both SQLite in-memory (default for fast units) and 
+    /// PostgreSQL/Docker (for full integration/persistence tests).
     /// </summary>
     public class TestDatabaseFixture : IAsyncLifetime
     {
-        private Microsoft.Data.Sqlite.SqliteConnection? _connection;
+        private Microsoft.Data.Sqlite.SqliteConnection? _sqliteConnection;
         private ApplicationDbContext? _context;
+        private bool _isPostgres = false;
 
         public ApplicationDbContext Context => _context ?? throw new InvalidOperationException("Database not initialized");
 
         public async Task InitializeAsync()
         {
-            // Create in-memory SQLite connection (shared mode for transaction support)
-            _connection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
-            await _connection.OpenAsync();
+            var postgresConnection = Environment.GetEnvironmentVariable("DB_CONNECTION_STRING")
+                ?? Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection");
 
-            // Configure DbContext with SQLite
-            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseSqlite(_connection)
+            var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>()
                 .EnableSensitiveDataLogging()
-                .LogTo(Console.WriteLine)
-                .Options;
+                .LogTo(Console.WriteLine);
 
-            _context = new ApplicationDbContext(options);
+            if (!string.IsNullOrEmpty(postgresConnection))
+            {
+                _isPostgres = true;
+                optionsBuilder.UseNpgsql(postgresConnection);
+            }
+            else
+            {
+                _sqliteConnection = new Microsoft.Data.Sqlite.SqliteConnection("Data Source=:memory:");
+                await _sqliteConnection.OpenAsync();
+                optionsBuilder.UseSqlite(_sqliteConnection);
+            }
 
-            // Create database schema
-            await _context.Database.EnsureCreatedAsync();
+            _context = new ApplicationDbContext(optionsBuilder.Options);
+
+            // Ensure schema is created
+            if (_isPostgres)
+            {
+                // For Postgres, we might want to migrate or ensure deleted then created
+                // await _context.Database.EnsureDeletedAsync();
+                await _context.Database.EnsureCreatedAsync();
+            }
+            else
+            {
+                await _context.Database.EnsureCreatedAsync();
+            }
         }
 
         public async Task DisposeAsync()
         {
             if (_context != null)
             {
-                await _context.Database.EnsureDeletedAsync();
+                if (_isPostgres)
+                {
+                    // Optionally delete test database after run
+                    // await _context.Database.EnsureDeletedAsync();
+                }
+                else
+                {
+                    await _context.Database.EnsureDeletedAsync();
+                }
                 await _context.DisposeAsync();
             }
 
-            if (_connection != null)
+            if (_sqliteConnection != null)
             {
-                await _connection.CloseAsync();
-                await _connection.DisposeAsync();
+                await _sqliteConnection.CloseAsync();
+                await _sqliteConnection.DisposeAsync();
             }
         }
 
@@ -58,25 +86,25 @@ namespace CloudStorage.API.Tests.Fixtures
         /// </summary>
         public async Task ClearDatabaseAsync()
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            using var transaction = await Context.Database.BeginTransactionAsync();
             try
             {
                 // Delete in reverse dependency order
-                _context.Notifications.RemoveRange(_context.Notifications);
-                _context.FilePermissions.RemoveRange(_context.FilePermissions);
-                _context.SyncEvents.RemoveRange(_context.SyncEvents);
-                _context.ActivityLogs.RemoveRange(_context.ActivityLogs);
-                _context.FileChunks.RemoveRange(_context.FileChunks);
-                _context.ChunkRegistry.RemoveRange(_context.ChunkRegistry);
-                _context.FileMetadata.RemoveRange(_context.FileMetadata);
-                _context.FolderPermissions.RemoveRange(_context.FolderPermissions);
-                _context.Folders.RemoveRange(_context.Folders);
-                _context.PasswordResetTokens.RemoveRange(_context.PasswordResetTokens);
-                _context.RefreshTokens.RemoveRange(_context.RefreshTokens);
-                _context.Devices.RemoveRange(_context.Devices);
-                _context.Users.RemoveRange(_context.Users);
+                Context.Notifications.RemoveRange(Context.Notifications);
+                Context.FilePermissions.RemoveRange(Context.FilePermissions);
+                Context.SyncEvents.RemoveRange(Context.SyncEvents);
+                Context.ActivityLogs.RemoveRange(Context.ActivityLogs);
+                Context.FileChunks.RemoveRange(Context.FileChunks);
+                Context.ChunkRegistry.RemoveRange(Context.ChunkRegistry);
+                Context.FileMetadata.RemoveRange(Context.FileMetadata);
+                Context.FolderPermissions.RemoveRange(Context.FolderPermissions);
+                Context.Folders.RemoveRange(Context.Folders);
+                Context.PasswordResetTokens.RemoveRange(Context.PasswordResetTokens);
+                Context.RefreshTokens.RemoveRange(Context.RefreshTokens);
+                Context.Devices.RemoveRange(Context.Devices);
+                Context.Users.RemoveRange(Context.Users);
 
-                await _context.SaveChangesAsync();
+                await Context.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
             catch

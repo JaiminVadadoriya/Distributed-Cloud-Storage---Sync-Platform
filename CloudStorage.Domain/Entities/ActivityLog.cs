@@ -13,8 +13,9 @@ namespace CloudStorage.Domain.Entities
         public string EntityType { get; set; } = string.Empty; // e.g., "FILE", "FOLDER"
         public string EntityId { get; set; } = string.Empty; // Guid string
         public string Details { get; set; } = string.Empty; // e.g., "File 'report.pdf' uploaded"
+        public string? IpAddress { get; set; }
         public DateTime Timestamp { get; set; }
-        
+
         // Navigation property
         public User User { get; set; } = null!;
     }

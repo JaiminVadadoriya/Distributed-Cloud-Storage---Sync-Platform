@@ -19,7 +19,7 @@ namespace CloudStorage.Domain.Entities
 
         public string Name { get; set; } = string.Empty;
         public DateTime LastModifiedAt { get; set; }
-        
+
         public int OwnerId { get; set; }
         public User Owner { get; set; } = null!;
 

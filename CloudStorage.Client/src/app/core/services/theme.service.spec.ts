@@ -25,35 +25,35 @@ describe('ThemeService', () => {
   });
 
   it('should update theme and localStorage', async () => {
-    service.setTheme('dark');
-    expect(service.theme()).toBe('dark');
+    service.setTheme('mono');
+    expect(service.theme()).toBe('mono');
     
     await new Promise(resolve => setTimeout(resolve, 10));
-    expect(localStorage.getItem(THEME_KEY)).toBe('dark');
+    expect(localStorage.getItem(THEME_KEY)).toBe('mono');
 
-    service.setTheme('glass');
-    expect(service.theme()).toBe('glass');
+    service.setTheme('blur');
+    expect(service.theme()).toBe('blur');
     
     await new Promise(resolve => setTimeout(resolve, 10));
-    expect(localStorage.getItem(THEME_KEY)).toBe('glass');
+    expect(localStorage.getItem(THEME_KEY)).toBe('blur');
   });
 
   it('should update density and localStorage', async () => {
-    service.setDensity('compact');
-    expect(service.density()).toBe('compact');
+    service.setDensity('technical');
+    expect(service.density()).toBe('technical');
     
     await new Promise(resolve => setTimeout(resolve, 10));
-    expect(localStorage.getItem(DENSITY_KEY)).toBe('compact');
+    expect(localStorage.getItem(DENSITY_KEY)).toBe('technical');
   });
 
   it('should load initial state from localStorage', () => {
-    localStorage.setItem(THEME_KEY, 'glass');
-    localStorage.setItem(DENSITY_KEY, 'editorial');
+    localStorage.setItem(THEME_KEY, 'blur');
+    localStorage.setItem(DENSITY_KEY, 'technical');
     
     runInInjectionContext(injector, () => {
        const newService = new ThemeService();
-       expect(newService.theme()).toBe('glass');
-       expect(newService.density()).toBe('editorial');
+       expect(newService.theme()).toBe('blur');
+       expect(newService.density()).toBe('technical');
     });
   });
 });

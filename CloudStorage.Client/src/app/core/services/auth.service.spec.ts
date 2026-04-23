@@ -14,7 +14,7 @@ describe('AuthService', () => {
   const mockResponse: AuthResponse = {
     accessToken: 'mock-token',
     refreshToken: 'mock-refresh',
-    user: { id: '1', username: 'test', email: 'test@example.com' }
+    user: { id: 1, username: 'test', email: 'test@example.com', role: 'user' }
   };
 
   const mockApiResponse = {

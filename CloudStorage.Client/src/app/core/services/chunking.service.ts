@@ -43,6 +43,17 @@ export class ChunkingService {
   }
 
   /**
+   * Generates a SHA-256 integrity hash for the entire file.
+   */
+  public async calculateFileHash(file: File): Promise<string> {
+    const buffer = await file.arrayBuffer();
+    const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+    return Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  }
+
+  /**
    * Generates a SHA-256 integrity hash for a data segment.
    */
   private async calculateHash(blob: Blob): Promise<string> {

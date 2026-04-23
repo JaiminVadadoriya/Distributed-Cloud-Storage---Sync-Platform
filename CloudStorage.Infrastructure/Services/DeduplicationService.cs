@@ -66,7 +66,7 @@ namespace CloudStorage.Infrastructure.Services
             {
                 // No more references, delete the chunk
                 _context.ChunkRegistry.Remove(entry);
-                
+
                 // TODO: Also delete the physical file from storage
                 // This would require injecting IChunkStorageService
             }

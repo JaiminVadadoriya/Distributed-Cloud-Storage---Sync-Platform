@@ -4,6 +4,7 @@ import { BaseComponent } from '../../core/models/base-component';
 import { ProfileSettingsComponent } from './profile/profile-settings.component';
 import { AppearanceSettingsComponent } from './appearance/appearance-settings.component';
 import { SecuritySettingsComponent } from './security/security-settings.component';
+import { DataSettingsComponent } from './data/data-settings.component';
 import { AuditLogComponent } from '../activity/audit-log/audit-log.component';
 
 @Component({
@@ -14,6 +15,7 @@ import { AuditLogComponent } from '../activity/audit-log/audit-log.component';
     ProfileSettingsComponent,
     AppearanceSettingsComponent,
     SecuritySettingsComponent,
+    DataSettingsComponent,
     AuditLogComponent
   ],
   template: `
@@ -50,6 +52,7 @@ import { AuditLogComponent } from '../activity/audit-log/audit-log.component';
           @case ('profile') { <app-profile-settings></app-profile-settings> }
           @case ('appearance') { <app-appearance-settings></app-appearance-settings> }
           @case ('security') { <app-security-settings></app-security-settings> }
+          @case ('data') { <app-data-settings></app-data-settings> }
           @case ('audit') { <app-audit-log></app-audit-log> }
         }
       </main>
@@ -71,6 +74,7 @@ export class SettingsComponent extends BaseComponent {
     { id: 'profile', label: 'Identity' },
     { id: 'appearance', label: 'Atmosphere' },
     { id: 'security', label: 'Protocols' },
+    { id: 'data', label: 'Storage' },
     { id: 'audit', label: 'Archive' },
   ];
 }

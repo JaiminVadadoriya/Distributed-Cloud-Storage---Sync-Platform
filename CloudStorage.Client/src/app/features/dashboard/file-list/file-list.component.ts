@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, ChangeDetectionStrategy, effect } from '@angular/core';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FileService } from '../../../core/services/file.service';
 import { FolderService } from '../../../core/services/folder.service';
@@ -81,6 +81,7 @@ export class FileListComponent extends BaseComponent implements OnInit {
   folderService = inject(FolderService);
   layoutService = inject(LayoutService);
   router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
   connectionStatus = inject(ConnectionStatusService);
   offlineCache = inject(OfflineCacheService);
   syncEngine = inject(SyncEngineService);
@@ -116,15 +117,26 @@ export class FileListComponent extends BaseComponent implements OnInit {
 
   filteredFolders = computed<Folder[]>(() => {
     const q = this.searchService.query().toLowerCase();
+    const folderId = this.currentFolderId();
     const folders = this.folders();
-    if (!q) return folders;
+    
+    // Filter by hierarchy first (if not searching)
+    if (!q) {
+      return folders.filter((f: Folder) => (f.parentId || null) === (folderId || null));
+    }
+
     return folders.filter((f: Folder) => f.name.toLowerCase().includes(q));
   });
 
   filteredFiles = computed<FileItem[]>(() => {
     const q = this.searchService.query().toLowerCase();
+    const folderId = this.currentFolderId();
     const files = this.files();
-    if (!q) return files;
+
+    if (!q) {
+      return files.filter((f: FileItem) => (f.folderId || null) === (folderId || null));
+    }
+
     return files.filter((f: FileItem) => f.name.toLowerCase().includes(q));
   });
 
@@ -161,33 +173,23 @@ export class FileListComponent extends BaseComponent implements OnInit {
 
   constructor() {
     super();
-    // Listening to global triggers from LayoutService (Issues 7 & 8)
-    effect(() => {
-      if (this.layoutService.uploadTrigger() > 0) {
-        this.triggerFileUpload();
-      }
+    // Listening to global new folder trigger only
+    this.layoutService.newFolderTrigger$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      this.createNewFolder();
     });
 
-    effect(() => {
-      if (this.layoutService.newFolderTrigger() > 0) {
-        this.createNewFolder();
-      }
+    // Reactive Upload Refresh
+    this.uploadManager.uploadCompleted$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      this.loadData();
+      this.cdr.markForCheck();
     });
   }
 
-  private triggerFileUpload() {
-    // Create a temporary file input to trigger the native file picker
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.multiple = true;
-    input.onchange = (e: Event) => {
-      const target = e.target as HTMLInputElement;
-      if (target.files) {
-        this.onFilesDropped(target.files);
-      }
-    };
-    input.click();
-  }
+
 
   loadCachedFiles() {
     this.offlineCache.getCachedFiles().then((files: CachedFileEntry[]) => {
@@ -342,21 +344,35 @@ export class FileListComponent extends BaseComponent implements OnInit {
     
     if (isFile) {
       if ((item as FileItem)?.folderId === targetFolderId) return;
+      
+      // Optimistic Update: Remove from current view
+      this.files.update(list => list.filter(f => f.id !== id));
+      
       this.fileService.moveFile(id, targetFolderId).subscribe({
         next: () => {
           this.notificationService.success(`RESOURCE_RELOCATED: "${name}" moved successfully.`);
           this.loadData();
         },
-        error: () => this.notificationService.error(`RELOCATION_FAILED: Could not move "${name}".`)
+        error: () => {
+          this.notificationService.error(`RELOCATION_FAILED: Could not move "${name}".`);
+          this.loadData(); // Revert by reloading
+        }
       });
     } else {
       if (id === targetFolderId || (item as Folder)?.parentId === targetFolderId) return;
+
+      // Optimistic Update: Remove from current view
+      this.folders.update(list => list.filter(f => f.id !== id));
+
       this.folderService.moveFolder(id, targetFolderId).subscribe({
         next: () => {
           this.notificationService.success(`DIRECTORY_RESTRUCTURED: "${name}" relocated.`);
           this.loadData();
         },
-        error: () => this.notificationService.error(`RESTRUCTURE_FAILED: Could not relocate "${name}".`)
+        error: () => {
+          this.notificationService.error(`RESTRUCTURE_FAILED: Could not relocate "${name}".`);
+          this.loadData(); // Revert by reloading
+        }
       });
     }
   }
@@ -429,24 +445,24 @@ export class FileListComponent extends BaseComponent implements OnInit {
     this.layoutService.openContextMenu(event.clientX, event.clientY, [
       { 
         label: 'OPEN_ENTITY', 
-        icon: '<svg ... />', // Simplified for brevity in this step, but I'll keep the logic
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>',
         action: () => this.router.navigate(['/preview', file.id]) 
       },
       { 
         label: 'DOWNLOAD_SEQUENCE', 
-        icon: '<svg ... />',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
         action: () => this.downloadFile(file)
       },
       { separator: true, label: '' },
       { 
         label: 'RENAME_ENTITY', 
-        icon: '<svg ... />',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
         action: () => this.openRenameModal(file.id, file.name, 'file')
       },
       { 
         label: 'PURGE_RECORD', 
         danger: true,
-        icon: '<svg ... />',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>',
         action: () => this.deleteFile(file)
       }
     ]);
@@ -461,25 +477,25 @@ export class FileListComponent extends BaseComponent implements OnInit {
     this.layoutService.openContextMenu(event.clientX, event.clientY, [
       { 
         label: 'OPEN_DIRECTORY', 
-        icon: '<svg ... />',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
         action: () => this.router.navigate(['/folders', folder.id]) 
       },
       { 
         label: 'RENAME_DIRECTORY', 
-        icon: '<svg ... />',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
         action: () => this.openRenameModal(folder.id, folder.name, 'folder')
       },
       { separator: true, label: '' },
       { 
         label: 'PURGE_DIRECTORY', 
         danger: true,
-        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>',
         action: () => this.deleteFolder(folder)
       },
       { separator: true, label: '' },
       {
         label: 'SHARE_DIRECTORY',
-        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>',
+        icon: '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>',
         action: () => this.shareFolder(folder)
       }
     ]);
