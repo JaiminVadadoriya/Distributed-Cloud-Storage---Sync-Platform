@@ -173,9 +173,9 @@ docker-compose up --build
 
 | Service           | URL                                       | Notes |
 | ----------------- | ----------------------------------------- | ----- |
-| API (via NGINX LB)| http://localhost:5000                     | 3 API replicas behind NGINX |
+| API (via NGINX LB)| http://localhost:8000                     | 3 API replicas behind NGINX |
 | Frontend (Angular)| http://localhost:4200                     | Served by Nginx SPA container |
-| Swagger           | http://localhost:5000/swagger             | OpenAPI UI via LB |
+| Swagger           | http://localhost:8000/swagger             | OpenAPI UI via LB |
 | Grafana           | http://localhost:3000 (admin/admin)       | Pre-built API dashboards |
 | Prometheus        | http://localhost:9090                     | Metrics scraping |
 | RabbitMQ UI       | http://localhost:15672 (guest/guest)      | Management console |

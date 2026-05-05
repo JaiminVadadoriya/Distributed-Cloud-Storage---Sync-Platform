@@ -17,12 +17,13 @@ namespace CloudStorage.API.Tests.Fixtures
     {
         private Microsoft.Data.Sqlite.SqliteConnection? _sqliteConnection;
 
+        private IServiceScope? _scope;
         public ApplicationDbContext DbContext
         {
             get
             {
-                var scope = Services.CreateScope();
-                return scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                _scope ??= Services.CreateScope();
+                return _scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
             }
         }
 
