@@ -116,12 +116,62 @@ jobs:
           path: CloudStorage.Client/dist/
 
   # ─────────────────────────────────────────────
+  # E2E: Playwright (mock mode, Chromium only)
+  # ─────────────────────────────────────────────
+  e2e-test:
+    name: Playwright E2E Tests
+    runs-on: ubuntu-latest
+    needs: [frontend-build]
+    defaults:
+      run:
+        working-directory: CloudStorage.Client
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: CloudStorage.Client/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers (Chromium only)
+        run: npx playwright install --with-deps chromium
+
+      - name: Run E2E tests (mock mode)
+        env:
+          CI: true
+          TEST_MODE: mock
+        run: npm run e2e:fast
+
+      - name: Upload Playwright HTML report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: CloudStorage.Client/playwright-report/
+          retention-days: 14
+
+      - name: Upload Playwright test results (JUnit)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-junit
+          path: CloudStorage.Client/test-results.xml
+          retention-days: 14
+
+  # ─────────────────────────────────────────────
   # Docker: Build & Push Images
   # ─────────────────────────────────────────────
   docker-build:
     name: Docker Build & Push
     runs-on: ubuntu-latest
-    needs: [backend-build, frontend-build]
+    needs: [backend-build, frontend-build, e2e-test]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read

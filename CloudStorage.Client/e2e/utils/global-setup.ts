@@ -1,4 +1,4 @@
-import { chromium, firefox, webkit, Browser, BrowserContext } from '@playwright/test';
+import process from 'node:process';
 
 /**
  * Global test setup

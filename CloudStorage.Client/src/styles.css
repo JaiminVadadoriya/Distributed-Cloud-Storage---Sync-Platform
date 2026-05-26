@@ -88,6 +88,7 @@
 html,
 body {
   min-height: 100vh;
+  min-height: 100svh;
   margin: 0;
   overflow-x: hidden;
   overflow-y: auto;
@@ -329,9 +330,11 @@ body {
   position: relative;
   overflow: auto;
   contain: strict;
-  height: 600px !important;
-  /* Force a stable, interactive height for E2E */
-  min-height: 400px;
+  /* Responsive height: fill available space on desktop, bounded on mobile */
+  height: calc(100vh - 200px);
+  height: calc(100svh - 200px);
+  min-height: 300px;
+  max-height: 700px;
 }
 
 .h-full.cdk-virtual-scroll-viewport {

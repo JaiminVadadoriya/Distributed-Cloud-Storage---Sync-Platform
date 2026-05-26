@@ -131,7 +131,7 @@
   </section>
 
   <!-- Sync Manager / Conflict Dialog -->
-  @if (showConflictDialog) {
+  @if (showConflictDialog()) {
     <div class="fixed inset-0 z-[100] flex items-center justify-center bg-editorial-bg/60 backdrop-blur-sm p-6 animate-in-fade">
       <div class="max-w-xl w-full border border-editorial-text bg-editorial-bg p-8 md:p-12 space-y-10 animate-in-scale shadow-brutalist">
         <div class="space-y-6">
@@ -170,7 +170,7 @@
         </div>
 
         <div class="flex justify-end pt-4">
-          <button (click)="showConflictDialog = false" 
+          <button (click)="showConflictDialog.set(false)" 
                   class="font-mono text-[9px] uppercase tracking-[0.3em] text-editorial-text/40 hover:text-editorial-text transition-colors">
             Postpone_Resolution_Sequence
           </button>

@@ -313,9 +313,6 @@ if (!app.Environment.IsEnvironment("Testing"))
     app.ApplyMigrations(); // Manual migration recommended for distributed setups
 
     // Seed test users if explicitly requested (useful for persona-based E2E tests against Real DB)
-    app.ApplyMigrations(); // Manual migration recommended for distributed setups
-
-    // Seed test users if explicitly requested (useful for persona-based E2E tests against Real DB)
     if (app.Configuration["SEED_TEST_USERS"] == "true")
     {
         using var scope = app.Services.CreateScope();

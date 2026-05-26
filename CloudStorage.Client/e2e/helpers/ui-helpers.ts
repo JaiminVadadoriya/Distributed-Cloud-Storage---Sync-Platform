@@ -23,9 +23,13 @@ export async function fillFormField(params: {
   value: string;
 }): Promise<void> {
   const { page, fieldLabel, value } = params;
-  const field = page.locator(`label:has-text("${fieldLabel}") ~ input, label:has-text("${fieldLabel}") ~ textarea, label:has-text("${fieldLabel}") ~ [role="combobox"]`).first();
+  const field = page
+    .locator(`label:has-text("${fieldLabel}") ~ input, label:has-text("${fieldLabel}") ~ textarea, label:has-text("${fieldLabel}") ~ [role="combobox"]`)
+    .first();
   await field.fill(value);
-  await page.waitForTimeout(200); // Wait for validation
+  // Note: validation is async — callers should assert the expected UI state
+  // using web-first assertions (e.g. expect(errorMsg).toBeVisible()) rather
+  // than relying on a fixed delay here.
 }
 
 /**
@@ -33,8 +37,9 @@ export async function fillFormField(params: {
  */
 export async function clickButton(params: { page: Page; buttonText: string }): Promise<void> {
   const { page, buttonText } = params;
-  await page.click(`button:has-text("${buttonText}")`);
-  await page.waitForTimeout(300); // Wait for potential navigation
+  // Use getByRole for resilience; callers should await navigation with
+  // expect(page).toHaveURL() rather than relying on a fixed delay.
+  await page.getByRole('button', { name: buttonText }).click();
 }
 
 /**
@@ -143,8 +148,10 @@ export async function enableApiMocking(page: Page, apiBase: string): Promise<voi
  */
 export async function simulateNetworkDelay(params: { page: Page; ms: number }): Promise<void> {
   const { page, ms } = params;
+  // waitForTimeout is intentional here — this helper exists purely to
+  // simulate artificial network latency for resilience/performance tests.
   await page.route('**/*', async (route) => {
-    await page.waitForTimeout(ms);
+    await new Promise((resolve) => setTimeout(resolve, ms));
     await route.continue();
   });
 }

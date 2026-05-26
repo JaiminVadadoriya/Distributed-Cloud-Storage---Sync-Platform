@@ -57,7 +57,7 @@ export class DashboardComponent extends BaseComponent implements OnInit, OnDestr
   @ViewChild('fileList') fileList!: FileListComponent;
   focusedId = signal<string | null>(null);
   viewMode = signal<'grid' | 'list'>('grid');
-  showConflictDialog = false;
+  showConflictDialog = signal<boolean>(false);
   showSyncPanel = false;
 
   public readonly searchService = inject(SearchService);
@@ -81,7 +81,7 @@ export class DashboardComponent extends BaseComponent implements OnInit, OnDestr
 
     effect(() => {
       if (this.syncEngine.hasConflicts()) {
-        this.showConflictDialog = true;
+        this.showConflictDialog.set(true);
       }
     });
   }

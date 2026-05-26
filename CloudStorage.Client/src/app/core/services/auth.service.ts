@@ -1,5 +1,5 @@
-import { Injectable, inject, signal } from '@angular/core';
-import { Observable, map, tap, throwError, catchError, finalize, shareReplay } from 'rxjs';
+import { Injectable, inject, signal, isDevMode } from '@angular/core';
+import { Observable, map, tap, throwError, catchError, finalize, shareReplay, BehaviorSubject, filter, take } from 'rxjs';
 import { ApiService } from './api.service';
 import { Router } from '@angular/router';
 import { BaseService } from '../models/base-service';
@@ -31,9 +31,11 @@ export class AuthService extends BaseService {
   protected readonly _currentUser = signal<User | null>(null);
   public readonly currentUser = this._currentUser.asReadonly();
   
-  private refreshObservable: Observable<AuthResponse> | null = null;
+  // Refresh token coordination (shared with authInterceptor)
+  private _refreshObservable: Observable<AuthResponse> | null = null;
   private readonly _isRefreshing = signal<boolean>(false);
   public readonly isRefreshing = this._isRefreshing.asReadonly();
+  public readonly refreshTokenSubject = new BehaviorSubject<string | null>(null);
   
   private readonly TOKEN_KEY = 'auth_token';
   private readonly REFRESH_TOKEN_KEY = 'refresh_token';
@@ -100,6 +102,10 @@ export class AuthService extends BaseService {
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     localStorage.removeItem(this.USER_KEY);
     this._currentUser.set(null);
+    // Reset refresh coordination state so queued requests don't replay on next login
+    this._refreshObservable = null;
+    this._isRefreshing.set(false);
+    this.refreshTokenSubject.next(null);
     this.router.navigate(['/auth/login']);
   }
 
@@ -116,47 +122,49 @@ export class AuthService extends BaseService {
   }
 
   public refreshToken(): Observable<AuthResponse> {
-    // If a refresh is already in progress, return the same observable
-    if (this.refreshObservable) {
-      console.log('[AuthS] Returning existing refresh observable');
-      return this.refreshObservable;
+    // If a refresh is already in progress, wait for the new token
+    if (this._refreshObservable) {
+      if (isDevMode()) console.log('[AuthS] Returning existing refresh observable');
+      return this._refreshObservable;
     }
 
     const refreshToken = localStorage.getItem(this.REFRESH_TOKEN_KEY);
     if (!refreshToken) {
-      console.warn('[AuthS] Refresh Token MISSING from storage');
+      if (isDevMode()) console.warn('[AuthS] Refresh Token MISSING from storage');
       if (this.currentUser()) {
         this.logout();
       }
       return throwError(() => new Error('AUTH_REFRESH_TOKEN_MISSING'));
     }
 
-    console.log('[AuthS] Starting NEW refresh API call...');
+    if (isDevMode()) console.log('[AuthS] Starting NEW refresh API call...');
     this._isRefreshing.set(true);
+    this.refreshTokenSubject.next(null);
     
-    this.refreshObservable = this.api.post<ApiResponse<AuthResponse>>('/auth/refresh', { refreshToken }).pipe(
+    this._refreshObservable = this.api.post<ApiResponse<AuthResponse>>('/auth/refresh', { refreshToken }).pipe(
       map(response => {
         if (!response.success || !response.data) throw new Error(response.message || 'AUTH_REFRESH_FAILED');
         return response.data;
       }),
       tap(data => {
-        console.log('[AuthS] Refresh Success: Updating session');
+        if (isDevMode()) console.log('[AuthS] Refresh Success: Updating session');
         this.handleAuthResponse(data);
+        this.refreshTokenSubject.next(data.accessToken);
       }),
       catchError(err => {
-        console.error('[AuthS] Refresh API Error:', err);
+        if (isDevMode()) console.error('[AuthS] Refresh API Error:', err);
         this.logout();
         return throwError(() => err);
       }),
       finalize(() => {
-        console.log('[AuthS] Refresh observable cleared');
-        this.refreshObservable = null;
+        if (isDevMode()) console.log('[AuthS] Refresh observable cleared');
+        this._refreshObservable = null;
         this._isRefreshing.set(false);
       }),
       shareReplay(1)
     );
 
-    return this.refreshObservable;
+    return this._refreshObservable;
   }
 
   public requestPasswordReset(email: string): Observable<{ message: string }> {

@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -39,6 +39,11 @@ export class TopbarComponent extends BaseComponent {
   private router = inject(Router);
 
   public showAtmosphereMenu = false;
+  public showMobileSearch = signal<boolean>(false);
+
+  public toggleMobileSearch(): void {
+    this.showMobileSearch.update(v => !v);
+  }
 
   public toggleAtmosphereMenu(): void {
     this.showAtmosphereMenu = !this.showAtmosphereMenu;

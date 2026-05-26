@@ -1,4 +1,6 @@
-<div class="flex h-full w-full items-center justify-between px-4 md:px-6 lg:px-8 bg-editorial-bg">
+<div class="flex h-full w-full flex-col bg-editorial-bg">
+  <!-- Main Row -->
+  <div class="flex h-16 w-full items-center justify-between px-4 md:px-6 lg:px-8">
   
   <!-- Left Side: Hamburger & Logo (Mobile) / Search (Desktop) -->
   <div class="flex items-center gap-4 flex-1 max-w-xl">
@@ -11,7 +13,7 @@
       </svg>
     </button>
 
-    <!-- Search Bar (Hidden on Mobile for now to save space) -->
+    <!-- Search Bar (Hidden on Mobile — use icon button below) -->
     <div class="hidden sm:block relative w-full group">
       <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-0 text-editorial-text/40 group-focus-within:text-editorial-accent transition-colors">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -40,6 +42,18 @@
         </div>
       }
     </div>
+
+    <!-- Mobile Search Icon Button (visible on xs only) -->
+    <button (click)="toggleMobileSearch()"
+            aria-label="Open search"
+            [attr.aria-expanded]="showMobileSearch()"
+            class="sm:hidden p-2 text-editorial-text/60 hover:text-editorial-text transition-colors focus:outline-none active:scale-90"
+            [class.text-editorial-accent]="showMobileSearch()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/>
+        <path d="m21 21-4.3-4.3"/>
+      </svg>
+    </button>
   </div>
 
   <!-- Right Side: Actions -->
@@ -223,5 +237,33 @@
       }
     </div>
   </div>
-</div>
 
+  <!-- Mobile Search Expansion Row (xs only) -->
+  @if (showMobileSearch()) {
+    <div class="sm:hidden animate-in-fade border-t border-editorial-border/30 px-4 py-3 bg-editorial-bg">
+      <div class="flex items-center gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-editorial-text/40 flex-shrink-0">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.3-4.3"/>
+        </svg>
+        <input type="text"
+               #mobileSearchInput
+               autofocus
+               placeholder="SEARCH_LOGS..."
+               aria-label="Mobile search"
+               data-testid="mobile-search-input"
+               (input)="onSearch(mobileSearchInput.value)"
+               (keydown.enter)="navigateToSearch(mobileSearchInput.value); showMobileSearch.set(false)"
+               (keydown.escape)="showMobileSearch.set(false)"
+               class="flex-1 border-b-2 border-editorial-text/10 bg-transparent py-2 font-mono uppercase text-[11px] font-bold text-editorial-text placeholder:text-editorial-text/20 focus:border-editorial-text focus:outline-none transition-all">
+        <button (click)="showMobileSearch.set(false)"
+                aria-label="Close search"
+                class="p-1 text-editorial-text/40 hover:text-editorial-text transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  }
+</div>
