@@ -137,6 +137,9 @@ test.describe('File Upload & Preview Flow', () => {
     // Small delay to allow Angular's reactive cycle & refresh to finish
     await page.waitForTimeout(1000);
 
+    // Dismiss the upload modal so it doesn't block the file explorer
+    await page.getByTestId('close-upload-modal-btn').click();
+
     // NO RELOAD: Verification that reactive refresh works
     const fileLocator = page.getByText(testFile.name).first();
     await expect(fileLocator).toBeVisible({ timeout: 15000 });
@@ -216,6 +219,9 @@ test.describe('File Upload & Preview Flow', () => {
     await csvChooser.setFiles(csvFile.path);
 
     await csvComplete;
+
+     // Dismiss the upload modal so it doesn't block the file explorer
+    await page.getByTestId('close-upload-modal-btn').click();
 
     // NO RELOAD: Verification that reactive refresh works
     await expect(page.getByText(csvFile.name)).toBeVisible();

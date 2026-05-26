@@ -50,6 +50,9 @@ test.describe('Folder Features', () => {
 
     const folderItem = page.locator('[data-testid="file-item-folder-1"]');
     
+    // Scroll the folder item to the top of the viewport to ensure the context menu renders fully within it
+    await folderItem.evaluate(el => el.scrollIntoView({ block: 'start' }));
+    
     // Force right click to trigger context menu
     await folderItem.click({ button: 'right', force: true });
     

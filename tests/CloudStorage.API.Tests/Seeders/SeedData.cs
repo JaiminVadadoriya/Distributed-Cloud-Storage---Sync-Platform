@@ -14,11 +14,10 @@ namespace CloudStorage.Tests.Seeders
         {
             if (await context.Users.AnyAsync()) return;
 
-            // Personsas
-            var admin = new UserBuilder().Admin().WithUsername("admin").WithEmail("admin@cloudstorage.com").Build();
-            var regularUser = new UserBuilder().WithId(1).WithUsername("regularuser").Build();
-            var adminUser = new UserBuilder().WithId(2).WithUsername("admin").WithRole("Admin").Build();
-            var guestUser = new UserBuilder().WithId(3).WithUsername("guest_user").WithRole("Guest").Build();
+            // Personas
+            var admin = new UserBuilder().WithId(2).Admin().WithUsername("admin").WithEmail("admin@cloudstorage.com").Build();
+            var regularUser = new UserBuilder().WithId(1).WithUsername("regularuser").WithEmail("user@cloudstorage.com").Build();
+            var guestUser = new UserBuilder().WithId(3).WithUsername("guest_user").WithRole("Guest").WithEmail("guest@cloudstorage.com").Build();
 
             context.Users.AddRange(admin, regularUser, guestUser);
             await context.SaveChangesAsync();

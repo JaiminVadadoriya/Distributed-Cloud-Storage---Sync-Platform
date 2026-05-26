@@ -59,14 +59,13 @@ test.describe('Authentication Flow', () => {
     await auth.expectErrorContaining('Invalid_Credentials_Node_Rejected');
   });
 
-  test('should log out successfully', async ({ page }) => {
-    await auth.injectAuthState('mock-token', 'u1', 'TESTRUNNER');
+  test('should log out successfully', async ({ authenticatedPage }) => {
+    const authPage = new AuthPage(authenticatedPage);
+    await authenticatedPage.goto('/dashboard', { waitUntil: 'domcontentloaded' });
 
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+    await authPage.logout();
 
-    await auth.logout();   // waits for profileTrigger → logoutBtn via toBeVisible()
-
-    await auth.expectRedirectedToLogin();
-    await auth.expectAuthToken(null);
+    await authPage.expectRedirectedToLogin();
+    await authPage.expectAuthToken(null);
   });
 });

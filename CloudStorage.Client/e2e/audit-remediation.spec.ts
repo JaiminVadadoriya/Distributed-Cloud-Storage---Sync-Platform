@@ -134,7 +134,7 @@ test.describe('Web Application Remediation Audit', () => {
       await trash.restore('t1');
 
       // FIX: scoped assertion via [role="alert"] instead of body
-      await expect(authenticatedPage.getByRole('alert').filter({ hasText: /RESTORE/i })).toBeVisible({ timeout: 15_000 });
+      await expect(authenticatedPage.getByRole('alert').filter({ hasText: /RESTORE/i }).first()).toBeVisible({ timeout: 15_000 });
     });
   });
 });

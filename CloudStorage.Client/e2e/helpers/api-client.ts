@@ -30,3 +30,7 @@ export class ApiClient {
     }
   }
 }
+
+export function createApiClient(page: any, baseURL?: string): ApiClient {
+  return new ApiClient(baseURL);
+}

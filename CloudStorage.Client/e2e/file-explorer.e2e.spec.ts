@@ -43,6 +43,7 @@ test.describe('CloudStorage E2E Suite', () => {
       await expect(renameBtn).toBeVisible({ timeout: 15_000 });
 
       // Test F2 shortcut
+      await page.keyboard.press('Escape'); // Dismiss context menu backdrop to prevent intercepting clicks
       await fileItem.click();
       await page.keyboard.press('F2');
 
@@ -149,7 +150,7 @@ test.describe('CloudStorage E2E Suite', () => {
       await restoreRequest;
 
       // FIX: scoped to [role="alert"] instead of body
-      await expect(page.getByRole('alert').filter({ hasText: /RESTORE/ })).toBeVisible({ timeout: 10_000 });
+      await expect(page.getByRole('alert').filter({ hasText: /RESTORE/ }).first()).toBeVisible({ timeout: 10_000 });
     });
   });
 });

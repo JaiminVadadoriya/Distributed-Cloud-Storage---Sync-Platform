@@ -7,9 +7,18 @@ test.describe.parallel('Regular User - Trash Management', () => {
   let apiClient: ReturnType<typeof createApiClient>;
 
   test.beforeEach(async ({ authenticatedPage, apiBase }) => {
+    await authenticatedPage.goto('/auth/login');
     const credentials = getTestUserCredentials('regularUser1');
-    let userAuth = await loginTestUser(authenticatedPage, apiBase, credentials.username, credentials.password)
-      .catch(async () => setupTestUser(authenticatedPage, apiBase, 'regularUser1'));
+    let userAuth = await loginTestUser({
+      page: authenticatedPage,
+      apiBase,
+      username: credentials.username,
+      password: credentials.password
+    }).catch(async () => setupTestUser({
+      page: authenticatedPage,
+      apiBase,
+      userKey: 'regularUser1'
+    }));
 
     await setupAuthToken({ page: authenticatedPage, token: userAuth.token });
     apiClient = createApiClient(authenticatedPage, apiBase);
@@ -125,9 +134,18 @@ test.describe.parallel('Regular User - Device Management', () => {
   let apiClient: ReturnType<typeof createApiClient>;
 
   test.beforeEach(async ({ authenticatedPage, apiBase }) => {
+    await authenticatedPage.goto('/auth/login');
     const credentials = getTestUserCredentials('regularUser1');
-    let userAuth = await loginTestUser(authenticatedPage, apiBase, credentials.username, credentials.password)
-      .catch(async () => setupTestUser(authenticatedPage, apiBase, 'regularUser1'));
+    let userAuth = await loginTestUser({
+      page: authenticatedPage,
+      apiBase,
+      username: credentials.username,
+      password: credentials.password
+    }).catch(async () => setupTestUser({
+      page: authenticatedPage,
+      apiBase,
+      userKey: 'regularUser1'
+    }));
 
     await setupAuthToken({ page: authenticatedPage, token: userAuth.token });
     apiClient = createApiClient(authenticatedPage, apiBase);
@@ -207,9 +225,18 @@ test.describe.parallel('Regular User - File Sync and Conflicts', () => {
   let apiClient: ReturnType<typeof createApiClient>;
 
   test.beforeEach(async ({ authenticatedPage, apiBase }) => {
+    await authenticatedPage.goto('/auth/login');
     const credentials = getTestUserCredentials('regularUser1');
-    let userAuth = await loginTestUser(authenticatedPage, apiBase, credentials.username, credentials.password)
-      .catch(async () => setupTestUser(authenticatedPage, apiBase, 'regularUser1'));
+    let userAuth = await loginTestUser({
+      page: authenticatedPage,
+      apiBase,
+      username: credentials.username,
+      password: credentials.password
+    }).catch(async () => setupTestUser({
+      page: authenticatedPage,
+      apiBase,
+      userKey: 'regularUser1'
+    }));
 
     await setupAuthToken({ page: authenticatedPage, token: userAuth.token });
     apiClient = createApiClient(authenticatedPage, apiBase);
@@ -285,9 +312,18 @@ test.describe.parallel('Regular User - Activity and Notifications', () => {
   let apiClient: ReturnType<typeof createApiClient>;
 
   test.beforeEach(async ({ authenticatedPage, apiBase }) => {
+    await authenticatedPage.goto('/auth/login');
     const credentials = getTestUserCredentials('regularUser1');
-    let userAuth = await loginTestUser(authenticatedPage, apiBase, credentials.username, credentials.password)
-      .catch(async () => setupTestUser(authenticatedPage, apiBase, 'regularUser1'));
+    let userAuth = await loginTestUser({
+      page: authenticatedPage,
+      apiBase,
+      username: credentials.username,
+      password: credentials.password
+    }).catch(async () => setupTestUser({
+      page: authenticatedPage,
+      apiBase,
+      userKey: 'regularUser1'
+    }));
 
     await setupAuthToken({ page: authenticatedPage, token: userAuth.token });
     apiClient = createApiClient(authenticatedPage, apiBase);

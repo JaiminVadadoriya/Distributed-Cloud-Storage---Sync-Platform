@@ -69,9 +69,14 @@ export class DragDropDirective {
       const promises: Promise<void>[] = [];
 
       for (const item of Array.from(items)) {
-        const entry = item.webkitGetAsEntry();
+        const entry = typeof item.webkitGetAsEntry === 'function' ? item.webkitGetAsEntry() : null;
         if (entry) {
           promises.push(this.traverseFileTree(entry, files));
+        } else {
+          const file = item.getAsFile();
+          if (file) {
+            files.push(file);
+          }
         }
       }
 

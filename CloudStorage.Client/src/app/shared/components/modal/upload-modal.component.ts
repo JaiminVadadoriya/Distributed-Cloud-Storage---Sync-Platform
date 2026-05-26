@@ -29,7 +29,7 @@ import { UploadProgressComponent } from '../upload-progress/upload-progress.comp
               <h2 class="text-xs font-mono font-bold uppercase tracking-[0.5em]">Ingestion_Protocol_v2</h2>
               <p class="text-[9px] font-mono uppercase tracking-widest opacity-60">Status: {{ uploadManager.queue().length }} active_sequences | Total_Bandwidth: {{ formatSpeed(uploadManager.globalSpeed()) }}</p>
             </div>
-            <button (click)="layout.closeUploadModal()" class="p-2 hover:bg-editorial-bg/10 rounded-none transition-colors">
+            <button (click)="layout.closeUploadModal()" data-testid="close-upload-modal-btn" aria-label="Close upload modal" class="p-2 hover:bg-editorial-bg/10 rounded-none transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
           </div>

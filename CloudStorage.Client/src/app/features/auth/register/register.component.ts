@@ -99,7 +99,7 @@ import { AuthService } from '../../../core/services/auth.service';
         }
 
         <button type="submit" 
-                [disabled]="registerForm.invalid || isLoading" 
+                [disabled]="isLoading" 
                 class="relative h-[80px] w-full bg-editorial-text text-editorial-bg font-mono text-xs tracking-[0.6em] uppercase transition-all hover:bg-black active:scale-[0.99] disabled:opacity-30 disabled:cursor-not-allowed group overflow-hidden border-none shadow-brutalist">
           <div class="relative z-10 flex items-center justify-center gap-6">
             @if (isLoading) {

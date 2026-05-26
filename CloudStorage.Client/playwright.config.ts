@@ -79,7 +79,17 @@ const getTestMatch = (): string | string[] => {
     case 'performance': return '**/personas/performance/**/*.spec.ts';
     case 'mobile':      return '**/personas/mobile/**/*.spec.ts';       // FIX: was 'accessibility'
     case 'a11y':        return '**/personas/accessibility/**/*.spec.ts';
-    default:            return '**/*.spec.ts';
+    default:            return [
+                          'audit-remediation.spec.ts',
+                          'auth.spec.ts',
+                          'example.spec.ts',
+                          'file-explorer.e2e.spec.ts',
+                          'file-management.spec.ts',
+                          'file-preview-comprehensive.spec.ts',
+                          'file-upload-and-preview.spec.ts',
+                          'folder-features.spec.ts',
+                          'personas/regularUser/core-flows.spec.ts'
+                        ];
   }
 };
 

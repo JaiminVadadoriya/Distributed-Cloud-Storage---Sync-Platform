@@ -4,6 +4,7 @@ import { devices } from '@playwright/test';
 
 test.describe.parallel('Accessibility - WCAG Compliance', () => {
   test.beforeEach(async ({ authenticatedPage, apiBase }) => {
+    await authenticatedPage.goto('/auth/login');
     // Direct token injection for mock mode to avoid UI login overhead/hangs
     if (process.env['TEST_MODE'] !== 'real') {
       await setupAuthToken({ page: authenticatedPage, token: 'mock-jwt-token' });

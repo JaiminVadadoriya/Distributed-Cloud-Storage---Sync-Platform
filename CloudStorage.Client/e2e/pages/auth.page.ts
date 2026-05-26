@@ -74,7 +74,7 @@ export class AuthPage {
 
   async expectErrorContaining(text: string): Promise<void> {
     // Scoped to [role="alert"] — avoids brittle `body` text matching
-    await expect(this.errorAlert.filter({ hasText: text })).toBeVisible({ timeout: 15_000 });
+    await expect(this.errorAlert.filter({ hasText: text }).first()).toBeVisible({ timeout: 15_000 });
   }
 
   async expectAuthToken(value: string | null): Promise<void> {

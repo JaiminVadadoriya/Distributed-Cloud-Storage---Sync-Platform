@@ -146,7 +146,7 @@ export class DashboardPage {
   // ── Assertions ─────────────────────────────────────────────────────────────
 
   async expectFilesCount(count: number): Promise<void> {
-    await expect(this.page.locator('[data-testid^="file-item-"]')).toHaveCount(count, { timeout: 20_000 });
+    await expect(this.page.locator('[data-testid^="file-item-"]:not([data-folder-id])')).toHaveCount(count, { timeout: 20_000 });
   }
 
   async expectFileVisible(fileName: string): Promise<void> {

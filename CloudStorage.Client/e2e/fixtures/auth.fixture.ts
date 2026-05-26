@@ -105,11 +105,77 @@ async function setupInterceptors(page: Page, testMode: string, apiBase: string) 
     const method = request.method();
     const headers = { ...request.headers() };
 
-    // Pass through auth for real login pages if needed
-    if (url.includes('/api/auth/login') || url.includes('/api/auth/register')) {
-      if (page.url().includes('/auth/login') || page.url().includes('/auth/register')) {
-         return route.continue().catch(() => {});
+    if (url.includes('/api/auth/login')) {
+      let postData: any = {};
+      try {
+        postData = request.postDataJSON() || {};
+      } catch (e) {}
+      
+      const pwd = postData.password || '';
+      if (pwd.includes('Wrong') || pwd.includes('wrong') || pwd === 'incorrect') {
+        await route.fulfill({
+          status: 401,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: false, message: 'Invalid credentials' }),
+          headers
+        }).catch(() => {});
+      } else {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: {
+              accessToken: 'mock-jwt-token',
+              refreshToken: 'mock-refresh-token',
+              user: { id: 1, username: postData.username || 'testuser', email: postData.username ? `${postData.username}@example.com` : 'user@example.com', role: 'User' }
+            }
+          }),
+          headers
+        }).catch(() => {});
       }
+      return;
+    }
+
+    if (url.includes('/api/auth/register')) {
+      let postData: any = {};
+      try {
+        postData = request.postDataJSON() || {};
+      } catch (e) {}
+      
+      const email = postData.email || '';
+      const duplicateEmails = [
+        'user1@test.local',
+        'user2@test.local',
+        'admin@test.local',
+        'guest@test.local',
+        'admin@cloudstorage.com',
+        'user@example.com',
+        'guest@example.com'
+      ];
+      if (duplicateEmails.includes(email) || email.includes('duplicate')) {
+        await route.fulfill({
+          status: 400,
+          contentType: 'application/json',
+          body: JSON.stringify({ success: false, message: 'Email already registered' }),
+          headers
+        }).catch(() => {});
+      } else {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            success: true,
+            data: {
+              userId: 1,
+              username: postData.username || 'testuser',
+              email: email
+            }
+          }),
+          headers
+        }).catch(() => {});
+      }
+      return;
     }
 
     let responseBody: any = { success: true, data: {} };
@@ -143,6 +209,12 @@ async function setupInterceptors(page: Page, testMode: string, apiBase: string) 
 
 export const test = base.extend<TestFixtures>({
   apiBase: process.env['API_BASE_URL'] || 'http://localhost:5010',
+
+  page: async ({ page, apiBase }, use) => {
+    const testMode = (process.env['TEST_MODE'] || 'mock').toLowerCase();
+    await setupInterceptors(page, testMode, apiBase);
+    await use(page);
+  },
 
   regularUserAuth: async ({ page, apiBase }, use) => {
     await authenticatePersona('regularUser', page, apiBase);

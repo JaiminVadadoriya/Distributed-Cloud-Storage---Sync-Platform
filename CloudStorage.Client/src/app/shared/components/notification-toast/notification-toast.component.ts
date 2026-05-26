@@ -14,7 +14,7 @@ import { BaseComponent } from '../../../core/models/base-component';
   template: `
     <div class="fixed top-12 right-12 z-[100] flex flex-col gap-6 pointer-events-none" role="status" aria-live="polite">
       @for (toast of notificationService.toasts(); track toast.id) {
-        <div class="pointer-events-auto w-[420px] border-2 border-editorial-text p-8 bg-editorial-bg relative overflow-hidden shadow-brutalist animate-in-fade selection:bg-editorial-text selection:text-editorial-bg group">
+        <div role="alert" class="pointer-events-auto w-[420px] border-2 border-editorial-text p-8 bg-editorial-bg relative overflow-hidden shadow-brutalist animate-in-fade selection:bg-editorial-text selection:text-editorial-bg group">
           
           <div class="grain-wrapper">
             <div class="absolute inset-0 grain-overlay pointer-events-none opacity-[0.03]"></div>

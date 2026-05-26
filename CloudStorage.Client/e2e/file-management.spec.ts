@@ -81,9 +81,7 @@ test.describe('File Management', () => {
   });
 
   test('should filter files via search', async ({ page }) => {
-    // FIX: use getByTestId / getByPlaceholder instead of brittle CSS attribute selector
-    const searchInput = page.getByTestId('contextual-search-input')
-      .or(page.getByPlaceholder(/search/i));
+    const searchInput = page.getByTestId('contextual-search-input');
 
     await searchInput.fill('document');
 
