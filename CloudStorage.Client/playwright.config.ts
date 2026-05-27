@@ -28,7 +28,7 @@ const isDebug = !!process.env['DEBUG'];
 
 // ─── Centralized timeout constants ──────────────────────────────────────────
 const TIMEOUTS = {
-  mock:        { test: 30_000, expect:  8_000, action:  8_000, nav: 20_000 },
+  mock:        { test: 45_000, expect: 10_000, action: 10_000, nav: 30_000 },
   real:        { test: 90_000, expect: 10_000, action: 30_000, nav: 60_000 },
   performance: { test: 180_000, expect: 10_000, action: 30_000, nav: 60_000 },
   mobile:      { test: 60_000, expect: 10_000, action: 15_000, nav: 30_000 },

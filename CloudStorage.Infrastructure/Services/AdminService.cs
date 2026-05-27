@@ -65,7 +65,7 @@ namespace CloudStorage.Infrastructure.Services
             {
                 var date = today.AddDays(-i);
                 var nextDate = date.AddDays(1);
-                
+
                 // For storage, we'd ideally have snapshots. As a proxy, we'll use cumulative size at that point.
                 var sizeAtDate = await _context.FileMetadata.AsNoTracking()
                     .Where(f => f.CreatedAt < nextDate && !f.IsDeleted)
@@ -161,7 +161,7 @@ namespace CloudStorage.Infrastructure.Services
             // Use real environment metrics where possible
             var process = System.Diagnostics.Process.GetCurrentProcess();
             var drive = new System.IO.DriveInfo(System.IO.Path.GetPathRoot(AppDomain.CurrentDomain.BaseDirectory)!);
-            
+
             return new SystemHealthDetailsDto
             {
                 Status = report.Status.ToString().ToLower(),

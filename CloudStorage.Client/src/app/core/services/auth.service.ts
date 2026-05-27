@@ -1,5 +1,5 @@
 import { Injectable, inject, signal, isDevMode } from '@angular/core';
-import { Observable, map, tap, throwError, catchError, finalize, shareReplay, BehaviorSubject, filter, take } from 'rxjs';
+import { Observable, map, tap, throwError, catchError, finalize, shareReplay, BehaviorSubject } from 'rxjs';
 import { ApiService } from './api.service';
 import { Router } from '@angular/router';
 import { BaseService } from '../models/base-service';

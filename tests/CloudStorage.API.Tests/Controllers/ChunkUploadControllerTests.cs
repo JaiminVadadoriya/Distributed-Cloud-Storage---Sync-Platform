@@ -82,7 +82,7 @@ namespace CloudStorage.API.Tests.Controllers
             var sessionId = "session1";
             var fileData = new byte[100];
             new Random().NextBytes(fileData);
-            
+
             using var sha256 = System.Security.Cryptography.SHA256.Create();
             var computedHash = BitConverter.ToString(sha256.ComputeHash(fileData)).Replace("-", "").ToLowerInvariant();
 

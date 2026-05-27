@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -40,6 +40,12 @@ export class TopbarComponent extends BaseComponent {
 
   public showAtmosphereMenu = false;
   public showMobileSearch = signal<boolean>(false);
+
+  @ViewChild('mobileSearchInput') set mobileSearchInput(element: ElementRef<HTMLInputElement> | undefined) {
+    if (element) {
+      setTimeout(() => element.nativeElement.focus(), 0);
+    }
+  }
 
   public toggleMobileSearch(): void {
     this.showMobileSearch.update(v => !v);

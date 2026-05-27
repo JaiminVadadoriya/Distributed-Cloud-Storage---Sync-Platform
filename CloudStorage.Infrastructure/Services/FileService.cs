@@ -99,8 +99,8 @@ namespace CloudStorage.Infrastructure.Services
             // Verify local chunks exist on disk before proceeding (skips URL blob and azure protocol checks)
             foreach (var chunk in chunkData)
             {
-                if (!chunk.StoragePath.StartsWith("http") && 
-                    !chunk.StoragePath.StartsWith("azure://") && 
+                if (!chunk.StoragePath.StartsWith("http") &&
+                    !chunk.StoragePath.StartsWith("azure://") &&
                     !System.IO.File.Exists(chunk.StoragePath))
                 {
                     throw new System.IO.FileNotFoundException($"Chunk missing from storage: {System.IO.Path.GetFileName(chunk.StoragePath)}");

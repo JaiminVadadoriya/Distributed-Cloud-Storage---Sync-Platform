@@ -199,7 +199,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddHealthChecks()
     .AddNpgSql(dbConnectionString!, name: "PostgreSQL")
     .AddRedis(redisConnectionString, name: "Redis")
-    .AddAzureBlobStorage(blobConnectionString, name: "Azure_Blob_Storage");
+    .AddAzureBlobStorage(name: "Azure_Blob_Storage");
 
 // OpenTelemetry Configuration
 builder.Services.AddOpenTelemetry()
