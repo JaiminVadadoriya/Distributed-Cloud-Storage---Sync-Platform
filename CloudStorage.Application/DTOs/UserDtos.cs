@@ -7,11 +7,11 @@ namespace CloudStorage.Application.DTOs
         [Required]
         [StringLength(50, MinimumLength = 3)]
         public string Username { get; set; } = string.Empty;
-        
+
         [Required]
         [EmailAddress]
         public string Email { get; set; } = string.Empty;
-        
+
         [Required]
         [StringLength(100, MinimumLength = 6)]
         public string Password { get; set; } = string.Empty;
@@ -22,13 +22,14 @@ namespace CloudStorage.Application.DTOs
         public string Id { get; set; } = string.Empty;
         public string Username { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = "User";
     }
 
     public class LoginDto
     {
         [Required]
         public string Identifier { get; set; } = string.Empty;
-        
+
         [Required]
         public string Password { get; set; } = string.Empty;
     }
@@ -59,7 +60,7 @@ namespace CloudStorage.Application.DTOs
     {
         [Required]
         public string Token { get; set; } = string.Empty;
-        
+
         [Required]
         [StringLength(100, MinimumLength = 6)]
         public string NewPassword { get; set; } = string.Empty;
@@ -89,5 +90,6 @@ namespace CloudStorage.Application.DTOs
         public int Id { get; set; }
         public string Username { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = "User";
     }
 }

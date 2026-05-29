@@ -55,7 +55,7 @@ namespace CloudStorage.Infrastructure.Services
 
         public async Task<LoginResponseDto?> LoginAsync(string identifier, string password)
         {
-            var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == identifier || u.Username == identifier);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == identifier || u.Username == identifier);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                 return null;
@@ -80,7 +80,8 @@ namespace CloudStorage.Infrastructure.Services
                 {
                     Id = user.Id.ToString(),
                     Username = user.Username,
-                    Email = user.Email
+                    Email = user.Email,
+                    Role = user.Role
                 }
             };
         }
@@ -112,7 +113,8 @@ namespace CloudStorage.Infrastructure.Services
                 {
                     Id = user.Id.ToString(),
                     Username = user.Username,
-                    Email = user.Email
+                    Email = user.Email,
+                    Role = user.Role
                 }
             };
         }
@@ -126,7 +128,7 @@ namespace CloudStorage.Infrastructure.Services
         {
             const string genericMessage = "If the email exists, a password reset link has been sent";
 
-            var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == email);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
             if (user == null)
             {
                 // Never reveal whether the email exists
@@ -176,7 +178,7 @@ namespace CloudStorage.Infrastructure.Services
             // Update user's password
             var user = resetToken.User;
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
-            
+
             // Mark token as used
             resetToken.IsUsed = true;
             resetToken.UsedAt = DateTime.UtcNow;
@@ -218,7 +220,8 @@ namespace CloudStorage.Infrastructure.Services
             {
                 Id = user.Id.ToString(),
                 Username = user.Username,
-                Email = user.Email
+                Email = user.Email,
+                Role = user.Role
             };
         }
 
@@ -264,7 +267,7 @@ namespace CloudStorage.Infrastructure.Services
         {
             var jwtKey = _configuration["Jwt:Key"];
             if (string.IsNullOrEmpty(jwtKey)) throw new Exception("JWT Key is missing from configuration");
-             
+
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -273,7 +276,8 @@ namespace CloudStorage.Infrastructure.Services
                 new Claim(JwtRegisteredClaimNames.Sub, user.Username),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim("id", user.Id.ToString())
+                new Claim("id", user.Id.ToString()),
+                new Claim(ClaimTypes.Role, user.Role)
             };
 
             var token = new JwtSecurityToken(

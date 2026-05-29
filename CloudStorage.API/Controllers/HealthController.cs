@@ -1,13 +1,19 @@
 using System.Threading.Tasks;
+using CloudStorage.Application.DTOs;
 using CloudStorage.Infrastructure.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using CloudStorage.Application.DTOs;
 
 namespace CloudStorage.API.Controllers
 {
+    /// <summary>
+    /// Health check endpoints for liveness and readiness probes.
+    /// Does NOT inherit from BaseApiController since it's unauthenticated.
+    /// </summary>
     [ApiController]
     [Route("[controller]")]
+    [AllowAnonymous]
     public class HealthController : ControllerBase
     {
         private readonly ApplicationDbContext _context;
@@ -20,12 +26,9 @@ namespace CloudStorage.API.Controllers
         [HttpGet]
         public IActionResult GetHealth()
         {
-            return Ok(new ApiResponse<object>
-            {
-                Success = true,
-                Message = "API is healthy",
-                Data = new { status = "healthy", timestamp = System.DateTime.UtcNow }
-            });
+            return Ok(ApiResponse<object>.Ok(
+                new { status = "healthy", timestamp = System.DateTime.UtcNow },
+                "API is healthy"));
         }
 
         [HttpGet("ready")]
@@ -33,23 +36,14 @@ namespace CloudStorage.API.Controllers
         {
             try
             {
-                // Check database connectivity
                 await _context.Database.CanConnectAsync();
-                return Ok(new ApiResponse<object>
-                {
-                    Success = true,
-                    Message = "API is ready",
-                    Data = new { status = "ready", database = "connected", timestamp = System.DateTime.UtcNow }
-                });
+                return Ok(ApiResponse<object>.Ok(
+                    new { status = "ready", database = "connected", timestamp = System.DateTime.UtcNow },
+                    "API is ready"));
             }
             catch (System.Exception ex)
             {
-                return StatusCode(503, new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = ex.Message,
-                    Data = new { status = "not ready", database = "disconnected" }
-                });
+                return StatusCode(503, ApiResponse<object>.Fail(ex.Message));
             }
         }
     }

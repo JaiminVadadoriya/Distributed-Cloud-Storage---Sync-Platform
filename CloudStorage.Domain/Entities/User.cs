@@ -3,21 +3,33 @@ using System.Collections.Generic;
 
 namespace CloudStorage.Domain.Entities
 {
-    public class User
+    /// <summary>
+    /// Represents a registered user in the system.
+    /// Inherits Id and CreatedAt from BaseAuditableEntity.
+    /// </summary>
+    public class User : BaseAuditableEntity<int>
     {
-        public int Id { get; set; }
+        public User()
+        {
+            RefreshTokens = new List<RefreshToken>();
+            Devices = new List<Device>();
+            FilePermissions = new List<FilePermission>();
+            Notifications = new List<Notification>();
+        }
+
         public string Username { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string PasswordHash { get; set; } = string.Empty;
         public bool EmailVerified { get; set; }
         public DateTime? LastLoginAt { get; set; }
         public bool IsActive { get; set; } = true;
-        public DateTime CreatedAt { get; set; }
+        public string Role { get; set; } = "User"; // e.g., "Admin", "User"
+        public long StorageQuota { get; set; } = 5368709120; // 5GB default
 
         // Navigation properties
-        public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
-        public ICollection<Device> Devices { get; set; } = new List<Device>();
-        public ICollection<FilePermission> FilePermissions { get; set; } = new List<FilePermission>();
-        public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+        public virtual ICollection<RefreshToken> RefreshTokens { get; set; }
+        public virtual ICollection<Device> Devices { get; set; }
+        public virtual ICollection<FilePermission> FilePermissions { get; set; }
+        public virtual ICollection<Notification> Notifications { get; set; }
     }
 }

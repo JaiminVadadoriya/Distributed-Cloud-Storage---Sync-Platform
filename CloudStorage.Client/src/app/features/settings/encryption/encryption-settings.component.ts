@@ -1,53 +1,75 @@
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BaseComponent } from '../../../core/models/base-component';
 
 @Component({
   selector: 'app-encryption-settings',
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="space-y-12">
-      <div class="pb-8 border-b border-editorial-text/20">
-        <h1 class="text-4xl font-bold font-sans tracking-[0.5em] text-editorial-text uppercase">Encryption</h1>
-        <p class="text-[10px] font-mono uppercase tracking-[0.3em] text-editorial-text/60 mt-2">Client-side encryption and key management</p>
-      </div>
+    <div class="space-y-16 animate-in fade-in slide-in-from-bottom-4 duration-700 selection:bg-editorial-text selection:text-editorial-bg">
+      <header class="pb-12 border-b-2 border-editorial-text space-y-4">
+        <h3 class="font-mono text-[10px] uppercase tracking-[0.5em] text-editorial-text/40 italic">Kernel_Security</h3>
+        <h1 class="text-6xl font-sans font-bold tracking-tighter text-editorial-text uppercase italic leading-none">Cryption_Vault</h1>
+        <p class="font-mono text-[10px] uppercase tracking-[0.4em] text-editorial-text/60">Manage hardware-accelerated segment encryption keys</p>
+      </header>
 
-      <div class="border border-editorial-text/10 bg-editorial-text/[0.01] p-10 space-y-8">
-        <div class="flex items-center justify-between">
-          <div class="space-y-1">
-            <h3 class="text-sm font-mono font-bold uppercase tracking-[0.3em] text-editorial-text">End-to-End_Encryption</h3>
-            <p class="text-[9px] font-mono text-editorial-text/50 uppercase tracking-widest">Encrypt files before upload</p>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+        <div class="p-10 border border-editorial-text/10 bg-editorial-text/[0.01] space-y-8 relative group overflow-hidden">
+          <div class="grain-wrapper">
+            <div class="absolute inset-0 opacity-[0.02] grain-overlay select-none"></div>
           </div>
-          <div class="w-12 h-6 rounded-none border border-editorial-text/20 bg-editorial-text/5 flex items-center px-1 cursor-not-allowed opacity-50"
-            [class.bg-editorial-text]="encryptionEnabled()" [class.justify-end]="encryptionEnabled()">
-            <div class="w-4 h-4 rounded-none bg-editorial-text/30" [class.bg-editorial-bg]="encryptionEnabled()"></div>
-          </div>
-        </div>
-
-        <div class="border-t border-editorial-text/10 pt-8 space-y-4">
-          <h4 class="text-[9px] font-mono font-bold uppercase tracking-[0.3em] text-editorial-text/70">Key_Management</h4>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="p-6 border border-editorial-text/5 space-y-2 opacity-50">
-              <div class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/40">Primary_Key</div>
-              <div class="text-[10px] font-mono text-editorial-text/30">••••••••-••••-••••</div>
+          <div class="relative z-10 space-y-6">
+            <h4 class="text-sm font-mono font-bold uppercase tracking-[0.3em] text-editorial-text pb-4 border-b border-editorial-text/10">Active_Protocol</h4>
+            <div class="space-y-2">
+              <div class="text-3xl font-sans font-bold uppercase tracking-tight text-editorial-text">AES_256_GCM</div>
+              <p class="font-mono text-[9px] uppercase tracking-widest text-editorial-text/40 leading-relaxed italic">Hardware-bound sequence initialized. Identity segment binding confirmed.</p>
             </div>
-            <div class="p-6 border border-editorial-text/5 space-y-2 opacity-50">
-              <div class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/40">Recovery_Key</div>
-              <div class="text-[10px] font-mono text-editorial-text/30">Not_Generated</div>
+            <div class="flex items-center gap-4 py-4 px-6 border border-emerald-500/10 bg-emerald-500/5">
+               <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+               <span class="font-mono text-[8px] uppercase tracking-widest text-emerald-600 font-bold">Encrypted_IO: Passive_Active</span>
             </div>
           </div>
         </div>
 
-        <div class="p-4 border border-amber-500/20 bg-amber-500/5">
-          <p class="text-[9px] font-mono uppercase tracking-widest text-amber-600">
-            &#9888; Encryption features are currently in development. This interface is read-only.
+        <div class="p-10 border border-editorial-text/10 space-y-10 group opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all">
+          <h4 class="text-sm font-mono font-bold uppercase tracking-[0.3em] text-editorial-text pb-4 border-b border-editorial-text/10">Personal_Identity_Seal</h4>
+          <p class="font-mono text-[10px] uppercase tracking-widest text-editorial-text/40 leading-relaxed">
+            Initialize an isolated identity seal using a local hardware security module (HSM). Metadata remains encrypted beyond system admin access.
           </p>
+          <div class="pt-8 flex justify-between items-center">
+             <span class="font-mono text-[9px] uppercase tracking-widest text-editorial-text/30">LOCKED_TIER</span>
+             <button disabled class="px-8 py-3 border border-editorial-text/20 text-editorial-text/20 font-mono text-[9px] uppercase tracking-widest cursor-not-allowed">
+               RESTRICED
+             </button>
+          </div>
         </div>
       </div>
+
+      <section class="space-y-10 pb-20">
+         <div class="pb-4 border-b border-editorial-text/20">
+            <h2 class="text-sm font-mono font-bold uppercase tracking-[0.4em] text-editorial-text italic">02. Recovery_Key_Backup</h2>
+         </div>
+         <div class="p-12 border-2 border-editorial-text border-dashed text-center space-y-10">
+            <div class="w-16 h-16 border border-editorial-text/10 mx-auto flex items-center justify-center text-editorial-text/20 text-3xl font-mono select-none">&#128273;</div>
+            <div class="space-y-4 max-w-lg mx-auto">
+               <p class="font-mono text-xs uppercase tracking-widest text-editorial-text/60 leading-loose">
+                 Your unique master recovery sequence has not been exported. Failure to preserve this sequence will result in total data loss upon node desynchronization.
+               </p>
+               <button class="px-12 py-5 bg-editorial-text text-editorial-bg font-mono text-[10px] font-bold uppercase tracking-[0.3em] hover:opacity-90 transition-all">
+                 Download_Identity_Segment
+               </button>
+            </div>
+         </div>
+      </section>
+
+      <footer class="opacity-20 flex justify-between items-center text-[8px] font-mono uppercase tracking-[0.5em] pb-10">
+         <span>Sync_Hash: B9-7F-D4</span>
+         <div class="h-[1px] flex-1 bg-editorial-text/10 mx-12"></div>
+         <span>Kernel_Access: Root_Limited</span>
+      </footer>
     </div>
   `
 })
-export class EncryptionSettingsComponent extends BaseComponent {
-  encryptionEnabled = signal(false);
+export class EncryptionSettingsComponent {
+  // Expansion in Phase 13
 }

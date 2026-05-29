@@ -21,7 +21,7 @@ namespace CloudStorage.Infrastructure.Services
         public async Task<T?> GetAsync<T>(string key)
         {
             var cachedResponse = await _cache.GetStringAsync(key);
-            
+
             if (string.IsNullOrEmpty(cachedResponse))
             {
                 return default;
@@ -33,17 +33,17 @@ namespace CloudStorage.Infrastructure.Services
         public async Task SetAsync<T>(string key, T value, TimeSpan? absoluteExpireTime = null, TimeSpan? unusedExpireTime = null)
         {
             var options = new DistributedCacheEntryOptions();
-            
+
             if (absoluteExpireTime.HasValue)
             {
                 options.AbsoluteExpirationRelativeToNow = absoluteExpireTime;
             }
-            
+
             if (unusedExpireTime.HasValue)
             {
                 options.SlidingExpiration = unusedExpireTime;
             }
-            
+
             // Provide a default 1-hour absolute expiration if none specified
             if (!absoluteExpireTime.HasValue && !unusedExpireTime.HasValue)
             {
@@ -51,7 +51,7 @@ namespace CloudStorage.Infrastructure.Services
             }
 
             var serializedResponse = JsonSerializer.Serialize(value);
-            
+
             await _cache.SetStringAsync(key, serializedResponse, options);
         }
 
@@ -64,10 +64,10 @@ namespace CloudStorage.Infrastructure.Services
         {
             var server = _redis.GetServer(_redis.GetEndPoints()[0]);
             var keys = server.Keys(pattern: $"{prefixKey}*");
-            
+
             foreach (var key in keys)
             {
-                await _cache.RemoveAsync(key);
+                await _cache.RemoveAsync(key.ToString());
             }
         }
     }

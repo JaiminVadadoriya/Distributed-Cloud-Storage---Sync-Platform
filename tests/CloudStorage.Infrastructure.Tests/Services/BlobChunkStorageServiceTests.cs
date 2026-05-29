@@ -41,7 +41,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
 
             _mockContainerClient
                 .Setup(x => x.CreateIfNotExistsAsync(It.IsAny<PublicAccessType>(), It.IsAny<System.Collections.Generic.IDictionary<string, string>>(), It.IsAny<BlobContainerEncryptionScopeOptions>(), It.IsAny<System.Threading.CancellationToken>()))
-                .ReturnsAsync(Response.FromValue((BlobContainerInfo)null, null));
+                .ReturnsAsync(Response.FromValue((BlobContainerInfo)null!, null!));
 
             _mockContainerClient
                 .Setup(x => x.GetBlobClient(It.IsAny<string>()))
@@ -57,7 +57,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
             var fileId = Guid.NewGuid();
             var chunkIndex = 0;
             var sasResponse = new SasUploadUrlResponseDto { SasUrl = "https://test.sas.url" };
-            
+
             _mockSasService.Setup(x => x.GenerateChunkUploadSasAsync(fileId, chunkIndex))
                 .ReturnsAsync(sasResponse);
 
@@ -76,17 +76,17 @@ namespace CloudStorage.Infrastructure.Tests.Services
             var fileId = Guid.NewGuid();
             var chunkIndex = 1;
             using var stream = new MemoryStream();
-            
+
             var fakeUri = new Uri("https://test.blob.core.windows.net/test-container/blob.chunk");
             _mockBlobClient.SetupGet(x => x.Uri).Returns(fakeUri);
-            
+
             _mockBlobClient.Setup(x => x.UploadAsync(stream, true, It.IsAny<System.Threading.CancellationToken>()))
-                .ReturnsAsync(Response.FromValue((BlobContentInfo)null, null));
+                .ReturnsAsync(Response.FromValue((BlobContentInfo)null!, null!));
 
             // Mock GetPropertiesAsync for SSE verification
             var mockProperties = BlobsModelFactory.BlobProperties(isServerEncrypted: true);
             _mockBlobClient.Setup(x => x.GetPropertiesAsync(It.IsAny<BlobRequestConditions>(), It.IsAny<System.Threading.CancellationToken>()))
-                .ReturnsAsync(Response.FromValue(mockProperties, null));
+                .ReturnsAsync(Response.FromValue(mockProperties, null!));
 
             // Act
             var result = await _service.SaveChunkAsync(fileId, chunkIndex, stream);
@@ -102,7 +102,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
             var storagePath = "https://test.blob.core.windows.net/test-container/blob.chunk";
 
             _mockBlobClient.Setup(x => x.DeleteIfExistsAsync(It.IsAny<DeleteSnapshotsOption>(), It.IsAny<BlobRequestConditions>(), It.IsAny<System.Threading.CancellationToken>()))
-                .ReturnsAsync(Response.FromValue(true, null));
+                .ReturnsAsync(Response.FromValue(true, null!));
 
             // Act
             await _service.DeleteChunkAsync(storagePath);

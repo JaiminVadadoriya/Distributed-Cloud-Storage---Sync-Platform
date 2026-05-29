@@ -6,3 +6,10 @@
 .preview-audio { width: 100%; display: block; padding: 1rem; }
 .unsupported { text-align: center; padding: 3rem; color: var(--color-text-muted, #888); }
 .file-type { font-size: 0.75rem; color: var(--color-text-muted, #666); }
+
+.preview-text { background: #1a1a1a; color: #eee; padding: 1rem; max-height: 500px; overflow: auto; border: 1px solid #333; }
+.preview-text pre { font-family: monospace; font-size: 0.85rem; margin: 0; white-space: pre-wrap; }
+
+.preview-doc { text-align: center; padding: 3rem; background: #f9f9f9; border: 1px solid #ddd; }
+.doc-icon { font-size: 2rem; font-weight: bold; margin-bottom: 1rem; color: #444; text-transform: uppercase; }
+.download-btn { display: inline-block; margin-top: 1rem; padding: 0.5rem 1rem; background: #000; color: #fff; text-decoration: none; border-radius: 4px; font-size: 0.85rem; }

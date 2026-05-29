@@ -46,7 +46,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
 
             _mockContainerClient
                 .Setup(x => x.CreateIfNotExistsAsync(It.IsAny<PublicAccessType>(), It.IsAny<System.Collections.Generic.IDictionary<string, string>>(), It.IsAny<BlobContainerEncryptionScopeOptions>(), It.IsAny<System.Threading.CancellationToken>()))
-                .ReturnsAsync(Response.FromValue((BlobContainerInfo)null, null)); // Mock CreateIfNotExistsAsync
+                .ReturnsAsync(Response.FromValue((BlobContainerInfo)null!, null!)); // Mock CreateIfNotExistsAsync
 
             _mockContainerClient
                 .Setup(x => x.GetBlobClient(It.IsAny<string>()))
@@ -60,7 +60,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
         {
             // Arrange
             _mockBlobClient.Setup(x => x.ExistsAsync(It.IsAny<System.Threading.CancellationToken>()))
-                .ReturnsAsync(Response.FromValue(true, null));
+                .ReturnsAsync(Response.FromValue(true, null!));
 
             // Act
             var result = await _service.ChunkBlobExistsAsync("test-blob.chunk");
@@ -74,7 +74,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
         {
             // Arrange
             _mockBlobClient.Setup(x => x.ExistsAsync(It.IsAny<System.Threading.CancellationToken>()))
-                .ReturnsAsync(Response.FromValue(false, null));
+                .ReturnsAsync(Response.FromValue(false, null!));
 
             // Act
             var result = await _service.ChunkBlobExistsAsync("missing-blob.chunk");
@@ -102,10 +102,10 @@ namespace CloudStorage.Infrastructure.Tests.Services
             // Assert
             Assert.Equal(fakeSasUri.ToString(), result.SasUrl);
             Assert.Equal(expectedBlobName, result.BlobName);
-            
+
             // Check expiry is roughly what we expect (30 mins from now)
             var expectedExpiry = DateTime.UtcNow.AddMinutes(30);
-            Assert.True((result.ExpiresAt - expectedExpiry).Duration() < TimeSpan.FromSeconds(5), 
+            Assert.True((result.ExpiresAt - expectedExpiry).Duration() < TimeSpan.FromSeconds(5),
                 "Expiry time is not within the expected range (+30 mins)");
         }
     }

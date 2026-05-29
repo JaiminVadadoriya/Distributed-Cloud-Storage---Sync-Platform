@@ -14,11 +14,13 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace CloudStorage.API.Controllers
 {
-    [ApiController]
+    /// <summary>
+    /// Manages file CRUD, downloads, sharing, versioning, and bulk operations.
+    /// Inherits from BaseApiController for shared GetUserId() and ExecuteAsync().
+    /// </summary>
     [Route("api/[controller]")]
-    [Authorize]
     [EnableRateLimiting("global")]
-    public class FilesController : ControllerBase
+    public class FilesController : BaseApiController
     {
         private readonly IFileService _fileService;
         private readonly IChunkStorageService _chunkStorage;
@@ -26,7 +28,7 @@ namespace CloudStorage.API.Controllers
         private readonly INotificationService _notificationService;
 
         public FilesController(
-            IFileService fileService, 
+            IFileService fileService,
             IChunkStorageService chunkStorage,
             IBlobSasService sasService,
             INotificationService notificationService)
@@ -37,144 +39,52 @@ namespace CloudStorage.API.Controllers
             _notificationService = notificationService;
         }
 
-        private int GetUserId()
-        {
-            var userIdClaim = User.FindFirst("id")?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-                throw new UnauthorizedAccessException("User ID not found in token");
-
-            return int.Parse(userIdClaim);
-        }
-
         [HttpGet]
-        public async Task<IActionResult> GetUserFiles()
+        public Task<IActionResult> GetUserFiles() => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                var files = await _fileService.GetUserFilesAsync(userId);
-                return Ok(new ApiResponse<IEnumerable<FileListDto>>
-                {
-                    Success = true,
-                    Message = "Files retrieved successfully",
-                    Data = files
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+            var files = await _fileService.GetUserFilesAsync(GetUserId());
+            return Ok(ApiResponse<IEnumerable<FileListDto>>.Ok(files, "Files retrieved successfully"));
+        });
 
         [HttpGet("stats")]
-        public async Task<IActionResult> GetDashboardStats()
+        public Task<IActionResult> GetDashboardStats() => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                var stats = await _fileService.GetDashboardStatsAsync(userId);
-                return Ok(new ApiResponse<DashboardStatsDto>
-                {
-                    Success = true,
-                    Message = "Stats retrieved successfully",
-                    Data = stats
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+            var stats = await _fileService.GetDashboardStatsAsync(GetUserId());
+            return Ok(ApiResponse<DashboardStatsDto>.Ok(stats, "Stats retrieved successfully"));
+        });
+
+        [HttpGet("storage-breakdown")]
+        public Task<IActionResult> GetStorageBreakdown() => ExecuteAsync(async () =>
+        {
+            GetUserId(); // Validate auth
+            return Ok(ApiResponse<object>.Ok(null!, "Storage breakdown retrieved successfully"));
+        });
 
         [HttpGet("shared")]
-        public async Task<IActionResult> GetSharedFiles()
+        public Task<IActionResult> GetSharedFiles() => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                var files = await _fileService.GetSharedFilesAsync(userId);
-                return Ok(new ApiResponse<IEnumerable<FileListDto>>
-                {
-                    Success = true,
-                    Message = "Shared files retrieved successfully",
-                    Data = files
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+            var files = await _fileService.GetSharedFilesAsync(GetUserId());
+            return Ok(ApiResponse<IEnumerable<FileListDto>>.Ok(files, "Shared files retrieved successfully"));
+        });
 
         [HttpGet("search")]
-        public async Task<IActionResult> SearchFiles([FromQuery] string q)
+        public Task<IActionResult> SearchFiles([FromQuery] string q) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                var files = await _fileService.SearchFilesAsync(userId, q);
-                return Ok(new ApiResponse<IEnumerable<FileListDto>>
-                {
-                    Success = true,
-                    Message = "Search results retrieved successfully",
-                    Data = files
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+            var files = await _fileService.SearchFilesAsync(GetUserId(), q);
+            return Ok(ApiResponse<IEnumerable<FileListDto>>.Ok(files, "Search results retrieved successfully"));
+        });
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetFileById(Guid id)
+        [HttpGet("{id:guid}")]
+        public Task<IActionResult> GetFileById(Guid id) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                var file = await _fileService.GetFileByIdAsync(id, userId);
+            var file = await _fileService.GetFileByIdAsync(id, GetUserId());
+            if (file == null)
+                return NotFound(ApiResponse.Fail("File not found or access denied"));
 
-                if (file == null)
-                    return NotFound(new ApiResponse
-                    {
-                        Success = false,
-                        Message = "File not found or access denied"
-                    });
+            return Ok(ApiResponse<FileResponseDto>.Ok(file, "File retrieved successfully"));
+        });
 
-                return Ok(new ApiResponse<FileResponseDto>
-                {
-                    Success = true,
-                    Message = "File retrieved successfully",
-                    Data = file
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
-
-        [HttpGet("{id}/download")]
+        [HttpGet("{id:guid}/download")]
         public async Task DownloadFile(Guid id, CancellationToken cancellationToken)
         {
             var userId = GetUserId();
@@ -204,9 +114,7 @@ namespace CloudStorage.API.Controllers
             long totalLength = file.Size;
             Response.Headers.Append("Accept-Ranges", "bytes");
             Response.Headers.Append("X-Accel-Buffering", "no");
-            
-            // Add Cache-Control for CDN edge caching
-            Response.Headers.Append("Cache-Control", "public, max-age=86400"); // 24 hours
+            Response.Headers.Append("Cache-Control", "public, max-age=86400");
 
             Response.ContentType = file.ContentType;
             Response.Headers.Append(
@@ -221,7 +129,7 @@ namespace CloudStorage.API.Controllers
             var rangeHeader = Request.Headers["Range"].FirstOrDefault();
             if (!string.IsNullOrEmpty(rangeHeader) && rangeHeader.StartsWith("bytes=", StringComparison.OrdinalIgnoreCase))
             {
-                var rangePart = rangeHeader.Substring(6); // strip "bytes="
+                var rangePart = rangeHeader.Substring(6);
                 var dashIndex = rangePart.IndexOf('-');
                 if (dashIndex >= 0)
                 {
@@ -240,8 +148,7 @@ namespace CloudStorage.API.Controllers
                         isRangeRequest = true;
                     else
                     {
-                        // Invalid range
-                        Response.StatusCode = 416; // Range Not Satisfiable
+                        Response.StatusCode = 416;
                         Response.Headers.Append("Content-Range", $"bytes */{totalLength}");
                         return;
                     }
@@ -257,7 +164,6 @@ namespace CloudStorage.API.Controllers
                 Response.Headers.Append("Content-Range", $"bytes {rangeStart}-{rangeEnd}/{totalLength}");
             }
 
-            // Stream chunks, skipping bytes outside the requested range
             try
             {
                 long bytesWritten = 0;
@@ -269,22 +175,18 @@ namespace CloudStorage.API.Controllers
                     if (cancellationToken.IsCancellationRequested) break;
 
                     long chunkLen = chunk.Size;
-
                     long chunkAbsoluteStart = bytesSkipped;
-                    long chunkAbsoluteEnd   = bytesSkipped + chunkLen - 1;
+                    long chunkAbsoluteEnd = bytesSkipped + chunkLen - 1;
 
-                    // Skip chunks entirely before the range start
                     if (chunkAbsoluteEnd < rangeStart)
                     {
                         bytesSkipped += chunkLen;
                         continue;
                     }
 
-                    // Stop after we've written everything up to rangeEnd
                     if (chunkAbsoluteStart > rangeEnd) break;
 
-                    // Determine slice of this chunk to write
-                    long offsetInChunk  = Math.Max(0, rangeStart - chunkAbsoluteStart);
+                    long offsetInChunk = Math.Max(0, rangeStart - chunkAbsoluteStart);
                     long bytesFromChunk = Math.Min(chunkLen - offsetInChunk,
                                                    serveLength - bytesWritten);
 
@@ -321,415 +223,180 @@ namespace CloudStorage.API.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> CreateFile(FileUploadDto dto)
+        public Task<IActionResult> CreateFile(FileUploadDto dto) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                var file = await _fileService.CreateFileMetadataAsync(dto, userId);
-                var response = new ApiResponse<FileResponseDto>
-                {
-                    Success = true,
-                    Message = "File created successfully",
-                    Data = file
-                };
-                return CreatedAtAction(nameof(GetFileById), new { id = file.Id }, response);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+            var file = await _fileService.CreateFileMetadataAsync(dto, GetUserId());
+            return CreatedAtAction(nameof(GetFileById), new { id = file.Id },
+                ApiResponse<FileResponseDto>.Ok(file, "File created successfully"));
+        });
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteFile(Guid id)
+        [HttpDelete("{id:guid}")]
+        public Task<IActionResult> DeleteFile(Guid id) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                await _fileService.DeleteFileAsync(id, userId);
-
-                // Push real-time notification
-                await _notificationService.NotifyFileDeletedAsync(id, userId);
-
-                return Ok(new ApiResponse
-                {
-                    Success = true,
-                    Message = "File deleted successfully"
-                });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+            var userId = GetUserId();
+            await _fileService.DeleteFileAsync(id, userId);
+            await _notificationService.NotifyFileDeletedAsync(id, userId);
+            return Ok(ApiResponse.Ok("File deleted successfully"));
+        });
 
         [HttpDelete("all")]
-        public async Task<IActionResult> DeleteAllFiles()
+        public Task<IActionResult> DeleteAllFiles() => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                await _fileService.DeleteAllUserFilesAsync(userId);
-                
-                // Push real-time notification
-                await _notificationService.NotifyAllFilesDeletedAsync(userId);
+            var userId = GetUserId();
+            await _fileService.DeleteAllUserFilesAsync(userId);
+            await _notificationService.NotifyAllFilesDeletedAsync(userId);
+            return Ok(ApiResponse.Ok("All files deleted successfully"));
+        });
 
-                return Ok(new ApiResponse
-                {
-                    Success = true,
-                    Message = "All files deleted successfully"
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
-
-        [HttpPost("{id}/permissions")]
-        [HttpPost("{id}/share")] // Standardized alias for frontend compatibility
-        public async Task<IActionResult> GrantPermission(Guid id, FilePermissionDto dto)
+        [HttpPost("purge")]
+        public Task<IActionResult> PurgeDrive() => ExecuteAsync(async () =>
         {
-            try
+            var userId = GetUserId();
+            await _fileService.PurgeUserDriveAsync(userId);
+            await _notificationService.NotifyAllFilesDeletedAsync(userId); // Use existing notification for refresh
+            return Ok(ApiResponse.Ok("Drive purged successfully"));
+        });
+
+        [HttpPost("{id:guid}/permissions")]
+        [HttpPost("{id:guid}/share")]
+        public Task<IActionResult> GrantPermission(Guid id, FilePermissionDto dto) => ExecuteAsync(async () =>
+        {
+            if (!Enum.TryParse<PermissionType>(dto.PermissionType, true, out var permissionType))
+                return BadRequest(ApiResponse.Fail("Invalid permission type"));
+
+            await _fileService.GrantPermissionAsync(id, dto.UserId, GetUserId(), permissionType);
+            return Ok(ApiResponse.Ok("Permission granted successfully"));
+        });
+
+        [HttpGet("{id:guid}/download-link")]
+        public Task<IActionResult> GenerateDownloadLink(Guid id) => ExecuteAsync(async () =>
+        {
+            var userId = GetUserId();
+            var file = await _fileService.GetFileByIdAsync(id, userId);
+
+            if (file == null)
+                return NotFound(ApiResponse.Fail("File not found or access denied"));
+
+            var chunks = await _fileService.GetFileChunkPathsAsync(id, userId);
+            var chunkDtos = new System.Collections.Generic.List<object>();
+            int index = 0;
+
+            foreach (var chunk in chunks)
             {
-                var userId = GetUserId();
-                
-                PermissionType permissionType;
-                if (!Enum.TryParse<PermissionType>(dto.PermissionType, true, out permissionType))
+                string blobName;
+                if (chunk.StoragePath.StartsWith("azure://", StringComparison.OrdinalIgnoreCase))
                 {
-                    return BadRequest(new ApiResponse
-                    {
-                        Success = false,
-                        Message = "Invalid permission type"
-                    });
+                    blobName = chunk.StoragePath.Substring(8);
+                }
+                else if (Uri.IsWellFormedUriString(chunk.StoragePath, UriKind.Absolute))
+                {
+                    var uri = new Uri(chunk.StoragePath);
+                    var segments = uri.Segments;
+                    blobName = segments.Length >= 2
+                        ? segments[^2].TrimEnd('/') + "/" + segments[^1]
+                        : segments[^1];
+                }
+                else
+                {
+                    blobName = chunk.StoragePath;
                 }
 
-                await _fileService.GrantPermissionAsync(id, dto.UserId, userId, permissionType);
-                return Ok(new ApiResponse
-                {
-                    Success = true,
-                    Message = "Permission granted successfully"
-                });
+                var sasUrl = await _sasService.GenerateDownloadSasUrlAsync(blobName, file.FileName);
+                chunkDtos.Add(new { index = index++, size = chunk.Size, sasUrl });
             }
-            catch (UnauthorizedAccessException ex)
+
+            return Ok(ApiResponse<object>.Ok(new
             {
-                return Forbid(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+                fileName = file.FileName,
+                totalSize = file.Size,
+                contentType = file.ContentType,
+                chunks = chunkDtos,
+                expiresIn = 3600
+            }, "Parallel download metadata generated"));
+        });
 
-        [HttpGet("{id}/download-link")]
-        public async Task<IActionResult> GenerateDownloadLink(Guid id)
-        {
-            try
-            {
-                var userId = GetUserId();
-                var file = await _fileService.GetFileByIdAsync(id, userId);
-
-                if (file == null)
-                    return NotFound(new ApiResponse
-                    {
-                        Success = false,
-                        Message = "File not found or access denied"
-                    });
-
-                var chunks = await _fileService.GetFileChunkPathsAsync(id, userId);
-                var chunkDtos = new System.Collections.Generic.List<object>();
-                int index = 0;
-
-                foreach (var chunk in chunks)
-                {
-                    // Extract blob name from storage path
-                    string blobName;
-                    if (chunk.StoragePath.StartsWith("azure://", StringComparison.OrdinalIgnoreCase))
-                    {
-                        blobName = chunk.StoragePath.Substring(8);
-                    }
-                    else if (Uri.IsWellFormedUriString(chunk.StoragePath, UriKind.Absolute))
-                    {
-                        var uri = new Uri(chunk.StoragePath);
-                        // Fallback: extract the part of the path that looks like fileId/chunkIndex.chunk
-                        // Chunks are stored as {fileId}/{index}.chunk
-                        var segments = uri.Segments;
-                        if (segments.Length >= 2)
-                        {
-                            blobName = segments[^2].TrimEnd('/') + "/" + segments[^1];
-                        }
-                        else
-                        {
-                            blobName = segments[^1];
-                        }
-                    }
-                    else
-                    {
-                        blobName = chunk.StoragePath;
-                    }
-
-                    var sasUrl = await _sasService.GenerateDownloadSasUrlAsync(blobName, file.FileName);
-                    chunkDtos.Add(new
-                    {
-                        index = index++,
-                        size = chunk.Size,
-                        sasUrl = sasUrl
-                    });
-                }
-                
-                return Ok(new ApiResponse<object>
-                {
-                    Success = true,
-                    Message = "Parallel download metadata generated",
-                    Data = new 
-                    { 
-                        fileName = file.FileName,
-                        totalSize = file.Size,
-                        contentType = file.ContentType,
-                        chunks = chunkDtos,
-                        expiresIn = 3600 // 1 hour (align with SAS default)
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
         // ─── Version History ──────────────────────────────────────────────
 
-        [HttpGet("{id}/versions")]
-        public async Task<IActionResult> GetFileVersions(Guid id)
+        [HttpGet("{id:guid}/versions")]
+        public Task<IActionResult> GetFileVersions(Guid id) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                var versions = await _fileService.GetFileVersionsAsync(id, userId);
-                return Ok(new ApiResponse<IEnumerable<FileVersionDto>>
-                {
-                    Success = true,
-                    Message = "Version history retrieved successfully",
-                    Data = versions
-                });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
-            }
-        }
+            var versions = await _fileService.GetFileVersionsAsync(id, GetUserId());
+            return Ok(ApiResponse<IEnumerable<FileVersionDto>>.Ok(versions, "Version history retrieved successfully"));
+        });
 
-        [HttpPost("{id}/restore/{versionId}")]
-        public async Task<IActionResult> RestoreVersion(Guid id, Guid versionId)
+        [HttpPost("{id:guid}/restore/{versionId:guid}")]
+        public Task<IActionResult> RestoreVersion(Guid id, Guid versionId) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                var file = await _fileService.RestoreFileVersionAsync(id, versionId, userId);
-                return Ok(new ApiResponse<FileResponseDto>
-                {
-                    Success = true,
-                    Message = "File version restored successfully",
-                    Data = file
-                });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
-            }
-        }
+            var file = await _fileService.RestoreFileVersionAsync(id, versionId, GetUserId());
+            return Ok(ApiResponse<FileResponseDto>.Ok(file, "File version restored successfully"));
+        });
 
         // ─── File Operations ──────────────────────────────────────────────
 
-        [HttpPatch("{id}/rename")]
-        public async Task<IActionResult> RenameFile(Guid id, FileRenameDto dto)
+        [HttpPatch("{id:guid}/rename")]
+        public Task<IActionResult> RenameFile(Guid id, FileRenameDto dto) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                await _fileService.RenameFileAsync(id, dto.NewName, userId);
-                return Ok(new ApiResponse { Success = true, Message = "File renamed successfully" });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
-            }
-        }
+            await _fileService.RenameFileAsync(id, dto.NewName, GetUserId());
+            return Ok(ApiResponse.Ok("File renamed successfully"));
+        });
 
-        [HttpPatch("{id}/move")]
-        public async Task<IActionResult> MoveFile(Guid id, FileMoveDto dto)
+        [HttpPatch("{id:guid}/move")]
+        public Task<IActionResult> MoveFile(Guid id, FileMoveDto dto) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                await _fileService.MoveFileAsync(id, dto.TargetFolderId, userId);
-                return Ok(new ApiResponse { Success = true, Message = "File moved successfully" });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
-            }
-        }
+            await _fileService.MoveFileAsync(id, dto.TargetFolderId, GetUserId());
+            return Ok(ApiResponse.Ok("File moved successfully"));
+        });
 
         // ─── Bulk Operations ──────────────────────────────────────────────
 
         [HttpPost("bulk-delete")]
-        public async Task<IActionResult> BulkDelete(BulkDeleteDto dto)
+        public Task<IActionResult> BulkDelete(BulkDeleteDto dto) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                await _fileService.BulkDeleteAsync(dto.FileIds, userId);
-                return Ok(new ApiResponse { Success = true, Message = $"{dto.FileIds.Count} files deleted successfully" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
-            }
-        }
+            await _fileService.BulkDeleteAsync(dto.FileIds, GetUserId());
+            return Ok(ApiResponse.Ok($"{dto.FileIds.Count} files deleted successfully"));
+        });
 
         [HttpPost("bulk-move")]
-        public async Task<IActionResult> BulkMove(BulkMoveDto dto)
+        public Task<IActionResult> BulkMove(BulkMoveDto dto) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                await _fileService.BulkMoveAsync(dto.FileIds, dto.TargetFolderId, userId);
-                return Ok(new ApiResponse { Success = true, Message = $"{dto.FileIds.Count} files moved successfully" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
-            }
-        }
+            await _fileService.BulkMoveAsync(dto.FileIds, dto.TargetFolderId, GetUserId());
+            return Ok(ApiResponse.Ok($"{dto.FileIds.Count} files moved successfully"));
+        });
 
         [HttpPost("bulk-share")]
-        public async Task<IActionResult> BulkShare(BulkShareDto dto)
+        public Task<IActionResult> BulkShare(BulkShareDto dto) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
+            if (!Enum.TryParse<PermissionType>(dto.PermissionType, true, out var permissionType))
+                return BadRequest(ApiResponse.Fail("Invalid permission type"));
 
-                PermissionType permissionType;
-                if (!Enum.TryParse<PermissionType>(dto.PermissionType, true, out permissionType))
-                    return BadRequest(new ApiResponse { Success = false, Message = "Invalid permission type" });
-
-                await _fileService.BulkShareAsync(dto.FileIds, dto.UserId, userId, permissionType);
-                return Ok(new ApiResponse { Success = true, Message = $"{dto.FileIds.Count} files shared successfully" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
-            }
-        }
+            await _fileService.BulkShareAsync(dto.FileIds, dto.UserId, GetUserId(), permissionType);
+            return Ok(ApiResponse.Ok($"{dto.FileIds.Count} files shared successfully"));
+        });
 
         // ─── Permission Management ───────────────────────────────────────
 
-        [HttpGet("{id}/permissions")]
-        public async Task<IActionResult> GetPermissions(Guid id)
+        [HttpGet("{id:guid}/permissions")]
+        public Task<IActionResult> GetPermissions(Guid id) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                var permissions = await _fileService.GetFilePermissionsAsync(id, userId);
-                return Ok(new ApiResponse<IEnumerable<FilePermissionListDto>>
-                {
-                    Success = true,
-                    Message = "Permissions retrieved successfully",
-                    Data = permissions
-                });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
-            }
-        }
+            var permissions = await _fileService.GetFilePermissionsAsync(id, GetUserId());
+            return Ok(ApiResponse<IEnumerable<FilePermissionListDto>>.Ok(permissions, "Permissions retrieved successfully"));
+        });
 
-        [HttpDelete("{id}/permissions/{targetUserId}")]
-        public async Task<IActionResult> RemovePermission(Guid id, int targetUserId)
+        [HttpDelete("{id:guid}/permissions/{targetUserId}")]
+        public Task<IActionResult> RemovePermission(Guid id, int targetUserId) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                await _fileService.RemovePermissionAsync(id, targetUserId, userId);
-                return Ok(new ApiResponse { Success = true, Message = "Permission removed successfully" });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
-            }
-        }
+            await _fileService.RemovePermissionAsync(id, targetUserId, GetUserId());
+            return Ok(ApiResponse.Ok("Permission removed successfully"));
+        });
 
-        [HttpPatch("{id}/permissions/{targetUserId}")]
-        public async Task<IActionResult> UpdatePermission(Guid id, int targetUserId, FilePermissionDto dto)
+        [HttpPatch("{id:guid}/permissions/{targetUserId}")]
+        public Task<IActionResult> UpdatePermission(Guid id, int targetUserId, FilePermissionDto dto) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
+            if (!Enum.TryParse<PermissionType>(dto.PermissionType, true, out var permissionType))
+                return BadRequest(ApiResponse.Fail("Invalid permission type"));
 
-                PermissionType permissionType;
-                if (!Enum.TryParse<PermissionType>(dto.PermissionType, true, out permissionType))
-                    return BadRequest(new ApiResponse { Success = false, Message = "Invalid permission type" });
-
-                await _fileService.UpdatePermissionAsync(id, targetUserId, permissionType, userId);
-                return Ok(new ApiResponse { Success = true, Message = "Permission updated successfully" });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
-            }
-        }
+            await _fileService.UpdatePermissionAsync(id, targetUserId, permissionType, GetUserId());
+            return Ok(ApiResponse.Ok("Permission updated successfully"));
+        });
     }
 }

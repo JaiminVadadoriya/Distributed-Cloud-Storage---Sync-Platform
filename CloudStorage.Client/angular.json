@@ -4,7 +4,8 @@
   "cli": {
     "packageManager": "npm",
     "schematicCollections": [
-      "angular-eslint"
+      "angular-eslint",
+      "playwright-ng-schematics"
     ]
   },
   "newProjectRoot": "projects",
@@ -28,16 +29,25 @@
               }
             ],
             "styles": [
+              "src/material-theme.scss",
               "src/styles.css"
             ]
           },
           "configurations": {
             "production": {
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                },
+                "fonts": false
+              },
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
+                  "maximumWarning": "750kB",
+                  "maximumError": "1.2MB"
                 },
                 {
                   "type": "anyComponentStyle",
@@ -65,7 +75,11 @@
           "builder": "@angular/build:dev-server",
           "options": {
             "proxyConfig": "proxy.conf.json",
-            "host": "0.0.0.0"
+            "host": "0.0.0.0",
+            "headers": {
+              "Cross-Origin-Opener-Policy": "same-origin",
+              "Cross-Origin-Embedder-Policy": "require-corp"
+            }
           },
           "configurations": {
             "production": {
@@ -93,6 +107,17 @@
               "src/**/*.ts",
               "src/**/*.html"
             ]
+          }
+        },
+        "e2e": {
+          "builder": "playwright-ng-schematics:playwright",
+          "options": {
+            "devServerTarget": "CloudStorage.Client:serve"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "CloudStorage.Client:serve:production"
+            }
           }
         }
       }

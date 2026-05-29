@@ -1,3 +1,12 @@
+/**
+ * File-specific model interfaces.
+ * Other domain types have been extracted to their own cohesive modules:
+ *   - folder.model.ts, dashboard.model.ts, trash.model.ts, sync.model.ts
+ *   - notification.model.ts, device.model.ts, search.model.ts, audit.model.ts
+ * 
+ * For backward compatibility, all types are also re-exported from ./index.ts
+ */
+
 export interface FileItem {
   id: string;
   name: string;
@@ -25,34 +34,6 @@ export interface ApiFileResponse {
   contentType?: string;
 }
 
-export interface DashboardStats {
-  totalStorageBytes: number;
-  maxStorageBytes: number;
-  totalFiles: number;
-  recentUploads: number;
-}
-
-export interface Folder {
-  id: string;
-  name: string;
-  parentId: string | null;
-  createdAt: string;
-  path?: { id: string; name: string }[];
-  subFolders?: Folder[];
-  files?: FileItem[];
-}
-
-export interface TrashItem {
-  id: string;
-  originalId: string;
-  name: string;
-  size: number;
-  type: string;
-  deletedAt: string;
-  expiresAt: string;
-  originalPath: string;
-}
-
 export interface FileVersion {
   id: string;
   fileId: string;
@@ -71,71 +52,12 @@ export interface Permission {
   grantedAt: string;
 }
 
-export interface AuditEntry {
-  id: string;
-  action: string;
-  targetName: string;
-  targetType: 'file' | 'folder' | 'user' | 'system';
-  performedBy: string;
-  performedAt: string;
-  details?: string;
-  ipAddress?: string;
-}
-
-export interface SyncEvent {
-  id: string;
-  type: 'upload' | 'download' | 'delete' | 'conflict' | 'rename' | 'move';
-  fileName: string;
-  deviceName: string;
-  timestamp: string;
-  status: 'success' | 'failed' | 'pending';
-  details?: string;
-}
-
-export interface DeviceInfo {
-  id: string;
-  name: string;
-  type: 'desktop' | 'mobile' | 'tablet' | 'browser';
-  lastSyncAt: string;
-  status: 'online' | 'offline' | 'syncing';
-  os: string;
-  ipAddress?: string;
-  isCurrent: boolean;
-}
-
-export interface SearchFilter {
-  query: string;
-  fileType?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  owner?: string;
-  sortBy?: 'name' | 'date' | 'size' | 'type';
-  sortDir?: 'asc' | 'desc';
-}
-
-export interface ConflictItem {
-  id: string;
-  fileId: string;
-  fileName: string;
-  localVersion: { size: number; modifiedAt: string; hash: string };
-  serverVersion: { size: number; modifiedAt: string; hash: string };
-  detectedAt: string;
-  status: 'unresolved' | 'resolved';
-}
-
-export interface NotificationItem {
-  id: string;
-  title: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error';
-  timestamp: string;
-  read: boolean;
-  actionUrl?: string;
-}
-
-export interface StorageBreakdown {
-  category: string;
-  bytes: number;
-  count: number;
-  color: string;
-}
+// Re-export from cohesive domain modules for backward compatibility
+export type { Folder } from './folder.model';
+export type { DashboardStats, StorageBreakdown } from './dashboard.model';
+export type { TrashItem } from './trash.model';
+export type { SyncEvent, SyncConflict, ConflictItem } from './sync.model';
+export type { NotificationItem } from './notification.model';
+export type { DeviceInfo } from './device.model';
+export type { SearchFilter } from './search.model';
+export type { AuditEntry } from './audit.model';

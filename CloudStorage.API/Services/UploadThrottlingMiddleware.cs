@@ -27,12 +27,12 @@ namespace CloudStorage.API.Services
                 if (!string.IsNullOrEmpty(userId))
                 {
                     var cacheKey = $"upload_throttle:{userId}";
-                    
+
                     // Note: In a real-world scenario with Redis, you'd use a Lua script 
                     // or Redis sorted sets for an exact atomic semaphore.
                     // Here we use a basic string increment via DistributedCache extension 
                     // if it supported it, but we'll manually get/set for simplicity.
-                    
+
                     var currentCountStr = await _cache.GetStringAsync(cacheKey);
                     int currentCount = string.IsNullOrEmpty(currentCountStr) ? 0 : int.Parse(currentCountStr);
 

@@ -1,0 +1,20 @@
+{
+  "admin": {
+    "username": "admin",
+    "password": "Password123!",
+    "email": "admin@cloudstorage.com",
+    "role": "Admin"
+  },
+  "regularUser": {
+    "username": "regularuser",
+    "password": "Password123!",
+    "email": "user@example.com",
+    "role": "User"
+  },
+  "guest": {
+    "username": "guest_user",
+    "password": "Password123!",
+    "email": "guest@example.com",
+    "role": "Guest"
+  }
+}

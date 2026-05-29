@@ -1,7 +1,7 @@
-import { vi } from 'vitest';
+import { vi, describe, it, expect, beforeEach, type Mocked } from 'vitest';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LoginComponent } from './login.component';
-import { AuthService } from '../../../core/auth.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { Router } from '@angular/router';
 import { ReactiveFormsModule } from '@angular/forms';
 import { of, throwError } from 'rxjs';
@@ -10,11 +10,20 @@ import { provideRouter } from '@angular/router';
 describe('LoginComponent', () => {
   let component: LoginComponent;
   let fixture: ComponentFixture<LoginComponent>;
-  let authServiceMock: any;
+  let authServiceMock: Mocked<AuthService>;
   let router: Router;
 
   beforeEach(async () => {
-    authServiceMock = { login: vi.fn() } as any;
+    authServiceMock = { 
+      login: vi.fn(),
+      getToken: vi.fn(),
+      logout: vi.fn(),
+      register: vi.fn(),
+      requestPasswordReset: vi.fn(),
+      resetPassword: vi.fn(),
+      currentUser: vi.fn(),
+      isAuthenticated: false
+    } as unknown as Mocked<AuthService>;
 
     await TestBed.configureTestingModule({
       imports: [LoginComponent, ReactiveFormsModule],
@@ -31,10 +40,11 @@ describe('LoginComponent', () => {
     router = TestBed.inject(Router);
     vi.spyOn(router, 'navigate').mockImplementation(async () => true);
 
-    fixture.detectChanges();
+    await fixture.whenStable();
   });
 
-  it('should create', () => {
+  it('should create', async () => {
+    await fixture.whenStable();
     expect(component).toBeTruthy();
   });
 
@@ -52,7 +62,7 @@ describe('LoginComponent', () => {
     component.loginForm.controls['identifier'].setValue('user');
     component.loginForm.controls['password'].setValue('pass');
     
-    authServiceMock.login.mockReturnValue(of({ accessToken: 'a', refreshToken: 'b', user: { id: '1', username: 'u', email: 'e' }}));
+    authServiceMock.login.mockReturnValue(of({ accessToken: 'a', refreshToken: 'b', user: { id: 1, username: 'u', email: 'e', role: 'user' }}));
     
     component.onSubmit();
     

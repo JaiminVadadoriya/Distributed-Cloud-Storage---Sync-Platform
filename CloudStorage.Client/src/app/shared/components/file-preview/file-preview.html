@@ -7,6 +7,16 @@
     <iframe [src]="safeUrl" class="preview-pdf"></iframe>
   } @else if (isAudio) {
     <audio [src]="fileUrl()" controls class="preview-audio"></audio>
+  } @else if (isText) {
+    <div class="preview-text">
+      <pre>{{ textContent() || 'Loading content...' }}</pre>
+    </div>
+  } @else if (isDocument) {
+    <div class="preview-doc">
+      <div class="doc-icon">{{ fileName().split('.').pop() }}</div>
+      <p>{{ fileName() }}</p>
+      <a [href]="fileUrl()" download class="download-btn">Download to View</a>
+    </div>
   } @else {
     <div class="unsupported">
       <p>Preview not available for this file type</p>

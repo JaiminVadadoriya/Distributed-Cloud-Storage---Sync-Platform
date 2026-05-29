@@ -1,5 +1,7 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Output, HostListener, signal, inject, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { LayoutService } from '../../../core/services/layout.service';
 
 export interface FileUploadEvent {
   file: File;
@@ -12,92 +14,130 @@ export interface FileUploadEvent {
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="w-full space-y-12">
+    <!-- Global Overlay -->
+    @if (isDragging()) {
       <div 
-        class="relative border border-editorial-text/10 p-20 text-center transition-none group cursor-pointer"
-        [ngClass]="{
-          'bg-editorial-text/5 border-editorial-text/40': isDragging,
-          'bg-transparent hover:bg-editorial-text/[0.02]': !isDragging
-        }"
+        class="fixed inset-0 z-[200] flex flex-col items-center justify-center p-8 backdrop-blur-md bg-editorial-bg/80 animate-in-fade"
         (dragover)="onDragOver($event)"
         (dragleave)="onDragLeave($event)"
-        (drop)="onDrop($event)"
-        (click)="fileInput.click()">
+        (drop)="onDrop($event)">
         
-        <div class="absolute inset-0 border border-editorial-text/5 m-2 pointer-events-none opacity-40 group-hover:opacity-100 transition-opacity"></div>
+        <div class="absolute inset-0 border-[16px] border-editorial-text/5 animate-pulse pointer-events-none"></div>
         
-        <div class="space-y-6 relative z-10">
-          <div class="w-12 h-12 border border-editorial-text/10 text-editorial-text/20 flex items-center justify-center mx-auto transition-all group-hover:border-editorial-text group-hover:text-editorial-text">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+        <div class="max-w-3xl w-full border-4 border-editorial-text p-20 text-center space-y-12 bg-editorial-bg shadow-brutalist animate-in-scale relative overflow-hidden">
+          <div class="absolute inset-0 bg-editorial-text/[0.02] pointer-events-none"></div>
+          
+          <div class="space-y-6 relative z-10">
+            <div class="w-24 h-24 border-4 border-editorial-text flex items-center justify-center mx-auto mb-8 animate-bounce">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>
+              </svg>
+            </div>
+            
+            <h2 class="text-5xl lg:text-7xl font-black uppercase tracking-tighter text-editorial-text leading-none italic">
+              Release_Entities_Here
+            </h2>
+            
+            <div class="flex items-center justify-center gap-6">
+              <div class="h-1 w-12 bg-editorial-text/20"></div>
+              <p class="font-mono text-[10px] uppercase tracking-[0.5em] text-editorial-text/40 font-bold">Inbound_Transmission_Ready</p>
+              <div class="h-1 w-12 bg-editorial-text/20"></div>
+            </div>
           </div>
 
-          <div class="space-y-1">
-            <h3 class="text-[11px] font-mono font-bold uppercase tracking-[0.4em] text-editorial-text">Release_Objects_Here</h3>
-            <p class="text-[9px] font-mono uppercase tracking-[0.2em] text-editorial-text/30">OR CLICK TO BROWSE LOCAL_HOST</p>
+          <!-- Progress Shimmer Placeholder -->
+          <div class="h-2 w-full bg-editorial-text/5 relative overflow-hidden">
+             <div class="absolute inset-0 bg-editorial-text/20 animate-[shimmer_2s_infinite]"></div>
           </div>
         </div>
-
-        <input 
-          type="file" 
-          #fileInput
-          multiple
-          (change)="onFileSelected($event)"
-          class="hidden"
-          id="file-upload-input">
       </div>
+    }
 
-      <!-- Technical Grid Metadata -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-0 border border-editorial-text/10">
-        <div class="p-8 border-b md:border-b-0 md:border-r border-editorial-text/5">
-          <div class="text-editorial-text/30 text-[8px] font-mono font-bold uppercase tracking-[0.3em] mb-4 underline decoration-editorial-text/10 underline-offset-4">Max_Load_Cap</div>
-          <div class="font-mono text-[10px] font-bold text-editorial-text uppercase tracking-widest">50.00 GB</div>
-        </div>
-        <div class="p-8 border-b md:border-b-0 md:border-r border-editorial-text/5">
-           <div class="text-editorial-text/30 text-[8px] font-mono font-bold uppercase tracking-[0.3em] mb-4 underline decoration-editorial-text/10 underline-offset-4">Chunk_Sequence</div>
-           <div class="font-mono text-[10px] font-bold text-editorial-text uppercase tracking-widest">5.00 MB_SEG</div>
-        </div>
-         <div class="p-8">
-           <div class="text-editorial-text/30 text-[8px] font-mono font-bold uppercase tracking-[0.3em] mb-4 underline decoration-editorial-text/10 underline-offset-4">Protocols_Active</div>
-           <div class="font-mono text-[10px] font-bold text-editorial-text uppercase tracking-widest italic">Resumable & Deduplicating</div>
-        </div>
-      </div>
-    </div>
+    <!-- Hidden native input for programmatic trigger -->
+    <input 
+      type="file" 
+      #fileInput
+      multiple
+      (change)="onFileSelected($event)"
+      class="hidden"
+      id="global-file-upload-input">
   `
 })
 export class FileUploadComponent {
+  @Input() listenToGlobal = true;
   @Output() filesSelected = new EventEmitter<FileUploadEvent[]>();
 
-  isDragging = false;
-  readonly maxFileSize = 50 * 1024 * 1024 * 1024; // 50GB
-  readonly allowedTypes = ['*'];
+  private layoutService = inject(LayoutService);
+  isDragging = signal(false);
+  private dragCounter = 0;
 
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      this.handleFiles(Array.from(input.files));
-      input.value = ''; // Reset input
+  readonly maxFileSize = 50 * 1024 * 1024 * 1024; // 50GB
+
+  constructor() {
+    // Listen for global upload trigger only if enabled
+    this.layoutService.uploadTrigger$.pipe(
+      takeUntilDestroyed()
+    ).subscribe(() => {
+      if (this.listenToGlobal) {
+        this.triggerUpload();
+      }
+    });
+  }
+
+  @HostListener('window:dragenter', ['$event'])
+  onWindowDragEnter(event: DragEvent): void {
+    event.preventDefault();
+    this.dragCounter++;
+    
+    // Only show the overlay if we're actually dragging files from the OS
+    const isFileDrag = event.dataTransfer?.types.includes('Files');
+    if (isFileDrag && event.dataTransfer?.items && event.dataTransfer.items.length > 0) {
+      this.isDragging.set(true);
     }
   }
 
-  onDragOver(event: DragEvent): void {
+  @HostListener('window:dragleave', ['$event'])
+  onWindowDragLeave(event: DragEvent): void {
     event.preventDefault();
-    event.stopPropagation();
-    this.isDragging = true;
+    this.dragCounter--;
+    if (this.dragCounter === 0) {
+      this.isDragging.set(false);
+    }
   }
 
   onDragLeave(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    this.isDragging = false;
   }
 
+  @HostListener('window:dragover', ['$event'])
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  @HostListener('window:drop', ['$event'])
   onDrop(event: DragEvent): void {
     event.preventDefault();
     event.stopPropagation();
-    this.isDragging = false;
+    this.isDragging.set(false);
+    this.dragCounter = 0;
 
     if (event.dataTransfer?.files) {
       this.handleFiles(Array.from(event.dataTransfer.files));
+    }
+  }
+
+  triggerUpload(): void {
+    const input = document.getElementById('global-file-upload-input') as HTMLInputElement;
+    input?.click();
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.handleFiles(Array.from(input.files));
+      input.value = '';
     }
   }
 
@@ -108,14 +148,8 @@ export class FileUploadComponent {
 
   private validateFile(file: File): FileUploadEvent {
     const errors: string[] = [];
-
-    if (file.size > this.maxFileSize) {
-      errors.push(`File size exceeds maximum of 50GB`);
-    }
-
-    if (file.size === 0) {
-      errors.push('File is empty');
-    }
+    if (file.size > this.maxFileSize) errors.push(`File size exceeds 50GB`);
+    if (file.size === 0) errors.push('File is empty');
 
     return {
       file,

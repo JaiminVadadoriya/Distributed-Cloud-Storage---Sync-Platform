@@ -16,4 +16,9 @@ import { ThemeService } from '../../services/theme.service';
 })
 export class AuthLayoutComponent {
   public themeService = inject(ThemeService);
+
+  public toggleTheme(): void {
+    const current = this.themeService.theme();
+    this.themeService.setTheme(current === 'clinical' ? 'mono' : 'clinical');
+  }
 }

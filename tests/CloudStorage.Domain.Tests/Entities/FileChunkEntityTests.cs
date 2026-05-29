@@ -33,7 +33,7 @@ namespace CloudStorage.Domain.Tests.Entities
             var id = Guid.NewGuid();
             var fileId = Guid.NewGuid();
             var now = DateTime.UtcNow;
-            
+
             // Act
             var chunk = new FileChunk
             {
@@ -67,7 +67,7 @@ namespace CloudStorage.Domain.Tests.Entities
         {
             // Arrange
             var file = new FileMetadata { Id = Guid.NewGuid(), FileName = "test.txt" };
-            
+
             // Act
             var chunk = new FileChunk
             {

@@ -32,7 +32,7 @@ namespace CloudStorage.Infrastructure.Services
 
             var host = _configuration["Smtp:Host"];
             var portString = _configuration["Smtp:Port"];
-            
+
             if (string.IsNullOrEmpty(host) || string.IsNullOrEmpty(portString) || !int.TryParse(portString, out int port))
             {
                 _logger.LogWarning("SMTP Configuration missing or invalid. Skipping actual email dispatch.");
@@ -45,7 +45,7 @@ namespace CloudStorage.Infrastructure.Services
             try
             {
                 using var client = new SmtpClient(host, port);
-                
+
                 var mailMessage = new MailMessage
                 {
                     From = new MailAddress(fromAddress, fromName),

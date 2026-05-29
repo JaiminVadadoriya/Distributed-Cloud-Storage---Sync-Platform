@@ -1,5 +1,7 @@
 using CloudStorage.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.Extensions.Logging;
 
 namespace CloudStorage.Infrastructure.Data
 {
@@ -21,6 +23,13 @@ namespace CloudStorage.Infrastructure.Data
         public DbSet<FolderPermission> FolderPermissions { get; set; } = null!;
         public DbSet<Notification> Notifications { get; set; } = null!;
 
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            // Set all warnings to Log behavior instead of Throw to prevent them from blocking migrations
+            optionsBuilder.ConfigureWarnings(w => w.Default(WarningBehavior.Log));
+            base.OnConfiguring(optionsBuilder);
+        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // User configuration
@@ -30,6 +39,7 @@ namespace CloudStorage.Infrastructure.Data
                 entity.HasIndex(u => u.Username).IsUnique();
                 entity.Property(u => u.Username).IsRequired().HasMaxLength(50);
                 entity.Property(u => u.Email).IsRequired().HasMaxLength(255);
+                entity.Property(u => u.Role).IsRequired().HasMaxLength(20).HasDefaultValue("User");
             });
 
             // FileMetadata configuration

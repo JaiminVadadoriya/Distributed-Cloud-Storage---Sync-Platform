@@ -1,7 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NotificationService } from '../../../core/services/notification.service';
-import { animate, style, transition, trigger } from '@angular/animations';
 import { BaseComponent } from '../../../core/models/base-component';
 
 /**
@@ -13,15 +12,16 @@ import { BaseComponent } from '../../../core/models/base-component';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="fixed top-8 right-8 z-[100] flex flex-col gap-4 pointer-events-none">
+    <div class="fixed top-12 right-12 z-[100] flex flex-col gap-6 pointer-events-none" role="status" aria-live="polite">
       @for (toast of notificationService.toasts(); track toast.id) {
-        <div [@toastAnimation]
-             class="pointer-events-auto w-[400px] border-2 border-editorial-text p-6 bg-editorial-bg relative overflow-hidden group selection:bg-editorial-text selection:text-editorial-bg">
+        <div role="alert" class="pointer-events-auto w-[420px] border-2 border-editorial-text p-8 bg-editorial-bg relative overflow-hidden shadow-brutalist animate-in-fade selection:bg-editorial-text selection:text-editorial-bg group">
           
-          <div class="grain-overlay pointer-events-none opacity-[0.02]"></div>
+          <div class="grain-wrapper">
+            <div class="absolute inset-0 grain-overlay pointer-events-none opacity-[0.03]"></div>
+          </div>
 
-          <div class="flex items-start gap-6 relative z-10">
-            <div class="w-1 h-8 flex-shrink-0 mt-1"
+          <div class="flex items-start gap-8 relative z-10">
+            <div class="w-1.5 h-10 flex-shrink-0 mt-1"
                  [ngClass]="{
                    'bg-editorial-text': toast.type === 'success',
                    'bg-rose-500': toast.type === 'error',
@@ -29,45 +29,44 @@ import { BaseComponent } from '../../../core/models/base-component';
                    'bg-amber-400': toast.type === 'warning'
                  }"></div>
 
-            <div class="flex-1 space-y-2">
+            <div class="flex-1 space-y-3">
               <div class="flex items-center justify-between">
-                <span class="text-[9px] font-mono font-bold uppercase tracking-[0.3em]"
+                <span class="text-[10px] font-mono font-extrabold uppercase tracking-[0.4em]"
                       [ngClass]="{
                         'text-editorial-text': toast.type === 'success',
                         'text-rose-500': toast.type === 'error',
                         'text-editorial-text/40': toast.type === 'info',
                         'text-amber-500': toast.type === 'warning'
                       }">
-                  {{ toast.type }}_LOG_EVENT
+                  SYS_EVENT: {{ toast.type }}
                 </span>
-                <button (click)="notificationService.removeToast(toast.id)" class="text-editorial-text/20 hover:text-editorial-text transition-none p-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <button (click)="notificationService.removeToast(toast.id)" class="text-editorial-text/20 hover:text-editorial-text transition-all p-1 active:scale-90">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                     <path d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
-              <p class="text-[11px] font-mono font-bold uppercase tracking-widest text-editorial-text leading-tight">{{ toast.message }}</p>
+              <p class="text-[12px] font-sans font-bold uppercase tracking-tight text-editorial-text leading-tight">{{ toast.message }}</p>
             </div>
           </div>
 
-          <div class="absolute bottom-0 left-0 h-[10px] bg-editorial-text opacity-[0.03] w-full"></div>
+          <!-- Depleting progress bar (simulated with CSS transition) -->
+          <div class="absolute bottom-0 left-0 h-1.5 bg-editorial-text/10 w-full overflow-hidden">
+             <div class="h-full bg-current opacity-20 animate-[loading-bar_5s_linear_infinite]"
+                  [ngClass]="{
+                    'text-editorial-text': toast.type === 'success',
+                    'text-rose-500': toast.type === 'error',
+                    'text-editorial-text/40': toast.type === 'info',
+                    'text-amber-500': toast.type === 'warning'
+                  }"></div>
+          </div>
         </div>
       }
     </div>
   `,
-  animations: [
-    trigger('toastAnimation', [
-      transition(':enter', [
-        style({ transform: 'translateY(20px)', opacity: 0 }),
-        animate('150ms ease-out', style({ transform: 'translateY(0)', opacity: 1 }))
-      ]),
-      transition(':leave', [
-        animate('150ms ease-in', style({ transform: 'translateX(20px)', opacity: 0 }))
-      ])
-    ])
-  ],
+  styles: [``],
   host: {
-    class: 'block'
+    class: 'block fixed inset-0 pointer-events-none z-[200]'
   }
 })
 export class NotificationToastComponent extends BaseComponent {

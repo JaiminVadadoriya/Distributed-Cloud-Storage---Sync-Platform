@@ -1,26 +1,63 @@
-<div class="flex h-screen w-full bg-editorial-bg text-editorial-text overflow-hidden selection:bg-editorial-text selection:text-editorial-bg">
+<div class="flex h-screen [height:100svh] w-full bg-editorial-bg text-editorial-text overflow-hidden selection:bg-editorial-text selection:text-editorial-bg relative">
+  
+  <!-- Mobile Sidebar Backdrop -->
+  @if (layoutService.isMobile() && layoutService.isSidebarOpen()) {
+    <div (click)="layoutService.closeSidebar()"
+         (keydown.escape)="layoutService.closeSidebar()"
+         tabindex="0"
+         role="button"
+         aria-label="Close Sidebar"
+         class="fixed inset-0 bg-editorial-text/20 z-40 animate-in-fade lg:hidden">
+    </div>
+  }
+
   <!-- Sidebar -->
-  <aside class="w-64 flex-shrink-0 border-r border-editorial-text/20 bg-editorial-bg">
+  <aside 
+    [class.fixed]="layoutService.isMobile()"
+    [class.relative]="!layoutService.isMobile()"
+    [class.translate-x-0]="layoutService.isSidebarOpen()"
+    [class.-translate-x-full]="layoutService.isMobile() && !layoutService.isSidebarOpen()"
+    class="z-50 inset-y-0 left-0 w-64 flex-shrink-0 border-r border-editorial-border bg-editorial-bg transition-transform duration-300 ease-in-out">
     <app-sidebar></app-sidebar>
   </aside>
 
   <!-- Main Content Area -->
-  <div class="flex flex-1 flex-col min-w-0 overflow-hidden">
+  <div class="flex flex-1 flex-col min-w-0 overflow-hidden relative transition-all duration-300">
     <!-- Topbar -->
-    <header class="h-16 flex-shrink-0 border-b border-editorial-text/20 bg-editorial-bg z-10 w-full">
+    <header class="h-16 flex-shrink-0 border-b border-editorial-border bg-editorial-bg/80 backdrop-blur-md z-30 w-full">
       <app-topbar></app-topbar>
     </header>
 
     <!-- Offline Banner -->
     <app-offline-banner></app-offline-banner>
 
+    <!-- Grain Overlay -->
+    <div class="grain-wrapper">
+      <div class="grain-overlay opacity-[0.02] pointer-events-none"></div>
+    </div>
+
     <!-- Scrollable Content -->
-    <main class="flex-1 overflow-y-auto p-6 lg:p-8 bg-editorial-bg relative" (click)="layoutService.closeAllOverlays()">
-      <router-outlet></router-outlet>
+    <main role="main"
+          class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-10 bg-editorial-bg relative" 
+          (click)="layoutService.isMobile() ? layoutService.closeSidebar() : null"
+          (keydown.escape)="layoutService.isMobile() ? layoutService.closeSidebar() : null"
+          tabindex="0">
+      <div class="max-w-7xl mx-auto">
+        <router-outlet></router-outlet>
+      </div>
     </main>
+
+    <!-- Sync Status Floating Panel (Responsive placement) -->
+    <app-sync-status class="fixed bottom-6 right-6 z-40 md:absolute md:bottom-8 md:right-8"></app-sync-status>
   </div>
 
   <!-- Global Overlays -->
+  <app-file-upload (filesSelected)="onGlobalFilesSelected($event)"></app-file-upload>
   <app-notification-toast></app-notification-toast>
   <app-context-menu></app-context-menu>
+  <app-upload-modal></app-upload-modal>
+  
+  <app-confirm-modal></app-confirm-modal>
+  <app-prompt-modal></app-prompt-modal>
 </div>
+

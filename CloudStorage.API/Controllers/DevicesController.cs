@@ -3,15 +3,16 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using CloudStorage.Application.DTOs;
 using CloudStorage.Application.Interfaces;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CloudStorage.API.Controllers
 {
-    [ApiController]
+    /// <summary>
+    /// Manages user device registration, sync tracking, and force-sync.
+    /// Inherits from BaseApiController for shared infrastructure.
+    /// </summary>
     [Route("api/[controller]")]
-    [Authorize]
-    public class DevicesController : ControllerBase
+    public class DevicesController : BaseApiController
     {
         private readonly IDeviceService _deviceService;
 
@@ -20,107 +21,45 @@ namespace CloudStorage.API.Controllers
             _deviceService = deviceService;
         }
 
-        private int GetUserId()
-        {
-            var userIdClaim = User.FindFirst("id")?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-                throw new UnauthorizedAccessException("User ID not found in token");
-            return int.Parse(userIdClaim);
-        }
-
-        /// <summary>
-        /// Get all devices registered by the current user.
-        /// </summary>
+        /// <summary>Get all devices registered by the current user.</summary>
         [HttpGet]
-        public async Task<IActionResult> GetDevices()
+        public Task<IActionResult> GetDevices() => ExecuteAsync(async () =>
         {
-            try
-            {
-                var devices = await _deviceService.GetUserDevicesAsync(GetUserId());
-                return Ok(new ApiResponse<IEnumerable<DeviceDto>>
-                {
-                    Success = true,
-                    Message = "Devices retrieved successfully",
-                    Data = devices
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
-            }
-        }
+            var devices = await _deviceService.GetUserDevicesAsync(GetUserId());
+            return Ok(ApiResponse<IEnumerable<DeviceDto>>.Ok(devices, "Devices retrieved successfully"));
+        });
 
-        /// <summary>
-        /// Register a new device for sync tracking.
-        /// </summary>
+        /// <summary>Register a new device for sync tracking.</summary>
         [HttpPost]
-        public async Task<IActionResult> RegisterDevice(RegisterDeviceDto dto)
+        public Task<IActionResult> RegisterDevice(RegisterDeviceDto dto) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var device = await _deviceService.RegisterDeviceAsync(dto, GetUserId());
-                return CreatedAtAction(nameof(GetDevices), new ApiResponse<DeviceDto>
-                {
-                    Success = true,
-                    Message = "Device registered successfully",
-                    Data = device
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
-            }
-        }
+            var device = await _deviceService.RegisterDeviceAsync(dto, GetUserId());
+            return CreatedAtAction(nameof(GetDevices), null,
+                ApiResponse<DeviceDto>.Ok(device, "Device registered successfully"));
+        });
 
-        /// <summary>
-        /// Update the last-sync timestamp for a device (called after each sync cycle).
-        /// </summary>
+        /// <summary>Update the last-sync timestamp for a device.</summary>
         [HttpPatch("{id}/sync")]
-        public async Task<IActionResult> RecordSync(Guid id)
+        public Task<IActionResult> RecordSync(Guid id) => ExecuteAsync(async () =>
         {
-            try
-            {
-                await _deviceService.UpdateLastSyncAsync(id, GetUserId());
-                return Ok(new ApiResponse { Success = true, Message = "Sync timestamp updated" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
-            }
-        }
+            await _deviceService.UpdateLastSyncAsync(id, GetUserId());
+            return Ok(ApiResponse.Ok("Sync timestamp updated"));
+        });
 
-        /// <summary>
-        /// Remove a registered device.
-        /// </summary>
+        /// <summary>Remove a registered device.</summary>
         [HttpDelete("{id}")]
-        public async Task<IActionResult> RemoveDevice(Guid id)
+        public Task<IActionResult> RemoveDevice(Guid id) => ExecuteAsync(async () =>
         {
-            try
-            {
-                await _deviceService.RemoveDeviceAsync(id, GetUserId());
-                return Ok(new ApiResponse { Success = true, Message = "Device removed successfully" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
-            }
-        }
+            await _deviceService.RemoveDeviceAsync(id, GetUserId());
+            return Ok(ApiResponse.Ok("Device removed successfully"));
+        });
 
-        /// <summary>
-        /// Force a sync cycle for a specific device.
-        /// </summary>
+        /// <summary>Force a sync cycle for a specific device.</summary>
         [HttpPost("{id}/force-sync")]
-        public async Task<IActionResult> ForceSync(Guid id)
+        public Task<IActionResult> ForceSync(Guid id) => ExecuteAsync(async () =>
         {
-            try
-            {
-                await _deviceService.ForceSyncAsync(id, GetUserId());
-                return Ok(new ApiResponse { Success = true, Message = "Sync triggered successfully" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
-            }
-        }
+            await _deviceService.ForceSyncAsync(id, GetUserId());
+            return Ok(ApiResponse.Ok("Sync triggered successfully"));
+        });
     }
 }

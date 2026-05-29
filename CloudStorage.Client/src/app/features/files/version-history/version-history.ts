@@ -1,6 +1,7 @@
 import { Component, inject, input, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BaseComponent } from '../../../core/models/base-component';
+import { FileVersion } from '../../../core/models/file.model';
 import { FileService } from '../../../core/services/file.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { takeUntil } from 'rxjs/operators';
@@ -17,7 +18,7 @@ export class VersionHistory extends BaseComponent implements OnInit {
   private fileService = inject(FileService);
   private notify = inject(NotificationService);
 
-  versions = signal<any[]>([]);
+  versions = signal<FileVersion[]>([]);
 
   ngOnInit() {
     this.loadVersions();

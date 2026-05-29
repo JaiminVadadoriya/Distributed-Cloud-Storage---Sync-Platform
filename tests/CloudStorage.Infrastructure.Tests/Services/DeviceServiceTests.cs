@@ -48,7 +48,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
             // Assert
             Assert.NotNull(result);
             Assert.Equal(dto.DeviceName, result.DeviceName);
-            
+
             var deviceInDb = await _context.Devices.FirstOrDefaultAsync(d => d.Id == result.Id);
             Assert.NotNull(deviceInDb);
             Assert.Equal(userId, deviceInDb.UserId);

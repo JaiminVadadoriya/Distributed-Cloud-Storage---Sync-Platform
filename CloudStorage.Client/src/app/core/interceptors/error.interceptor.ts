@@ -1,8 +1,6 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { catchError, throwError, switchMap } from 'rxjs';
-import { AuthService } from '../services/auth.service';
+import { catchError, throwError } from 'rxjs';
 import { NotificationService } from '../services/notification.service';
 
 /**
@@ -10,29 +8,17 @@ import { NotificationService } from '../services/notification.service';
  * token expiration and unauthorized access.
  */
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
-  const authService = inject(AuthService);
   const notificationService = inject(NotificationService);
-  const router = inject(Router);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
+      // 401 handling is managed by authInterceptor for robust refresh logic.
+      // This interceptor only handles general error notifications.
       if (error.status === 401) {
-        // Attempting silent identity renewal
-        return authService.refreshToken().pipe(
-          switchMap(() => {
-            const token = authService.getToken();
-            const cloned = req.clone({
-              setHeaders: { Authorization: `Bearer ${token}` }
-            });
-            return next(cloned);
-          }),
-          catchError((refreshError) => {
-            authService.logout();
-            notificationService.error('SECURITY_FAULT: Identity session expired.');
-            router.navigate(['/auth/login']);
-            return throwError(() => refreshError);
-          })
-        );
+        // Suppress generic error notifications for unauthorized access
+        // as this is handled specifically by individual services (AuthService)
+        // or redirected via interceptors.
+        return throwError(() => error);
       }
 
       const errorMessage = error.error?.message || 'SYSTEM_ERR: Execution failure';

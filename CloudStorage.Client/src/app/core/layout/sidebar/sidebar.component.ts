@@ -3,8 +3,11 @@ import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { LayoutService } from '../../services/layout.service';
 import { FileService } from '../../services/file.service';
+import { AuthService } from '../../services/auth.service';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { computed } from '@angular/core';
 import { BaseComponent } from '../../models/base-component';
+import { formatBytes } from '../../utils/format.utils';
 
 @Component({
   selector: 'app-sidebar',
@@ -16,19 +19,17 @@ import { BaseComponent } from '../../models/base-component';
 export class SidebarComponent extends BaseComponent {
   public layoutService = inject(LayoutService);
   private fileService = inject(FileService);
+  private authService = inject(AuthService);
+  
   public stats = toSignal(this.fileService.getDashboardStats());
+  public isAdmin = computed(() => this.authService.currentUser()?.role === 'Admin');
 
   public closeSidebar(): void {
     this.layoutService.closeSidebar();
   }
 
-  public formatBytes(bytes: number): string {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  }
+  /** Delegates to shared utility */
+  public formatBytes = formatBytes;
 
   public getPercentage(used: number, total: number): number {
     if (total === 0) return 0;

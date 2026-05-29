@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { BaseComponent } from '../../../core/models/base-component';
 import { AuthService } from '../../../core/services/auth.service';
 import { FileService } from '../../../core/services/file.service';
+import { FolderService } from '../../../core/services/folder.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { takeUntil, debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { Subject, of } from 'rxjs';
@@ -15,11 +16,13 @@ import { Subject, of } from 'rxjs';
   styleUrl: './share-modal.css',
 })
 export class ShareModal extends BaseComponent {
-  fileId = input<string>('');
+  fileId = input<string | null>(null);
+  folderId = input<string | null>(null);
   closed = output<void>();
 
   private authService = inject(AuthService);
   private fileService = inject(FileService);
+  private folderService = inject(FolderService);
   private notify = inject(NotificationService);
 
   searchQuery = signal('');
@@ -54,18 +57,33 @@ export class ShareModal extends BaseComponent {
   share() {
     const user = this.selectedUser();
     const fId = this.fileId();
-    if (!user || !fId) return;
+    const foldId = this.folderId();
+    if (!user) return;
 
     this.isSharing.set(true);
-    this.fileService.shareFile(fId, user.email)
-      .pipe(takeUntil(this.destroy$))
+    
+    const obs = fId 
+      ? this.fileService.shareFile(fId, user.id, this.permission())
+      : foldId 
+        ? this.folderService.shareFolder(foldId, user.id, this.permission())
+        : null;
+
+    if (!obs) {
+      this.isSharing.set(false);
+      return;
+    }
+
+    obs.pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
-          this.notify.success(`File shared with ${user.username}`);
+          this.notify.success(`Entity shared with ${user.username}`);
           this.isSharing.set(false);
           this.close();
         },
-        error: () => this.isSharing.set(false)
+        error: (err: unknown) => {
+          console.error('[ShareModal] Operation failed:', err);
+          this.isSharing.set(false);
+        }
       });
   }
 

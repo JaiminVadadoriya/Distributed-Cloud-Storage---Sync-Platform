@@ -3,7 +3,6 @@ import { ApiService } from './api.service';
 import { ApiResponse } from '../models/api-response.model';
 import { Observable, catchError } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { HttpParams } from '@angular/common/http';
 import { BaseService } from '../models/base-service';
 
 export interface DeviceDto {

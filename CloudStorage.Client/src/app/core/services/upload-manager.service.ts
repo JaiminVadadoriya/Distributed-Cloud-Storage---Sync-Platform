@@ -3,7 +3,7 @@ import { ChunkingService } from './chunking.service';
 import { UploadService } from './upload.service';
 import { FileChunk } from '../models/upload.model';
 import { BaseService } from '../models/base-service';
-import { lastValueFrom } from 'rxjs';
+import { lastValueFrom, Subject } from 'rxjs';
 
 export interface UploadTask {
   id: string;
@@ -16,6 +16,7 @@ export interface UploadTask {
   uploadedChunks: number;
   totalChunks: number;
   uploadSpeed: number;
+  folderId?: string;
   error?: string;
 }
 
@@ -33,8 +34,10 @@ export class UploadManagerService extends BaseService {
   private readonly _tasks = signal<Map<string, UploadTask>>(new Map());
   private readonly _activeCount = signal<number>(0);
   private readonly MAX_CONCURRENT = 3;
+  private readonly uploadCompletedSubject = new Subject<UploadTask>();
 
   public readonly queue = computed(() => Array.from(this._tasks().values()));
+  public readonly uploadCompleted$ = this.uploadCompletedSubject.asObservable();
   
   public readonly globalSpeed = computed(() => 
     this.queue().reduce((acc, t) => acc + (t.status === 'uploading' ? t.uploadSpeed : 0), 0)
@@ -43,7 +46,7 @@ export class UploadManagerService extends BaseService {
   /**
    * Provisions a new transmission task in the local queue.
    */
-  public async addToQueue(file: File): Promise<string> {
+  public async addToQueue(file: File, folderId?: string): Promise<string> {
     const id = `TX_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`.toUpperCase();
     const chunks = await this.chunker.splitFileIntoChunks(file);
 
@@ -56,7 +59,8 @@ export class UploadManagerService extends BaseService {
       status: 'pending',
       uploadedChunks: 0,
       totalChunks: chunks.length,
-      uploadSpeed: 0
+      uploadSpeed: 0,
+      folderId
     };
 
     this.updateTask(task);
@@ -77,11 +81,13 @@ export class UploadManagerService extends BaseService {
       this.updateTask({ ...task, status: 'uploading' });
 
       // Handshake with storage node
+      const fileHash = await this.chunker.calculateFileHash(task.file);
       const session = await lastValueFrom(
-        this.uploader.initiateUpload(task.file.name, task.file.size, task.totalChunks, task.file.type)
+        this.uploader.initiateUpload(task.file.name, task.file.size, task.totalChunks, task.file.type || 'application/octet-stream', fileHash, task.folderId)
       );
 
       if (!session) throw new Error('HANDSHAKE_REJECTED');
+      console.log(`[TX_MGR] Session started: ${session.sessionId} for ${task.file.name}`);
 
       const updatedTask = { ...task, sessionId: session.sessionId };
       this.updateTask(updatedTask);
@@ -90,11 +96,15 @@ export class UploadManagerService extends BaseService {
       await this.transmitSegments(updatedTask);
 
       // Atomic commit
+      console.log(`[TX_MGR] Finalizing session: ${session.sessionId}`);
       await lastValueFrom(this.uploader.completeUpload(session.sessionId));
-      this.updateTask({ ...updatedTask, status: 'complete', uploadedChunks: task.totalChunks });
+      const completedTask: UploadTask = { ...updatedTask, status: 'complete', uploadedChunks: task.totalChunks };
+      this.updateTask(completedTask);
+      this.uploadCompletedSubject.next(completedTask);
 
-    } catch (err: any) {
-      this.updateTask({ ...task, status: 'error', error: err.message || 'TRANSMISSION_FAULT' });
+    } catch (err: unknown) {
+      const error = err instanceof Error ? err : new Error('TRANSMISSION_FAULT');
+      this.updateTask({ ...task, status: 'error', error: error.message });
     } finally {
       this._activeCount.update(c => c - 1);
       this.processNext();
@@ -108,7 +118,7 @@ export class UploadManagerService extends BaseService {
     let lastLoaded = 0;
     const chunkSize = this.chunker.getChunkSize(task.file.size);
 
-    const activeRequests: Promise<any>[] = [];
+    const activeRequests: Promise<void>[] = [];
     const pendingChunks = [...task.chunks];
 
     while (pendingChunks.length > 0 || activeRequests.length > 0) {

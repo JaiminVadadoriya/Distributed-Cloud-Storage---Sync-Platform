@@ -1,22 +1,26 @@
-<div class="modal-backdrop" (click)="close()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
+<div class="modal-backdrop" (click)="close()" (keydown.escape)="close()" tabindex="0" role="button" aria-label="Close modal">
+  <div class="modal-content" (click)="$event.stopPropagation()" (keydown.enter)="$event.stopPropagation()" tabindex="0" role="document">
     <div class="modal-header">
-      <h3>Share File</h3>
-      <button class="close-btn" (click)="close()">✕</button>
+      <h3 id="share-modal-title">Share File</h3>
+      <button class="close-btn" (click)="close()" aria-label="Close modal">✕</button>
     </div>
 
     <div class="modal-body">
       <div class="search-group">
-        <label>Find user by email or username</label>
-        <input type="text" [ngModel]="searchQuery()" (ngModelChange)="onSearchChange($event)"
+        <label for="share-user-search">Find user by email or username</label>
+        <input type="text" id="share-user-search" [ngModel]="searchQuery()" (ngModelChange)="onSearchChange($event)"
                placeholder="Search users..." class="search-input" />
         @if (searchResults().length > 0) {
-          <div class="search-dropdown">
+          <div class="search-dropdown" role="listbox">
             @for (user of searchResults(); track user.id) {
-              <div class="search-item" (click)="selectUser(user)">
+              <button type="button" class="search-item w-full text-left p-3 hover:bg-editorial-text/5 focus:bg-editorial-text/10 focus:outline-none" 
+                      (click)="selectUser(user)" 
+                      (keydown.enter)="selectUser(user)" 
+                      role="option"
+                      [attr.aria-selected]="selectedUser()?.id === user.id">
                 <span class="user-name">{{ user.username }}</span>
                 <span class="user-email">{{ user.email }}</span>
-              </div>
+              </button>
             }
           </div>
         }
@@ -28,8 +32,8 @@
         </div>
 
         <div class="permission-group">
-          <label>Permission</label>
-          <select [ngModel]="permission()" (ngModelChange)="permission.set($event)" class="permission-select">
+          <label for="share-permission">Permission</label>
+          <select id="share-permission" [ngModel]="permission()" (ngModelChange)="permission.set($event)" class="permission-select">
             <option value="Read">Read Only</option>
             <option value="Write">Read & Write</option>
           </select>

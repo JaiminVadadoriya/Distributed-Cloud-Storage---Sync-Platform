@@ -23,16 +23,16 @@ namespace CloudStorage.Application.DTOs
         [Required]
         [StringLength(255)]
         public string FileName { get; set; } = string.Empty;
-        
+
         [Required]
         public string ContentType { get; set; } = string.Empty;
-        
+
         [Required]
         [Range(1, long.MaxValue)]
         public long Size { get; set; }
-        
+
         public int ChunkCount { get; set; } = 1;
-        
+
         public string Hash { get; set; } = string.Empty;
         public Guid? FolderId { get; set; }
     }
@@ -41,7 +41,7 @@ namespace CloudStorage.Application.DTOs
     {
         [Required]
         public int UserId { get; set; }
-        
+
         [Required]
         public string PermissionType { get; set; } = "Read";
     }

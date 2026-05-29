@@ -14,13 +14,16 @@ A scalable, distributed cloud storage and synchronization platform built with **
 - **Comprehensive File System UI** — Trash, Recent files, multi-select operations, and File Preview (Image/Video/PDF/Text)
 - **Advanced Sync & Conflict Resolution** — Dedicated Sync History timeline and Conflict Center for resolving Version Vector mismatches
 - **Admin & Analytics** — System metrics and comprehensive storage usage analytics
-- **Horizontal Scaling** — API scaled to 3+ replicas with **NGINX** load balancing
+- **Horizontal Scaling** — API scaled to **3 replicas** with **NGINX** reverse-proxy load balancing
 - **Distributed Caching** — **Redis** for metadata, permissions, and SignalR backplane
-- **Async Background Tasks** — **RabbitMQ** for offloading heavy dedup/integrity checks
-- **HTTP/2 & Compression** — Optimized network transfers with Brotli/Gzip and multiplexed connections
-- **Observability** — **Prometheus** and **Grafana** for real-time traffic monitoring
+- **Async Background Tasks** — **RabbitMQ** + **BackgroundWorkerService** for offloading dedup/integrity checks
+- **HTTP/2 & Compression** — Optimized network transfers with Gzip and multiplexed connections
+- **Observability** — **Prometheus** metrics scraping and **Grafana** dashboards for real-time monitoring
+- **Email Testing** — **Mailpit** local SMTP server captures all outbound emails (password resets) during development
+- **Local Azure Emulation** — **Azurite** emulates Azure Blob Storage in the development environment
+- **Upload Throttling** — `UploadThrottlingMiddleware` limits each user to 5 concurrent chunk uploads (Redis-backed)
 - **Cloud-Ready** — Kubernetes manifests with HPA support and Docker Compose orchestration
-- **Comprehensive Tests** — Unit tests across all 4 backend layers + k6 load tests (12k CCU)
+- **Comprehensive Tests** — Unit tests across all 4 backend layers + Playwright E2E + k6 load tests
 
 ---
 
@@ -168,16 +171,18 @@ cd cloud-storage
 docker-compose up --build
 ```
 
-| Service      | URL                                  |
-| ------------ | ------------------------------------ |
-| API (via LB) | http://localhost:5000                |
-| Frontend     | http://localhost:4200                |
-| Swagger      | http://localhost:5000/swagger        |
-| Grafana      | http://localhost:3000 (admin/admin)  |
-| Prometheus   | http://localhost:9090                |
-| RabbitMQ     | http://localhost:15672 (guest/guest) |
-| PostgreSQL   | localhost:5433                       |
-| Redis        | localhost:6379                       |
+| Service           | URL                                       | Notes |
+| ----------------- | ----------------------------------------- | ----- |
+| API (via NGINX LB)| http://localhost:8000                     | 3 API replicas behind NGINX |
+| Frontend (Angular)| http://localhost:4200                     | Served by Nginx SPA container |
+| Swagger           | http://localhost:8000/swagger             | OpenAPI UI via LB |
+| Grafana           | http://localhost:3000 (admin/admin)       | Pre-built API dashboards |
+| Prometheus        | http://localhost:9090                     | Metrics scraping |
+| RabbitMQ UI       | http://localhost:15672 (guest/guest)      | Management console |
+| Mailpit (Email)   | http://localhost:8025                     | Captures all outbound emails |
+| Azurite (Blob)    | http://localhost:10000                    | Local Azure Blob emulator |
+| PostgreSQL        | localhost:5433                            | External port (internal 5432) |
+| Redis             | localhost:6379                            | Cache & SignalR backplane |
 
 ### Option 2: Manual Setup
 
@@ -336,16 +341,19 @@ npm test
 
 ## 🗺️ Roadmap
 
-- [x] **Phase 1:** MVP — Backend API, PostgreSQL, Docker setup
-- [x] **Phase 2:** Database refinement, JWT auth, file management
-- [x] **Phase 3:** Chunked uploads with deduplication
-- [x] **Phase 4:** Horizontal Scaling & NGINX Load Balancing
-- [x] **Phase 5:** Redis Caching & SignalR Backplane
-- [x] **Phase 6:** RabbitMQ Background Worker & Async processing
-- [x] **Phase 7:** Observability (Prometheus/Grafana)
-- [x] **Phase 8:** CDN Optimization & HTTP/2
-- [x] **Phase 9:** Kubernetes Manifests
-- [x] **Phase 10:** Load Testing with k6 (12k Users Target)
+All **11 development phases** are complete. Phases are as defined in [`masterplan.md`](masterplan.md).
+
+- [x] **Phase 1:** MVP Web App — Angular frontend, .NET backend, PostgreSQL, Azure Blob Storage integration
+- [x] **Phase 2:** Chunked Uploads & Resumable Transfers — chunk strategy, delta sync
+- [x] **Phase 3:** Offline-First + Versioning — offline edits, version vectors, conflict handling
+- [x] **Phase 4:** Real-Time Sync — SignalR push notifications across devices
+- [x] **Phase 5:** Security & Access Control — TLS, encryption, permission enforcement
+- [x] **Phase 6:** Scalability & Partitioning — NGINX LB (3 API replicas), Redis, RabbitMQ, Prometheus/Grafana
+- [x] **Phase 7:** Optional Enhancements — k6 load tests, Kubernetes manifests, email testing (Mailpit)
+- [x] **Phase 8:** Architecture Modernization — OOP core/shared structure, Signal-based state
+- [x] **Phase 9:** Advanced Data Management — Version History, Bulk Operations
+- [x] **Phase 10:** Notification Persistence — Database-backed alerts and activity tracking
+- [x] **Phase 11:** Comprehensive Frontend UI — 16+ feature areas including Trash, Recent, Sync History, Conflict Center
 
 ---
 

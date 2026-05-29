@@ -3,15 +3,16 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using CloudStorage.Application.DTOs;
 using CloudStorage.Application.Interfaces;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CloudStorage.API.Controllers
 {
-    [ApiController]
+    /// <summary>
+    /// Manages folder hierarchy CRUD, sharing, and permissions.
+    /// Inherits from BaseApiController for shared infrastructure.
+    /// </summary>
     [Route("api/[controller]")]
-    [Authorize]
-    public class FoldersController : ControllerBase
+    public class FoldersController : BaseApiController
     {
         private readonly IFolderService _folderService;
 
@@ -20,186 +21,57 @@ namespace CloudStorage.API.Controllers
             _folderService = folderService;
         }
 
-        private int GetUserId()
-        {
-            var userIdClaim = User.FindFirst("id")?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-                throw new UnauthorizedAccessException("User ID not found in token");
-
-            return int.Parse(userIdClaim);
-        }
-
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetFolderById(Guid id)
+        public Task<IActionResult> GetFolderById(Guid id) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                var folder = await _folderService.GetFolderByIdAsync(id, userId);
+            var folder = await _folderService.GetFolderByIdAsync(id, GetUserId());
+            if (folder == null)
+                return NotFound(ApiResponse.Fail("Folder not found or access denied"));
 
-                if (folder == null)
-                    return NotFound(new ApiResponse
-                    {
-                        Success = false,
-                        Message = "Folder not found or access denied"
-                    });
-
-                return Ok(new ApiResponse<FolderDto>
-                {
-                    Success = true,
-                    Message = "Folder retrieved successfully",
-                    Data = folder
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+            return Ok(ApiResponse<FolderDto>.Ok(folder, "Folder retrieved successfully"));
+        });
 
         [HttpGet("root")]
-        public async Task<IActionResult> GetRootFolders()
+        public Task<IActionResult> GetRootFolders() => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                var folders = await _folderService.GetUserRootFoldersAsync(userId);
-                return Ok(new ApiResponse<IEnumerable<FolderDto>>
-                {
-                    Success = true,
-                    Message = "Root folders retrieved successfully",
-                    Data = folders
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+            var folders = await _folderService.GetUserRootFoldersAsync(GetUserId());
+            return Ok(ApiResponse<IEnumerable<FolderDto>>.Ok(folders, "Root folders retrieved successfully"));
+        });
 
         [HttpPost]
-        public async Task<IActionResult> CreateFolder(CreateFolderDto dto)
+        public Task<IActionResult> CreateFolder(CreateFolderDto dto) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                var folder = await _folderService.CreateFolderAsync(dto, userId);
-                return CreatedAtAction(nameof(GetFolderById), new { id = folder.Id }, new ApiResponse<FolderDto>
-                {
-                    Success = true,
-                    Message = "Folder created successfully",
-                    Data = folder
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+            var folder = await _folderService.CreateFolderAsync(dto, GetUserId());
+            return CreatedAtAction(nameof(GetFolderById), new { id = folder.Id },
+                ApiResponse<FolderDto>.Ok(folder, "Folder created successfully"));
+        });
 
         [HttpPatch("{id}/rename")]
-        public async Task<IActionResult> RenameFolder(Guid id, RenameFolderDto dto)
+        public Task<IActionResult> RenameFolder(Guid id, RenameFolderDto dto) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                var folder = await _folderService.RenameFolderAsync(id, dto.NewName, userId);
-                return Ok(new ApiResponse<FolderDto>
-                {
-                    Success = true,
-                    Message = "Folder renamed successfully",
-                    Data = folder
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+            var folder = await _folderService.RenameFolderAsync(id, dto.NewName, GetUserId());
+            return Ok(ApiResponse<FolderDto>.Ok(folder, "Folder renamed successfully"));
+        });
 
         [HttpPatch("{id}/move")]
-        public async Task<IActionResult> MoveFolder(Guid id, MoveFolderDto dto)
+        public Task<IActionResult> MoveFolder(Guid id, MoveFolderDto dto) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                var folder = await _folderService.MoveFolderAsync(id, dto.NewParentFolderId, userId);
-                return Ok(new ApiResponse<FolderDto>
-                {
-                    Success = true,
-                    Message = "Folder moved successfully",
-                    Data = folder
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+            var folder = await _folderService.MoveFolderAsync(id, dto.NewParentFolderId, GetUserId());
+            return Ok(ApiResponse<FolderDto>.Ok(folder, "Folder moved successfully"));
+        });
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteFolder(Guid id)
+        public Task<IActionResult> DeleteFolder(Guid id) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                await _folderService.DeleteFolderAsync(id, userId);
-                return Ok(new ApiResponse
-                {
-                    Success = true,
-                    Message = "Folder deleted successfully"
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    Success = false,
-                    Message = ex.Message
-                });
-            }
-        }
+            await _folderService.DeleteFolderAsync(id, GetUserId());
+            return Ok(ApiResponse.Ok("Folder deleted successfully"));
+        });
+
         [HttpPost("{id}/share")]
-        public async Task<IActionResult> ShareFolder(Guid id, [FromBody] FolderShareDto dto)
+        public Task<IActionResult> ShareFolder(Guid id, [FromBody] FolderShareDto dto) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                await _folderService.ShareFolderAsync(id, dto.UserId, userId, dto.PermissionType);
-                return Ok(new ApiResponse
-                {
-                    Success = true,
-                    Message = "Folder shared successfully — all nested files are now accessible to the user"
-                });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
-            }
-        }
+            await _folderService.ShareFolderAsync(id, dto.UserId, GetUserId(), dto.PermissionType);
+            return Ok(ApiResponse.Ok("Folder shared successfully — all nested files are now accessible to the user"));
+        });
     }
 }

@@ -1,5 +1,4 @@
 using System.Threading.Tasks;
-using System.Threading.RateLimiting;
 using CloudStorage.Application.DTOs;
 using CloudStorage.Domain.Entities;
 using CloudStorage.Application.Interfaces;
@@ -9,10 +8,13 @@ using Microsoft.AspNetCore.RateLimiting;
 
 namespace CloudStorage.API.Controllers
 {
-    [ApiController]
+    /// <summary>
+    /// Manages authentication, user profiles, and password management.
+    /// Inherits from BaseApiController for shared infrastructure.
+    /// </summary>
     [Route("api/[controller]")]
     [EnableRateLimiting("auth")]
-    public class AuthController : ControllerBase
+    public class AuthController : BaseApiController
     {
         private readonly IAuthService _authService;
 
@@ -22,193 +24,84 @@ namespace CloudStorage.API.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register(RegisterDto dto)
+        public Task<IActionResult> Register(RegisterDto dto) => ExecuteAsync(async () =>
         {
-            try
+            var user = new User
             {
-                var user = new User
-                {
-                    Username = dto.Username,
-                    Email = dto.Email
-                };
+                Username = dto.Username,
+                Email = dto.Email
+            };
 
-                var result = await _authService.RegisterAsync(user, dto.Password);
-                return Ok(new ApiResponse<object> 
-                { 
-                    Success = true, 
-                    Message = "Registration successful", 
-                    Data = new { result.Id, result.Username, result.Email } 
-                });
-            }
-            catch (System.Exception ex)
-            {
-                return BadRequest(new ApiResponse 
-                { 
-                    Success = false, 
-                    Message = ex.Message 
-                });
-            }
-        }
+            var result = await _authService.RegisterAsync(user, dto.Password);
+            return Ok(ApiResponse<object>.Ok(
+                new { result.Id, result.Username, result.Email },
+                "Registration successful"));
+        });
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginDto dto)
+        [AllowAnonymous]
+        public Task<IActionResult> Login(LoginDto dto) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var response = await _authService.LoginAsync(dto.Identifier, dto.Password);
+            var response = await _authService.LoginAsync(dto.Identifier, dto.Password);
+            if (response == null)
+                return Unauthorized(ApiResponse.Fail("Invalid credentials"));
 
-                if (response == null)
-                    return Unauthorized(new ApiResponse 
-                    { 
-                        Success = false, 
-                        Message = "Invalid credentials" 
-                    });
-
-                return Ok(new ApiResponse<LoginResponseDto> 
-                { 
-                    Success = true, 
-                    Message = "Login successful", 
-                    Data = response 
-                });
-            }
-            catch (System.Exception ex)
-            {
-                return BadRequest(new ApiResponse 
-                { 
-                    Success = false, 
-                    Message = ex.Message 
-                });
-            }
-        }
+            return Ok(ApiResponse<LoginResponseDto>.Ok(response, "Login successful"));
+        });
 
         [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh(RefreshTokenDto dto)
+        [AllowAnonymous]
+        public Task<IActionResult> Refresh(RefreshTokenDto dto) => ExecuteAsync(async () =>
         {
             var response = await _authService.RefreshTokenAsync(dto.RefreshToken);
-
             if (response == null)
-                return Unauthorized(new ApiResponse 
-                { 
-                    Success = false, 
-                    Message = "Invalid or expired refresh token" 
-                });
+                return Unauthorized(ApiResponse.Fail("Invalid or expired refresh token"));
 
-            return Ok(new ApiResponse<LoginResponseDto> 
-            { 
-                Success = true, 
-                Message = "Token refreshed successfully", 
-                Data = response 
-            });
-        }
+            return Ok(ApiResponse<LoginResponseDto>.Ok(response, "Token refreshed successfully"));
+        });
 
         [HttpPost("logout")]
-        [Authorize]
-        public async Task<IActionResult> Logout(RefreshTokenDto dto)
+        public Task<IActionResult> Logout(RefreshTokenDto dto) => ExecuteAsync(async () =>
         {
             await _authService.LogoutAsync(dto.RefreshToken);
-            return Ok(new ApiResponse 
-            { 
-                Success = true, 
-                Message = "Logged out successfully" 
-            });
-        }
+            return Ok(ApiResponse.Ok("Logged out successfully"));
+        });
 
         [HttpPost("password-reset-request")]
-        public async Task<IActionResult> RequestPasswordReset(PasswordResetRequestDto dto)
+        [AllowAnonymous]
+        public Task<IActionResult> RequestPasswordReset(PasswordResetRequestDto dto) => ExecuteAsync(async () =>
         {
             var result = await _authService.RequestPasswordResetAsync(dto.Email);
-            return Ok(new ApiResponse 
-            { 
-                Success = true, 
-                Message = result 
-            });
-        }
+            return Ok(ApiResponse.Ok(result));
+        });
 
         [HttpPost("password-reset")]
-        public async Task<IActionResult> ResetPassword(PasswordResetDto dto)
+        [AllowAnonymous]
+        public Task<IActionResult> ResetPassword(PasswordResetDto dto) => ExecuteAsync(async () =>
         {
-            try
-            {
-                await _authService.ResetPasswordAsync(dto.Token, dto.NewPassword);
-                return Ok(new ApiResponse 
-                { 
-                    Success = true, 
-                    Message = "Password reset successfully" 
-                });
-            }
-            catch (System.Exception ex)
-            {
-                return BadRequest(new ApiResponse 
-                { 
-                    Success = false, 
-                    Message = ex.Message 
-                });
-            }
-        }
-
-        private int GetUserId()
-        {
-            var userIdClaim = User.FindFirst("id")?.Value;
-            if (string.IsNullOrEmpty(userIdClaim))
-                throw new UnauthorizedAccessException("User ID not found in token");
-            return int.Parse(userIdClaim);
-        }
+            await _authService.ResetPasswordAsync(dto.Token, dto.NewPassword);
+            return Ok(ApiResponse.Ok("Password reset successfully"));
+        });
 
         [HttpPut("profile")]
-        [Authorize]
-        public async Task<IActionResult> UpdateProfile(UpdateProfileDto dto)
+        public Task<IActionResult> UpdateProfile(UpdateProfileDto dto) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                var user = await _authService.UpdateProfileAsync(userId, dto);
-                return Ok(new ApiResponse<UserDto>
-                {
-                    Success = true,
-                    Message = "Profile updated successfully",
-                    Data = user
-                });
-            }
-            catch (System.Exception ex)
-            {
-                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
-            }
-        }
+            var user = await _authService.UpdateProfileAsync(GetUserId(), dto);
+            return Ok(ApiResponse<UserDto>.Ok(user, "Profile updated successfully"));
+        });
 
         [HttpPut("change-password")]
-        [Authorize]
-        public async Task<IActionResult> ChangePassword(ChangePasswordDto dto)
+        public Task<IActionResult> ChangePassword(ChangePasswordDto dto) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var userId = GetUserId();
-                await _authService.ChangePasswordAsync(userId, dto);
-                return Ok(new ApiResponse { Success = true, Message = "Password changed successfully" });
-            }
-            catch (System.Exception ex)
-            {
-                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
-            }
-        }
+            await _authService.ChangePasswordAsync(GetUserId(), dto);
+            return Ok(ApiResponse.Ok("Password changed successfully"));
+        });
 
         [HttpGet("users/search")]
-        [Authorize]
-        public async Task<IActionResult> SearchUsers([FromQuery] string q)
+        public Task<IActionResult> SearchUsers([FromQuery] string q) => ExecuteAsync(async () =>
         {
-            try
-            {
-                var results = await _authService.SearchUsersAsync(q);
-                return Ok(new ApiResponse<IEnumerable<UserSearchResultDto>>
-                {
-                    Success = true,
-                    Message = "Search results retrieved",
-                    Data = results
-                });
-            }
-            catch (System.Exception ex)
-            {
-                return BadRequest(new ApiResponse { Success = false, Message = ex.Message });
-            }
-        }
+            var results = await _authService.SearchUsersAsync(q);
+            return Ok(ApiResponse<IEnumerable<UserSearchResultDto>>.Ok(results, "Search results retrieved"));
+        });
     }
 }

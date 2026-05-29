@@ -16,7 +16,7 @@ namespace CloudStorage.Infrastructure.Services
             _activityRepo = activityRepo;
         }
 
-        public async Task LogActivityAsync(int userId, string action, string entityType, string entityId, string details)
+        public async Task LogActivityAsync(int userId, string action, string entityType, string entityId, string details, string? ipAddress = null)
         {
             var log = new ActivityLog
             {
@@ -26,6 +26,7 @@ namespace CloudStorage.Infrastructure.Services
                 EntityType = entityType,
                 EntityId = entityId,
                 Details = details,
+                IpAddress = ipAddress,
                 Timestamp = DateTime.UtcNow
             };
 

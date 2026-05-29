@@ -12,17 +12,20 @@ namespace CloudStorage.Infrastructure.Services
     public class FileService : IFileService
     {
         private readonly IFileMetadataRepository _fileRepository;
+        private readonly IFolderRepository _folderRepository;
         private readonly IUserRepository _userRepository;
         private readonly ICacheService _cache;
         private readonly IActivityService _activityService;
 
         public FileService(
-            IFileMetadataRepository fileRepository, 
-            IUserRepository userRepository, 
+            IFileMetadataRepository fileRepository,
+            IFolderRepository folderRepository,
+            IUserRepository userRepository,
             ICacheService cache,
             IActivityService activityService)
         {
             _fileRepository = fileRepository;
+            _folderRepository = folderRepository;
             _userRepository = userRepository;
             _cache = cache;
             _activityService = activityService;
@@ -31,18 +34,10 @@ namespace CloudStorage.Infrastructure.Services
         public async Task<IEnumerable<FileListDto>> GetUserFilesAsync(int userId)
         {
             var files = await _fileRepository.GetUserFilesAsync(userId);
-            
+
             return files
                 .Where(f => f.Status == UploadStatus.Complete)
-                .Select(f => new FileListDto
-                {
-                    Id = f.Id,
-                    FileName = f.FileName,
-                    Size = f.Size,
-                    CreatedAt = f.CreatedAt,
-                    IsShared = false,
-                    FolderId = f.FolderId
-                });
+                .Select(f => f.ToListDto());
         }
 
         public async Task<IEnumerable<FileListDto>> GetSharedFilesAsync(int userId)
@@ -51,30 +46,14 @@ namespace CloudStorage.Infrastructure.Services
 
             return sharedFiles
                 .Where(f => f.Status == UploadStatus.Complete)
-                .Select(f => new FileListDto
-                {
-                    Id = f.Id,
-                    FileName = f.FileName,
-                    Size = f.Size,
-                    CreatedAt = f.CreatedAt,
-                    IsShared = true,
-                    FolderId = f.FolderId
-                });
+                .Select(f => f.ToListDto(isShared: true));
         }
 
         public async Task<IEnumerable<FileListDto>> SearchFilesAsync(int userId, string query)
         {
             var files = await _fileRepository.SearchAsync(userId, query);
 
-            return files.Select(f => new FileListDto
-            {
-                Id = f.Id,
-                FileName = f.FileName,
-                Size = f.Size,
-                CreatedAt = f.CreatedAt,
-                IsShared = false,
-                FolderId = f.FolderId
-            });
+            return files.Select(f => f.ToListDto());
         }
 
         public async Task<FileResponseDto?> GetFileByIdAsync(Guid fileId, int requestingUserId)
@@ -94,21 +73,7 @@ namespace CloudStorage.Infrastructure.Services
                 return null;
 
             var owner = await _userRepository.GetByIdAsync(file.OwnerId);
-
-            var response = new FileResponseDto
-            {
-                Id = file.Id,
-                FileName = file.FileName,
-                ContentType = file.ContentType,
-                Size = file.Size,
-                Version = file.Version,
-                ChunkCount = file.ChunkCount,
-                CreatedAt = file.CreatedAt,
-                LastModifiedAt = file.LastModifiedAt,
-                OwnerId = file.OwnerId,
-                OwnerUsername = owner?.Username ?? "Unknown",
-                FolderId = file.FolderId
-            };
+            var response = file.ToResponseDto(owner?.Username ?? "Unknown");
 
             await _cache.SetAsync(cacheKey, response, TimeSpan.FromMinutes(10));
             return response;
@@ -131,11 +96,15 @@ namespace CloudStorage.Infrastructure.Services
                 Size: c.Size
             )).ToList();
 
-            // Verify local chunks exist on disk before proceeding (skips URL blob checks)
+            // Verify local chunks exist on disk before proceeding (skips URL blob and azure protocol checks)
             foreach (var chunk in chunkData)
             {
-                if (!chunk.StoragePath.StartsWith("http") && !System.IO.File.Exists(chunk.StoragePath))
+                if (!chunk.StoragePath.StartsWith("http") &&
+                    !chunk.StoragePath.StartsWith("azure://") &&
+                    !System.IO.File.Exists(chunk.StoragePath))
+                {
                     throw new System.IO.FileNotFoundException($"Chunk missing from storage: {System.IO.Path.GetFileName(chunk.StoragePath)}");
+                }
             }
 
             return chunkData;
@@ -165,21 +134,7 @@ namespace CloudStorage.Infrastructure.Services
             await _activityService.LogActivityAsync(ownerId, "UPLOAD", "FILE", fileMetadata.Id.ToString(), $"File '{fileMetadata.FileName}' uploaded successfully.");
 
             var owner = await _userRepository.GetByIdAsync(ownerId);
-
-            return new FileResponseDto
-            {
-                Id = fileMetadata.Id,
-                FileName = fileMetadata.FileName,
-                ContentType = fileMetadata.ContentType,
-                Size = fileMetadata.Size,
-                Version = fileMetadata.Version,
-                ChunkCount = fileMetadata.ChunkCount,
-                CreatedAt = fileMetadata.CreatedAt,
-                LastModifiedAt = fileMetadata.LastModifiedAt,
-                OwnerId = fileMetadata.OwnerId,
-                OwnerUsername = owner?.Username ?? "Unknown",
-                FolderId = fileMetadata.FolderId
-            };
+            return fileMetadata.ToResponseDto(owner?.Username ?? "Unknown");
         }
 
         public async Task DeleteFileAsync(Guid fileId, int userId)
@@ -194,7 +149,7 @@ namespace CloudStorage.Infrastructure.Services
             file.IsDeleted = true;
             file.LastModifiedAt = DateTime.UtcNow;
             await _fileRepository.UpdateAsync(file);
-            
+
             await _activityService.LogActivityAsync(userId, "DELETE", "FILE", fileId.ToString(), $"File '{file.FileName}' was deleted.");
 
             await _cache.RemoveByPrefixAsync($"file:{fileId}:");
@@ -243,7 +198,7 @@ namespace CloudStorage.Infrastructure.Services
         {
             var cacheKey = $"perm:{fileId}:{userId}:{minimumPermission}";
             var cachedPermission = await _cache.GetAsync<bool?>(cacheKey);
-            
+
             if (cachedPermission.HasValue)
             {
                 return cachedPermission.Value;
@@ -258,7 +213,7 @@ namespace CloudStorage.Infrastructure.Services
         {
             var cacheKey = $"stats:{userId}";
             var cachedStats = await _cache.GetAsync<DashboardStatsDto>(cacheKey);
-            
+
             if (cachedStats != null)
             {
                 return cachedStats;
@@ -266,7 +221,7 @@ namespace CloudStorage.Infrastructure.Services
 
             var files = await _fileRepository.GetUserFilesAsync(userId);
             var oneWeekAgo = DateTime.UtcNow.AddDays(-7);
-            
+
             var stats = new DashboardStatsDto
             {
                 TotalStorageBytes = files.Sum(f => f.Size),
@@ -278,18 +233,38 @@ namespace CloudStorage.Infrastructure.Services
             await _cache.SetAsync(cacheKey, stats, TimeSpan.FromMinutes(5));
             return stats;
         }
-        
+
         public async Task DeleteAllUserFilesAsync(int userId)
         {
             var files = await _fileRepository.GetUserFilesAsync(userId);
             var nonDeletedFiles = files.Where(f => !f.IsDeleted).ToList();
-            
+
             foreach (var file in nonDeletedFiles)
             {
                 file.IsDeleted = true;
                 file.LastModifiedAt = DateTime.UtcNow;
                 await _fileRepository.UpdateAsync(file);
             }
+        }
+
+        public async Task PurgeUserDriveAsync(int userId)
+        {
+            // 1. Mark all files as deleted
+            await DeleteAllUserFilesAsync(userId);
+
+            // 2. Delete all folders
+            var folders = await _folderRepository.GetAllUserFoldersAsync(userId);
+            foreach (var folder in folders)
+            {
+                await _folderRepository.DeleteAsync(folder);
+            }
+
+            // 3. Log Activity
+            await _activityService.LogActivityAsync(userId, "PURGE_DRIVE", "DRIVE", userId.ToString(), "Complete storage reset initiated by user.");
+
+            // 4. Clear Caches
+            await _cache.RemoveByPrefixAsync($"stats:{userId}");
+            await _cache.RemoveByPrefixAsync($"file-list:{userId}");
         }
 
         // ─── Version History ──────────────────────────────────────────────
@@ -362,20 +337,7 @@ namespace CloudStorage.Infrastructure.Services
             await _cache.RemoveByPrefixAsync($"file:{fileId}:");
 
             var owner = await _userRepository.GetByIdAsync(currentFile.OwnerId);
-            return new FileResponseDto
-            {
-                Id = currentFile.Id,
-                FileName = currentFile.FileName,
-                ContentType = currentFile.ContentType,
-                Size = currentFile.Size,
-                Version = currentFile.Version,
-                ChunkCount = currentFile.ChunkCount,
-                CreatedAt = currentFile.CreatedAt,
-                LastModifiedAt = currentFile.LastModifiedAt,
-                OwnerId = currentFile.OwnerId,
-                OwnerUsername = owner?.Username ?? "Unknown",
-                FolderId = currentFile.FolderId
-            };
+            return currentFile.ToResponseDto(owner?.Username ?? "Unknown");
         }
 
         // ─── File Operations ──────────────────────────────────────────────
@@ -419,12 +381,33 @@ namespace CloudStorage.Infrastructure.Services
 
         // ─── Bulk Operations ──────────────────────────────────────────────
 
-        public async Task BulkDeleteAsync(IEnumerable<Guid> fileIds, int userId)
+        public async Task BulkDeleteAsync(IEnumerable<Guid> resourceIds, int userId)
         {
-            foreach (var fileId in fileIds)
+            foreach (var id in resourceIds)
             {
-                await DeleteFileAsync(fileId, userId);
+                var file = await _fileRepository.GetByIdAsync(id);
+                if (file != null)
+                {
+                    await DeleteFileAsync(id, userId);
+                    continue;
+                }
+
+                var folder = await _folderRepository.GetByIdAsync(id);
+                if (folder != null)
+                {
+                    if (folder.OwnerId != userId)
+                        throw new UnauthorizedAccessException("Only the owner can delete this folder");
+
+                    await _folderRepository.DeleteAsync(folder);
+                    await _activityService.LogActivityAsync(userId, "DELETE", "FOLDER", id.ToString(), $"Folder '{folder.Name}' was deleted via bulk operation.");
+                    continue;
+                }
+
+                // If neither found, we log warning but continue the sequence
+                Console.WriteLine($"[BulkDelete] Resource {id} not found in files or folders for User {userId}");
             }
+
+            await _cache.RemoveByPrefixAsync($"stats:{userId}");
         }
 
         public async Task BulkMoveAsync(IEnumerable<Guid> fileIds, Guid? targetFolderId, int userId)

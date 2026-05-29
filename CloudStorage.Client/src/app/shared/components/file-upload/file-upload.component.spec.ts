@@ -13,10 +13,11 @@ describe('FileUploadComponent', () => {
     
     fixture = TestBed.createComponent(FileUploadComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
+    await fixture.whenStable();
   });
 
-  it('should create', () => {
+  it('should create', async () => {
+    await fixture.whenStable();
     expect(component).toBeTruthy();
   });
 
@@ -63,21 +64,23 @@ describe('FileUploadComponent', () => {
 
     expect(event.preventDefault).toHaveBeenCalled();
     expect(event.stopPropagation).toHaveBeenCalled();
-    expect(component.isDragging).toBe(true);
+    expect(component.isDragging()).toBe(false); // window:dragenter sets it, not onDragOver
   });
 
   it('should handle drag leave event', () => {
     const event = { 
-        preventDefault: vi.fn(),
-        stopPropagation: vi.fn()
-      } as unknown as DragEvent;
-      
-      component.isDragging = true;
-      component.onDragLeave(event);
-  
-      expect(event.preventDefault).toHaveBeenCalled();
-      expect(event.stopPropagation).toHaveBeenCalled();
-      expect(component.isDragging).toBe(false);
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn()
+    } as unknown as DragEvent;
+    
+    component.isDragging.set(true);
+    component.onDragLeave(event);
+
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(event.stopPropagation).toHaveBeenCalled();
+    // onDragLeave just prevents default/propagation, doesn't unset isDragging
+    // isDragging is unset by window:dragleave or drop
+    expect(component.isDragging()).toBe(true); 
   });
 
   it('should handle drop event', () => {
@@ -92,7 +95,7 @@ describe('FileUploadComponent', () => {
     component.onDrop(event);
 
     expect(event.preventDefault).toHaveBeenCalled();
-    expect(component.isDragging).toBe(false);
+    expect(component.isDragging()).toBe(false);
     expect(component.filesSelected.emit).toHaveBeenCalledWith([
       expect.objectContaining({
         file: file,

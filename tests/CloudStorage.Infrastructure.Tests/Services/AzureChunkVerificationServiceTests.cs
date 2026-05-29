@@ -38,7 +38,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
             // Assert
             Assert.True(result.IsValid);
             Assert.Empty(result.MissingChunkIndices);
-            
+
             // Verify that ChunkBlobExistsAsync was called exactly chunkCount times
             for (var i = 0; i < chunkCount; i++)
             {

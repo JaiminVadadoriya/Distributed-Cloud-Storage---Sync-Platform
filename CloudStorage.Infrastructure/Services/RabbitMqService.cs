@@ -1,6 +1,7 @@
 using System;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using CloudStorage.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
@@ -10,50 +11,97 @@ namespace CloudStorage.Infrastructure.Services
 {
     public class RabbitMqService : IMessageQueue, IDisposable
     {
-        private readonly IConnection _connection;
-        private readonly IModel _channel;
+        private readonly ConnectionFactory _factory;
+        private IConnection? _connection;
+        private IChannel? _channel;
+        private readonly SemaphoreSlim _connectionLock = new(1, 1);
 
         public RabbitMqService(IConfiguration configuration)
         {
-            var factory = new ConnectionFactory
+            _factory = new ConnectionFactory
             {
                 HostName = configuration["RabbitMQ:HostName"] ?? "localhost",
                 UserName = configuration["RabbitMQ:UserName"] ?? "guest",
-                Password = configuration["RabbitMQ:Password"] ?? "guest",
-                DispatchConsumersAsync = true
+                Password = configuration["RabbitMQ:Password"] ?? "guest"
             };
-
-            // Warning: In production, consider retry policies and handling connection drops
-            _connection = factory.CreateConnection();
-            _channel = _connection.CreateModel();
         }
 
-        public Task PublishAsync<T>(string queueName, T message)
+        private async Task EnsureConnectedAsync()
         {
-            _channel.QueueDeclare(queue: queueName,
-                                 durable: true,
-                                 exclusive: false,
-                                 autoDelete: false,
-                                 arguments: null);
+            if (_channel is { IsOpen: true }) return;
+
+            await _connectionLock.WaitAsync();
+            try
+            {
+                if (_channel is { IsOpen: true }) return;
+
+                // Dispose existing if broken
+                if (_channel != null)
+                {
+                    _channel.Dispose();
+                    _channel = null;
+                }
+                if (_connection != null)
+                {
+                    _connection.Dispose();
+                    _connection = null;
+                }
+
+                var retries = 5;
+                var delay = TimeSpan.FromSeconds(5);
+
+                for (int i = 0; i < retries; i++)
+                {
+                    try
+                    {
+                        _connection = await _factory.CreateConnectionAsync();
+                        _channel = await _connection.CreateChannelAsync();
+                        return;
+                    }
+                    catch (Exception)
+                    {
+                        if (i == retries - 1) throw;
+                        await Task.Delay(delay);
+                    }
+                }
+            }
+            finally
+            {
+                _connectionLock.Release();
+            }
+        }
+
+        public async Task PublishAsync<T>(string queueName, T message)
+        {
+            await EnsureConnectedAsync();
+
+            await _channel!.QueueDeclareAsync(queue: queueName,
+                                             durable: true,
+                                             exclusive: false,
+                                             autoDelete: false,
+                                             arguments: null);
 
             var json = JsonSerializer.Serialize(message);
             var body = Encoding.UTF8.GetBytes(json);
 
-            var properties = _channel.CreateBasicProperties();
-            properties.Persistent = true;
+            var properties = new BasicProperties
+            {
+                Persistent = true
+            };
 
-            _channel.BasicPublish(exchange: "",
-                                 routingKey: queueName,
-                                 basicProperties: properties,
-                                 body: body);
-
-            return Task.CompletedTask;
+            await _channel.BasicPublishAsync(exchange: "",
+                                            routingKey: queueName,
+                                            mandatory: false,
+                                            basicProperties: properties,
+                                            body: body);
         }
 
         public void Dispose()
         {
             _channel?.Dispose();
             _connection?.Dispose();
+            _connectionLock.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 }

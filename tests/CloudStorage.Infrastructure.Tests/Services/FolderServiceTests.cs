@@ -24,7 +24,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
             _folderRepoMock = new Mock<IFolderRepository>();
             _cacheMock = new Mock<ICacheService>();
             _activityMock = new Mock<IActivityService>();
-            
+
             _service = new FolderService(
                 _folderRepoMock.Object,
                 _cacheMock.Object,
@@ -44,13 +44,13 @@ namespace CloudStorage.Infrastructure.Tests.Services
             // Assert
             Assert.NotNull(result);
             Assert.Equal(dto.Name, result.Name);
-            
-            _folderRepoMock.Verify(repo => repo.AddAsync(It.Is<Folder>(f => 
+
+            _folderRepoMock.Verify(repo => repo.AddAsync(It.Is<Folder>(f =>
                 f.Name == dto.Name && f.OwnerId == userId)), Times.Once);
-            
+
             _activityMock.Verify(act => act.LogActivityAsync(
                 userId, "CREATE", "FOLDER", It.IsAny<string>(), It.IsAny<string>()), Times.Once);
-            
+
             _cacheMock.Verify(c => c.RemoveByPrefixAsync($"stats:{userId}"), Times.Once);
         }
 
@@ -71,7 +71,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
             // Assert
             Assert.Equal(newName, result.Name);
             Assert.Equal(newName, folder.Name);
-            
+
             _folderRepoMock.Verify(repo => repo.UpdateAsync(folder), Times.Once);
             _activityMock.Verify(act => act.LogActivityAsync(
                 userId, "RENAME", "FOLDER", folderId.ToString(), It.IsAny<string>()), Times.Once);

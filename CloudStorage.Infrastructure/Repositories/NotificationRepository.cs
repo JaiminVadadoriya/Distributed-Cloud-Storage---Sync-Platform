@@ -9,38 +9,29 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CloudStorage.Infrastructure.Repositories
 {
-    public class NotificationRepository : INotificationRepository
+    /// <summary>
+    /// NotificationRepository now properly inherits from Repository&lt;Notification&gt;,
+    /// gaining standard CRUD operations (GetByIdAsync, AddAsync, DeleteAsync, etc.)
+    /// and only implementing notification-specific methods.
+    /// </summary>
+    public class NotificationRepository : Repository<Notification>, INotificationRepository
     {
-        private readonly ApplicationDbContext _context;
-
-        public NotificationRepository(ApplicationDbContext context)
+        public NotificationRepository(ApplicationDbContext context) : base(context)
         {
-            _context = context;
         }
 
         public async Task<IEnumerable<Notification>> GetUserNotificationsAsync(int userId, int limit = 50)
         {
-            return await _context.Notifications
+            return await _dbSet
                 .Where(n => n.UserId == userId)
                 .OrderByDescending(n => n.CreatedAt)
                 .Take(limit)
                 .ToListAsync();
         }
 
-        public async Task<Notification?> GetByIdAsync(Guid id)
-        {
-            return await _context.Notifications.FindAsync(id);
-        }
-
-        public async Task AddAsync(Notification notification)
-        {
-            _context.Notifications.Add(notification);
-            await _context.SaveChangesAsync();
-        }
-
         public async Task MarkAsReadAsync(Guid notificationId, int userId)
         {
-            var notification = await _context.Notifications
+            var notification = await _dbSet
                 .FirstOrDefaultAsync(n => n.Id == notificationId && n.UserId == userId);
 
             if (notification != null)
@@ -52,7 +43,7 @@ namespace CloudStorage.Infrastructure.Repositories
 
         public async Task MarkAllAsReadAsync(int userId)
         {
-            var unread = await _context.Notifications
+            var unread = await _dbSet
                 .Where(n => n.UserId == userId && !n.IsRead)
                 .ToListAsync();
 
@@ -61,11 +52,6 @@ namespace CloudStorage.Infrastructure.Repositories
                 n.IsRead = true;
             }
 
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task SaveChangesAsync()
-        {
             await _context.SaveChangesAsync();
         }
     }

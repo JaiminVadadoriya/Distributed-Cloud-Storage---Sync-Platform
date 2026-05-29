@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { FileService } from '../../../core/services/file.service';
 import { SearchService } from '../../../core/services/search.service';
@@ -29,8 +29,8 @@ import { takeUntil } from 'rxjs/operators';
       <!-- Filters Bar -->
       <div class="flex flex-wrap gap-3 items-center">
         <div class="flex items-center gap-2">
-          <label class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/40">Type:</label>
-          <select [(ngModel)]="filterType" (ngModelChange)="applyFilters()"
+          <label for="filter-type" class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/40">Type:</label>
+          <select id="filter-type" [(ngModel)]="filterType" (ngModelChange)="applyFilters()"
             class="bg-transparent border border-editorial-text/20 px-3 py-1.5 text-[9px] font-mono uppercase tracking-widest text-editorial-text focus:outline-none focus:border-editorial-text">
             <option value="">All</option>
             <option value="pdf">PDF</option>
@@ -42,17 +42,17 @@ import { takeUntil } from 'rxjs/operators';
         </div>
 
         <div class="flex items-center gap-2">
-          <label class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/40">Date:</label>
-          <input type="date" [(ngModel)]="filterDateFrom" (ngModelChange)="applyFilters()"
-            class="bg-transparent border border-editorial-text/20 px-3 py-1.5 text-[9px] font-mono text-editorial-text focus:outline-none focus:border-editorial-text">
+          <label for="filter-date-from" class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/40">Date:</label>
+          <input type="date" id="filter-date-from" [(ngModel)]="filterDateFrom" (ngModelChange)="applyFilters()"
+            class="bg-transparent border border-editorial-text/20 px-3 py-1.5 text-[9px] font-mono text-editorial-text focus:outline-none focus:border-editorial-text" aria-label="From date">
           <span class="text-editorial-text/30 text-[9px]">to</span>
-          <input type="date" [(ngModel)]="filterDateTo" (ngModelChange)="applyFilters()"
-            class="bg-transparent border border-editorial-text/20 px-3 py-1.5 text-[9px] font-mono text-editorial-text focus:outline-none focus:border-editorial-text">
+          <input type="date" id="filter-date-to" [(ngModel)]="filterDateTo" (ngModelChange)="applyFilters()"
+            class="bg-transparent border border-editorial-text/20 px-3 py-1.5 text-[9px] font-mono text-editorial-text focus:outline-none focus:border-editorial-text" aria-label="To date">
         </div>
 
         <div class="flex items-center gap-2">
-          <label class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/40">Sort:</label>
-          <select [(ngModel)]="sortBy" (ngModelChange)="applyFilters()"
+          <label for="sort-by" class="text-[8px] font-mono uppercase tracking-[0.3em] text-editorial-text/40">Sort:</label>
+          <select id="sort-by" [(ngModel)]="sortBy" (ngModelChange)="applyFilters()"
             class="bg-transparent border border-editorial-text/20 px-3 py-1.5 text-[9px] font-mono uppercase tracking-widest text-editorial-text focus:outline-none focus:border-editorial-text">
             <option value="name">Name</option>
             <option value="date">Date</option>

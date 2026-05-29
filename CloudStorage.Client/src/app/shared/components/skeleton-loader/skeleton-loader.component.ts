@@ -6,48 +6,37 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div class="animate-pulse space-y-3">
-      @switch (variant()) {
-        @case ('table') {
-          @for (row of rows; track $index) {
-            <div class="flex gap-4 items-center py-3 border-b border-editorial-text/5">
-              <div class="w-4 h-4 bg-editorial-text/10 rounded-none"></div>
-              <div class="flex-1 h-3 bg-editorial-text/10 rounded-none"></div>
-              <div class="w-20 h-3 bg-editorial-text/8 rounded-none"></div>
-              <div class="w-16 h-3 bg-editorial-text/6 rounded-none"></div>
-            </div>
-          }
-        }
-        @case ('card') {
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            @for (card of rows; track $index) {
-              <div class="border border-editorial-text/10 p-6 space-y-3">
-                <div class="w-full h-20 bg-editorial-text/8 rounded-none"></div>
-                <div class="w-3/4 h-3 bg-editorial-text/10 rounded-none"></div>
-                <div class="w-1/2 h-2 bg-editorial-text/6 rounded-none"></div>
-              </div>
-            }
-          </div>
-        }
-        @case ('text') {
-          @for (line of rows; track $index) {
-            <div class="h-3 bg-editorial-text/10 rounded-none" [style.width.%]="60 + ($index * 10) % 40"></div>
-          }
-        }
-        @default {
-          @for (line of rows; track $index) {
-            <div class="h-4 bg-editorial-text/10 rounded-none"></div>
-          }
-        }
-      }
-    </div>
-  `
+    @for (i of countArray(); track $index) {
+      <div [class]="classes() + ' mb-2 last:mb-0'" [style.height.px]="height()" [style.width]="width()">
+        <div class="absolute inset-0 bg-editorial-text/5 animate-pulse"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-editorial-text/[0.03] to-transparent animate-[shimmer_2s_infinite]"></div>
+        
+        <!-- Editorial Accents -->
+        <div class="absolute top-0 left-0 w-1 h-1 bg-editorial-text/10"></div>
+        <div class="absolute bottom-0 right-0 w-1 h-1 bg-editorial-text/10"></div>
+      </div>
+    }
+  `,
+  styles: [`
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+  `]
 })
 export class SkeletonLoaderComponent {
-  variant = input<'table' | 'card' | 'text' | 'default'>('default');
-  count = input<number>(5);
+  height = input<number>(20);
+  width = input<string>('100%');
+  variant = input<'text' | 'rect' | 'circle' | 'table'>('text');
+  count = input<number>(1);
 
-  get rows(): number[] {
-    return Array.from({ length: this.count() }, (_, i) => i);
+  countArray() {
+    return Array(this.count() || 1);
+  }
+
+  classes() {
+    const base = 'relative overflow-hidden bg-editorial-text/[0.02] border border-editorial-text/5 ';
+    if (this.variant() === 'circle') return base + 'rounded-full';
+    return base + 'rounded-none';
   }
 }

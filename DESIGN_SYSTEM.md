@@ -1,94 +1,83 @@
-# Editorial Minimalist Design System
+# Modern Editorial Design System
 
-This document outlines the core visual rules and guidelines for the Cloud Storage application's UI/UX. The aesthetic is "Editorial Minimalist," characterized by high-contrast brutalist borders, monospace technical typography, strict geometry, and variable light/dark mode implementations.
+This document outlines the visual rules and UX guidelines for the Cloud Storage application. The aesthetic is "Modern Editorial"—a sophisticated evolution of technical minimalist styles, balancing high-contrast brutalist borders with modern spacing, refined typography, and full mobile-first responsiveness.
 
 ## 1. Color Palette
 
-The entire UI is built on a high-contrast binary system using CSS variables defined in `styles.css` using the Tailwind CSS v4 `@theme` block or root variables.
+The UI uses a high-contrast system with semantic clarity, supporting both Light and Dark modes.
 
 ### Core Variables (`styles.css`)
-- `--editorial-bg`: The primary background color.
-  - **Light Mode**: `#F1EEE9` (Warm off-white, paper-like)
-  - **Dark Mode**: `#1A1A1A` (Deep near-black)
-- `--editorial-text`: The primary foreground color.
-  - **Light Mode**: `#1A1A1A` (Soft black)
-  - **Dark Mode**: `#F1EEE9` (Warm off-white)
+- `--editorial-bg`: Primary background.
+  - **Light**: `#F9F7F4` (Clean paper off-white)
+  - **Dark**: `#0F0F0F` (True dark-near-black)
+- `--editorial-text`: Primary text.
+  - **Light**: `#121212` (Rich black)
+  - **Dark**: `#F1EEE9` (Warm off-white)
+- `--editorial-accent`: Primary brand interaction.
+  - `#6366f1` (Indigo 500)
 
-### Semantic Colors
-- **Danger / Critical**: `#e11d48` (Rose 600) / Red. Used for irreversible actions (e.g., Purge Drive).
-- **Subdued / Secondary Text**: Use opacity modifiers or specific colors.
-  - **CRITICAL**: Never use opacities below **50%** for text elements to ensure accessibility compliance.
-  - Recommended: `text-editorial-text/70` for secondary labels, `text-editorial-text/60` for metadata.
+### Action Colors
+- **Primary**: Variable based on mode (typically inverse of BG).
+- **Critical**: `#e11d48` (Rose 600).
+- **Success**: `#10b981` (Emerald 500).
 
 ---
 
 ## 2. Typography
 
-The design relies exclusively on two main font families, strictly enforcing a technical and documentary feel.
+We use a "Documentary Scale" that prioritizes legibility while maintaining a technical feel.
 
-### Primary Font (Headings, Body text)
-- **Family**: `Inter` / `Roboto` / sans-serif
-- **Usage**: Main headings, page titles, body paragraphs.
-- **Classes**: `font-sans font-bold tracking-tighter`
+### Primary Font (UI, Body)
+- **Family**: `Inter` / `System-UI`
+- **Weight**: 400 (Regular), 600 (Semibold), 800 (Bold)
+- **Base Size**: 14px (`text-sm`) for better readability on mobile.
 
-### Secondary Font (Labels, Data, Navigation, UI Elements)
-- **Family**: `Roboto Mono` / `Space Mono` / monospace
-- **Usage**: Forms, buttons, table data, timestamps, system statuses, navigation items.
+### Secondary Font (Data, Labels, Status)
+- **Family**: `Roboto Mono`
+- **Usage**: Metadata, technical readouts, button labels, navigation.
 - **Modifiers**:
-  - **Uppercase**: Almost all mono text should be `uppercase`.
-  - **Extreme Tracking**: Use `tracking-widest` or custom `tracking-[0.2em]` to `[0.5em]` for a spaced-out, technical look.
-  - **Sizing**: Keep mono text small (e.g., `text-[9px]`, `text-[10px]`, `text-[11px]`).
+  - **Spacing**: `tracking-[0.05em]` to `[0.3em]`.
+  - **Case**: Typically `uppercase` for small technical labels (8px-11px).
 
 ---
 
-## 3. Layout & Geometry
+## 3. Layout & Grid
 
-The design completely avoids rounded corners and soft shadows to maintain a brutalist, print-like aesthetic.
+The redesign adheres to a strict 8px (4px subdivision) spacing system.
 
-- **Border Radius**: Always `0` (`rounded-none`). No soft radii anywhere.
-- **Borders**: Sharp 1px solid borders.
-  - Main structural dividers: `border-editorial-text/20`.
-  - Subtle separators: `border-editorial-text/10`.
-- **Shadows**: Avoid soft, blurry drop shadows. If depth is needed, use sharp, hard-edged offsets (e.g., brutalist shadows) or stick to flat 2D overlapping div borders.
-- **Glassmorphism**: **FORBIDDEN**. Do not use `backdrop-blur` or semi-transparent glowing overlays. Modals and overlays should be solid colors (`bg-editorial-bg`) with high-contrast borders and dim solid backdrops (`bg-editorial-text/20`).
+- **Grid**: Use a 12-column grid for desktop and a 4-column grid for mobile.
+- **Corner Radius**: 
+  - **Primary**: `rounded-none` (0px) for high-level structural containers.
+  - **Subtle**: `rounded-sm` (2px) or `rounded-md` (4px) for interactive elements (buttons, cards) to signify "clickability."
+- **Borders**: Continuous 1px borders using `border-editorial-text/15`.
+- **Depth**: Soft, sharp-edged shadows (`shadow-brutalist` or subtle layering) replace purely 2D layouts where depth aids hierarchy.
 
 ---
 
 ## 4. Components
 
-### Primary Buttons (Call to Action)
-- **Background**: Solid primary text color (`bg-editorial-text`).
-- **Foreground**: Solid primary background color (`text-editorial-bg`).
-- **Typography**: Mono, uppercase, small text, wide tracking.
-- **Interaction**: `hover:opacity-90 active:scale-[0.99] transition-all`.
-- **Disabled State**: `disabled:opacity-50 disabled:cursor-not-allowed`.
+### Navigation (Mobile-First)
+- **Desktop**: Persistent side navigation (240px) or compact icon bar (64px).
+- **Mobile**: Collapsible bottom navigation or hidden drawer via hamburger trigger.
 
-### Secondary Buttons & Controls
-- **Style**: Transparent with full or partial borders (`border border-editorial-text/20`).
-- **Interaction**: `hover:bg-editorial-text hover:text-editorial-bg transition-colors`.
-
-### Inputs & Forms
-- **Container**: `bg-transparent` with only a bottom border (`border-b border-editorial-text/20`). No full surrounding box.
-- **Focus State**: `focus:border-editorial-text outline-none transition-all`.
-- **Text**: Monospace, uppercase.
-
-### Tables / Lists (Data Display)
-- **Structure**: Avoid traditional `<table>` elements. Use CSS Grid (e.g., `grid-cols-[40px_1fr_100px_150px]`) for strict alignment.
-- **Separators**: `border-b border-editorial-text/20` between rows.
-- **Hover Effects**: Reveal actions (download, delete) on row hover using `opacity-0 group-hover:opacity-100`.
+### Interactions
+- **Hover**: Immediate feedback using background shifts (`bg-editorial-text/5`) or scale tweaks (`scale-[1.01]`).
+- **Active**: Press-down effect (`scale-[0.98]`).
+- **Loading**: Use technical progress bars `[||||||____]` and skeleton loaders that mirror list structure.
 
 ---
 
-## 5. Micro-Interactions
+## 5. Accessibility (WCAG 2.1+)
 
-- **Hover States**: Subtle but immediate. Avoid long transitions unless it's a structural layout shift. Use `<div class="w-1.5 h-1.5 rounded-full bg-editorial-text/20 group-hover:bg-editorial-text/60 transition-none"></div>` for terminal-like active indicators.
-- **Loading States**: Use brutalist placeholders like `[____]` or `--- KB` rather than generic spinning loaders. If using pulse animations, style them to look like terminal enumeration blocks (e.g., `ENUMERATING_OBJECT_1...`).
+1. **Contrast**: Minimum 4.5:1 ratio for all body text.
+2. **Text Size**: Avoid text smaller than 12px for primary content. Technical metadata may use 9px-11px but must be high contrast.
+3. **Focus States**: Explicit 2px solid offset rings for keyboard navigation.
+4. **Touch Targets**: Minimum 44x44px for mobile interactions.
 
 ---
 
-## Summary Checklist for New UI Additions:
-1. Is the text readable? **Strictly avoid** opacities below **50%** for any text.
-2. Are corners completely sharp? No `rounded` classes (use `rounded-none`).
-3. Is technical information using the `.font-mono` class?
-4. Are borders visible? Use `border-editorial-text/20` as the standard.
-5. Does it work in both light and dark mode automatically via CSS variables?
+## Summary Checklist
+1. Is it responsive? Test from 320px to 2560px.
+2. Is the hierarchy clear? Use weight and size, not just uppercase.
+3. Does it feel "Premium Editorial"? (Clean, fast, technically precise).
+

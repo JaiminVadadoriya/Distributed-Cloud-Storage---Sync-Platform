@@ -53,7 +53,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
             int userId = 1;
             int limit = 10;
             var expectedLogs = new List<ActivityLog> { new ActivityLog { Id = Guid.NewGuid(), UserId = userId } };
-            
+
             _activityRepoMock.Setup(repo => repo.GetRecentActivityAsync(userId, limit))
                 .ReturnsAsync(expectedLogs);
 

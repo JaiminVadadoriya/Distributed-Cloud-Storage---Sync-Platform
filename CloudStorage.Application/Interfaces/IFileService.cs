@@ -19,6 +19,7 @@ namespace CloudStorage.Application.Interfaces
         Task<bool> HasPermissionAsync(Guid fileId, int userId, PermissionType minimumPermission);
         Task<DashboardStatsDto> GetDashboardStatsAsync(int userId);
         Task DeleteAllUserFilesAsync(int userId);
+        Task PurgeUserDriveAsync(int userId);
 
         // Version history
         Task<IEnumerable<FileVersionDto>> GetFileVersionsAsync(Guid fileId, int userId);

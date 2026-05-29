@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, type Mocked } from 'vitest';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { SyncTestPanelComponent } from './sync-test-panel.component';
 import { SyncEngineService } from '../../../core/services/sync-engine.service';
@@ -9,9 +9,9 @@ import { signal } from '@angular/core';
 describe('SyncTestPanelComponent', () => {
   let component: SyncTestPanelComponent;
   let fixture: ComponentFixture<SyncTestPanelComponent>;
-  let syncEngineMock: any;
-  let offlineCacheMock: any;
-  let connectionStatusMock: any;
+  let syncEngineMock: Mocked<SyncEngineService>;
+  let offlineCacheMock: Mocked<OfflineCacheService>;
+  let connectionStatusMock: Mocked<ConnectionStatusService>;
 
   beforeEach(async () => {
     syncEngineMock = {
@@ -21,17 +21,20 @@ describe('SyncTestPanelComponent', () => {
       syncLog: signal([]),
       performSync: vi.fn().mockResolvedValue(undefined),
       simulateLocalEdit: vi.fn().mockResolvedValue(undefined),
-      clearLog: vi.fn()
-    };
+      clearLog: vi.fn(),
+      refreshPendingOpsCount: vi.fn().mockResolvedValue(undefined),
+      pendingOpsCount: signal(0),
+      hasPendingOps: signal(false)
+    } as unknown as Mocked<SyncEngineService>;
 
     offlineCacheMock = {
       getCachedFiles: vi.fn().mockResolvedValue([]),
-    };
+    } as unknown as Mocked<OfflineCacheService>;
 
     connectionStatusMock = {
       isOnline: vi.fn().mockReturnValue(true),
       isOffline: vi.fn().mockReturnValue(false)
-    };
+    } as unknown as Mocked<ConnectionStatusService>;
 
     await TestBed.configureTestingModule({
       imports: [SyncTestPanelComponent],
@@ -56,7 +59,15 @@ describe('SyncTestPanelComponent', () => {
   });
 
   it('should simulate edit', async () => {
-    const file = { id: '1', fileName: 'test.txt' } as any;
+    const file = { 
+      id: '1', 
+      fileName: 'test.txt', 
+      size: 1024, 
+      createdAt: '2023-01-01', 
+      lastModifiedAt: '2023-01-01', 
+      isShared: false, 
+      versionVector: null 
+    };
     await component.simulateEdit(file);
 
     expect(syncEngineMock.simulateLocalEdit).toHaveBeenCalledWith('1', 'test.txt');

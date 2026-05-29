@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { OfflineCacheService } from './offline-cache.service';
 
@@ -6,15 +6,17 @@ describe('OfflineCacheService', () => {
   let service: OfflineCacheService;
 
   beforeEach(() => {
-    // Mock IndexedDB if needed, but here we'll test localStorage logic first
-    // and basic service instantiation.
-    // For full IndexedDB testing, a more complex mock is required.
-    
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn(),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+    });
+
     TestBed.configureTestingModule({
       providers: [OfflineCacheService]
     });
     service = TestBed.inject(OfflineCacheService);
-    localStorage.clear();
   });
 
   it('should be created', () => {
@@ -24,11 +26,14 @@ describe('OfflineCacheService', () => {
   it('should store and retrieve last sync timestamp', () => {
     const timestamp = new Date().toISOString();
     service.setLastSyncTimestamp(timestamp);
+    expect(localStorage.setItem).toHaveBeenCalledWith('lastSyncTimestamp', timestamp);
+
+    vi.mocked(localStorage.getItem).mockReturnValue(timestamp);
     expect(service.getLastSyncTimestamp()).toBe(timestamp);
-    expect(localStorage.getItem('lastSyncTimestamp')).toBe(timestamp);
   });
 
   it('should return null if no sync timestamp is stored', () => {
+    vi.mocked(localStorage.getItem).mockReturnValue(null);
     expect(service.getLastSyncTimestamp()).toBeNull();
   });
 });

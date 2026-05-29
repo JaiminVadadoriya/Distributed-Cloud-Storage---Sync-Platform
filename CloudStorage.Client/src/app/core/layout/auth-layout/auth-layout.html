@@ -1,37 +1,63 @@
-<div class="min-h-screen relative flex items-center justify-center p-4 overflow-hidden bg-editorial-bg selection:bg-editorial-text selection:text-editorial-bg transition-colors duration-500">
+<div class="relative w-full flex flex-col items-center justify-start md:justify-center p-4 pt-12 md:pt-24 pb-32 md:pb-40 bg-editorial-bg selection:bg-editorial-text selection:text-editorial-bg transition-colors duration-500 overflow-x-hidden">
   <!-- Theme Toggle (Brutalist Top-Right) -->
   <div class="absolute top-8 right-8 z-50">
-    <button (click)="themeService.toggleTheme()" 
+    <button (click)="toggleTheme()" 
             class="w-10 h-10 flex items-center justify-center text-editorial-text/70 hover:text-editorial-text transition-all border border-editorial-text/20 bg-editorial-bg/10 hover:bg-editorial-bg group relative overflow-hidden">
       <div class="relative z-10">
-        @if (themeService.isDarkMode()) {
+        @if (themeService.theme() !== 'clinical') {
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
         } @else {
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
         }
+
       </div>
       <div class="absolute inset-0 bg-editorial-text translate-y-full group-hover:translate-y-0 transition-transform duration-300 opacity-[0.02]"></div>
     </button>
   </div>
 
   <!-- Animated Grain Overlay -->
-  <div class="grain-overlay opacity-[0.05]"></div>
+  <div class="grain-wrapper">
+    <div class="grain-overlay opacity-[0.05]"></div>
+  </div>
   
-  <!-- Moody Atmospheric Auras (Editorial Phase 2) -->
+  <!-- Moody Atmospheric Auras -->
   <div class="absolute top-[10%] left-[5%] w-[600px] h-[600px] bg-editorial-aura-rose/10 rounded-full blur-[120px] animate-pulse pointer-events-none"></div>
   <div class="absolute bottom-[10%] right-[5%] w-[500px] h-[500px] bg-editorial-aura-deep/15 rounded-full blur-[100px] pointer-events-none"></div>
-  <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-editorial-aura-deep/5 rounded-full blur-[150px] pointer-events-none"></div>
 
-  <div class="w-full max-w-[480px] p-8 relative z-10">
-    <!-- Brand Header: Editorial Refinement -->
-    <div class="text-center mb-16">
-         <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-editorial-text text-editorial-bg mb-8 shadow-2xl transition-transform hover:scale-110 duration-700">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
+  <div class="w-full max-w-[540px] p-2 sm:p-6 md:p-8 relative z-10 flex-1 flex flex-col justify-center">
+    <!-- Brand Header -->
+    <div class="text-center mb-12 md:mb-16 space-y-6 md:space-y-8">
+         <div class="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 bg-editorial-text text-editorial-bg shadow-brutalist transition-transform hover:rotate-90 duration-1000 cursor-none group/logo">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" md:width="40" md:height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="group-hover/logo:scale-75 transition-transform"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>
          </div>
-         <h1 class="text-5xl font-extrabold tracking-tighter mb-4 text-editorial-text font-sans">CloudStorage</h1>
-         <p class="text-editorial-text/70 font-mono text-xs tracking-[0.3em] uppercase">Secure . Fast . Distributed</p>
+         <div class="space-y-2">
+           <h1 class="text-4xl md:text-6xl font-black tracking-[-0.05em] text-editorial-text font-sans uppercase italic">CloudStorage</h1>
+           <div class="flex items-center justify-center gap-4 md:gap-6 opacity-30">
+              <div class="h-[1px] w-8 md:w-12 bg-editorial-text"></div>
+              <p class="font-mono text-[8px] md:text-[9px] tracking-[0.4em] uppercase font-bold text-editorial-text">Arc_V21_Core</p>
+              <div class="h-[1px] w-8 md:w-12 bg-editorial-text"></div>
+           </div>
+         </div>
     </div>
     
     <router-outlet></router-outlet>
+  </div>
+
+  <!-- Technical Status Footer Bar: Non-fixed on very small mobile for usability -->
+  <div class="w-full mt-24 md:fixed md:bottom-0 md:left-0 border-t border-editorial-text/10 p-6 flex flex-col sm:flex-row justify-between items-center bg-editorial-bg/50 backdrop-blur-xl z-50 gap-6 sm:gap-0">
+     <div class="flex items-center gap-10">
+        <div class="flex items-center gap-4">
+           <div class="w-2 h-2 bg-editorial-text animate-pulse"></div>
+           <span class="font-mono text-[9px] uppercase tracking-[0.4em] text-editorial-text font-bold">System_Ready</span>
+        </div>
+        <div class="hidden md:flex items-center gap-4 text-editorial-text/30 font-mono text-[8px] uppercase tracking-[0.3em]">
+           <span>Enc_Node: 0x9AF2</span>
+           <span class="w-1 h-1 bg-current rounded-full"></span>
+           <span>Latency: 12ms</span>
+        </div>
+     </div>
+     <div class="font-mono text-[8px] uppercase tracking-[0.5em] text-editorial-text/20 font-black text-center sm:text-right">
+        © 2026_Distributed_Protocol_LTS
+     </div>
   </div>
 </div>

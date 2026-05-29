@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { BaseComponent } from '../../../core/models/base-component';
 import { SyncEngineService } from '../../../core/services/sync-engine.service';

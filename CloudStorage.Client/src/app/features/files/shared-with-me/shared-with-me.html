@@ -1,24 +1,60 @@
-<div class="shared-with-me">
-  <h3 class="page-title">Shared With Me</h3>
+<div class="space-y-12 animate-in fade-in duration-700 selection:bg-editorial-text selection:text-editorial-bg">
+  <header class="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-8 border-b border-editorial-text/20">
+    <div class="space-y-2">
+      <h3 class="font-mono text-[10px] uppercase tracking-[0.5em] text-editorial-text/40">Shared_Entities</h3>
+      <h1 class="font-sans text-3xl font-bold uppercase tracking-tight text-editorial-text leading-none">Inbound_Transmission</h1>
+    </div>
+    
+    <div class="flex items-center gap-4">
+      <p class="font-mono text-[9px] uppercase tracking-[0.3em] text-editorial-text/40 italic underline decoration-editorial-text/10 underline-offset-4">
+        Volume_Count: {{ files().length }} Objects
+      </p>
+    </div>
+  </header>
 
   @if (isBusy()) {
-    <div class="loading-state"><div class="spinner"></div><p>Loading shared files...</p></div>
+    <div class="py-32 text-center space-y-4">
+      <div class="w-8 h-8 border border-editorial-text/20 border-t-editorial-text rounded-full animate-spin mx-auto"></div>
+      <p class="font-mono text-[9px] uppercase tracking-[0.4em] text-editorial-text/40">Accessing_Encrypted_Link...</p>
+    </div>
   } @else if (files().length === 0) {
-    <div class="empty-state">
-      <p>No files have been shared with you yet</p>
+    <div class="py-48 text-center border-2 border-dashed border-editorial-text/5">
+      <div class="w-16 h-16 border border-editorial-text/10 mx-auto flex items-center justify-center mb-10 opacity-20 group hover:opacity-100 transition-opacity">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+      </div>
+      <p class="font-mono text-[10px] uppercase tracking-[0.6em] text-editorial-text/20">Null_Sequence: No_Shared_Resource_Found</p>
     </div>
   } @else {
-    <div class="file-grid">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       @for (file of files(); track file.id) {
-        <div class="file-card">
-          <div class="file-info">
-            <span class="file-icon">📄</span>
-            <div class="file-meta">
-              <span class="file-name">{{ file.name }}</span>
-              <span class="file-detail">{{ formatSize(file.size) }} · from {{ file.owner }}</span>
+        <div class="group p-8 border border-editorial-text/10 bg-editorial-bg hover:border-editorial-text transition-all duration-500 relative overflow-hidden flex flex-col justify-between aspect-[4/3]">
+          <div class="space-y-6">
+            <div class="flex justify-between items-start">
+              <div class="text-editorial-text/20 group-hover:text-editorial-text transition-colors duration-500">
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <span class="font-mono text-[8px] uppercase tracking-widest text-editorial-text/40 border border-editorial-text/10 px-2 py-1">{{ file.type }}</span>
+            </div>
+            
+            <div class="space-y-2">
+              <h4 class="font-sans text-lg font-bold uppercase tracking-tight text-editorial-text truncate group-hover:tracking-normal transition-all duration-500">{{ file.name }}</h4>
+              <div class="flex flex-col gap-1">
+                <p class="font-mono text-[9px] uppercase tracking-widest text-editorial-text/40 italic">Origin: {{ file.owner }}</p>
+                <p class="font-mono text-[9px] uppercase tracking-widest text-editorial-text/40">Magnitude: {{ formatSize(file.size) }}</p>
+              </div>
             </div>
           </div>
-          <button class="download-btn" (click)="downloadFile(file.id, file.name)">⬇</button>
+
+          <div class="flex items-center justify-between pt-6 mt-6 border-t border-editorial-text/5">
+            <span class="font-mono text-[8px] uppercase tracking-tighter text-editorial-text/20">{{ file.modified | date:'dd.MM.yy HH:mm' }}</span>
+            <button (click)="downloadFile(file.id, file.name)" 
+                    class="font-mono text-[10px] uppercase tracking-widest font-bold text-editorial-text hover:underline underline-offset-8 decoration-2 decoration-editorial-text transition-all">
+              Execute_Download
+            </button>
+          </div>
+
+          <!-- Decorative Line -->
+          <div class="absolute bottom-0 left-0 h-[1px] bg-editorial-text w-0 group-hover:w-full transition-all duration-700 ease-in-out"></div>
         </div>
       }
     </div>

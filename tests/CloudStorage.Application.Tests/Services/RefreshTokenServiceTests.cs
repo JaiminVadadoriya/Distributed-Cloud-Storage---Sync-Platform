@@ -142,7 +142,7 @@ namespace CloudStorage.Application.Tests.Services
 
             // Assert
             Assert.Null(result);
-            
+
             var token = await _context.RefreshTokens.FindAsync(expiredToken.Id);
             Assert.True(token!.IsRevoked);
         }

@@ -16,7 +16,7 @@ namespace CloudStorage.Infrastructure.Services
         private readonly IActivityService _activityService;
 
         public FolderService(
-            IFolderRepository folderRepository, 
+            IFolderRepository folderRepository,
             ICacheService cache,
             IActivityService activityService)
         {
@@ -53,11 +53,11 @@ namespace CloudStorage.Infrastructure.Services
             };
 
             await _folderRepository.AddAsync(folder);
-            
+
             await _activityService.LogActivityAsync(userId, "CREATE", "FOLDER", folder.Id.ToString(), $"Folder '{folder.Name}' was created.");
 
             await _cache.RemoveByPrefixAsync($"stats:{userId}");
-            
+
             return MapToDto(folder);
         }
 
@@ -70,7 +70,7 @@ namespace CloudStorage.Infrastructure.Services
             folder.Name = newName;
             folder.LastModifiedAt = DateTime.UtcNow;
             await _folderRepository.UpdateAsync(folder);
-            
+
             await _activityService.LogActivityAsync(userId, "RENAME", "FOLDER", folderId.ToString(), $"Folder renamed to '{newName}'.");
 
             return MapToDto(folder);
@@ -89,7 +89,7 @@ namespace CloudStorage.Infrastructure.Services
             folder.ParentFolderId = newParentId;
             folder.LastModifiedAt = DateTime.UtcNow;
             await _folderRepository.UpdateAsync(folder);
-            
+
             await _activityService.LogActivityAsync(userId, "MOVE", "FOLDER", folderId.ToString(), "Folder was moved.");
 
             return MapToDto(folder);
@@ -147,25 +147,9 @@ namespace CloudStorage.Infrastructure.Services
                 $"Folder shared with user ID {targetUserId} ({permissionType}).");
         }
 
-        private FolderDto MapToDto(Folder folder)
-        {
-            return new FolderDto
-            {
-                Id = folder.Id,
-                Name = folder.Name,
-                ParentFolderId = folder.ParentFolderId,
-                CreatedAt = folder.CreatedAt,
-                LastModifiedAt = folder.LastModifiedAt,
-                SubFolders = folder.SubFolders?.Select(MapToDto).ToList() ?? new List<FolderDto>(),
-                Files = folder.Files?.Select(f => new FileListDto
-                {
-                    Id = f.Id,
-                    FileName = f.FileName,
-                    Size = f.Size,
-                    CreatedAt = f.CreatedAt,
-                    IsShared = f.OwnerId != folder.OwnerId
-                }).ToList() ?? new List<FileListDto>()
-            };
-        }
+        /// <summary>
+        /// Mapping is now delegated to MappingExtensions.ToDto() for reusability.
+        /// </summary>
+        private static FolderDto MapToDto(Folder folder) => folder.ToDto();
     }
 }

@@ -5,6 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using CloudStorage.Application.DTOs;
 using CloudStorage.Application.Interfaces;
+using CloudStorage.Domain.Entities;
+using CloudStorage.Domain.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,8 +21,8 @@ namespace CloudStorage.API.Services
         private readonly ILogger<BackgroundWorkerService> _logger;
         private readonly IServiceProvider _serviceProvider;
         private readonly IConfiguration _configuration;
-        private IConnection _connection;
-        private IModel _channel;
+        private IConnection? _connection;
+        private IChannel? _channel;
 
         public BackgroundWorkerService(
             ILogger<BackgroundWorkerService> logger,
@@ -38,45 +40,71 @@ namespace CloudStorage.API.Services
             {
                 HostName = _configuration["RabbitMQ:HostName"] ?? "localhost",
                 UserName = _configuration["RabbitMQ:UserName"] ?? "guest",
-                Password = _configuration["RabbitMQ:Password"] ?? "guest",
-                DispatchConsumersAsync = true
+                Password = _configuration["RabbitMQ:Password"] ?? "guest"
             };
 
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    _connection = factory.CreateConnection();
-                    _channel = _connection.CreateModel();
+                    _connection = await factory.CreateConnectionAsync(stoppingToken);
+                    _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
-                    _channel.QueueDeclare(queue: "deduplication-tasks",
-                                         durable: true,
-                                         exclusive: false,
-                                         autoDelete: false,
-                                         arguments: null);
-                                         
-                    _channel.BasicQos(prefetchSize: 0, prefetchCount: 10, global: false);
-                    
+                    await _channel.QueueDeclareAsync(queue: "deduplication-tasks",
+                                                     durable: true,
+                                                     exclusive: false,
+                                                     autoDelete: false,
+                                                     arguments: null,
+                                                     cancellationToken: stoppingToken);
+
+                    await _channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 10, global: false, cancellationToken: stoppingToken);
+
                     _logger.LogInformation("Connected to RabbitMQ for background tasks.");
-                    
+
                     var consumer = new AsyncEventingBasicConsumer(_channel);
-                    consumer.Received += async (model, ea) =>
+                    consumer.ReceivedAsync += async (model, ea) =>
                     {
                         var body = ea.Body.ToArray();
                         var message = Encoding.UTF8.GetString(body);
-                        
-                        try 
+
+                        try
                         {
-                            _logger.LogInformation($"Received deduplication task: {message}");
-                            
-                            using var scope = _serviceProvider.CreateScope();
-                            var verifyService = scope.ServiceProvider.GetRequiredService<IAzureChunkVerificationService>();
-                            
-                            await Task.Delay(100, stoppingToken);
-                            
-                            if (_channel.IsOpen)
+                            var taskData = JsonDocument.Parse(message).RootElement;
+                            var taskType = taskData.GetProperty("TaskType").GetString();
+
+                            if (taskType == "VerifyAndComplete")
                             {
-                                _channel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
+                                var fileId = taskData.GetProperty("FileId").GetGuid();
+                                var chunkCount = taskData.GetProperty("ChunkCount").GetInt32();
+
+                                _logger.LogInformation($"[WORKER] Starting verification for File: {fileId} ({chunkCount} chunks)");
+
+                                using var scope = _serviceProvider.CreateScope();
+                                var verifyService = scope.ServiceProvider.GetRequiredService<IAzureChunkVerificationService>();
+                                var fileRepository = scope.ServiceProvider.GetRequiredService<IFileMetadataRepository>();
+
+                                var result = await verifyService.VerifyAllChunksAsync(fileId, chunkCount);
+
+                                if (result.IsValid)
+                                {
+                                    _logger.LogInformation($"[WORKER] Verification SUCCESS for File: {fileId}");
+                                }
+                                else
+                                {
+                                    _logger.LogError($"[WORKER] Verification FAILED for File: {fileId}. Missing chunks: {string.Join(", ", result.MissingChunkIndices)}");
+
+                                    var file = await fileRepository.GetByIdAsync(fileId);
+                                    if (file != null)
+                                    {
+                                        file.Status = UploadStatus.Failed;
+                                        await fileRepository.UpdateAsync(file);
+                                    }
+                                }
+                            }
+
+                            if (_channel != null && _channel.IsOpen)
+                            {
+                                await _channel.BasicAckAsync(deliveryTag: ea.DeliveryTag, multiple: false, cancellationToken: stoppingToken);
                             }
                         }
                         catch (Exception ex)
@@ -84,14 +112,15 @@ namespace CloudStorage.API.Services
                             _logger.LogError(ex, "Error processing background task");
                             if (_channel != null && _channel.IsOpen)
                             {
-                                _channel.BasicNack(deliveryTag: ea.DeliveryTag, multiple: false, requeue: true);
+                                await _channel.BasicNackAsync(deliveryTag: ea.DeliveryTag, multiple: false, requeue: true, cancellationToken: stoppingToken);
                             }
                         }
                     };
 
-                    _channel.BasicConsume(queue: "deduplication-tasks",
-                                         autoAck: false,
-                                         consumer: consumer);
+                    await _channel.BasicConsumeAsync(queue: "deduplication-tasks",
+                                                     autoAck: false,
+                                                     consumer: consumer,
+                                                     cancellationToken: stoppingToken);
 
                     while (!stoppingToken.IsCancellationRequested && _connection.IsOpen)
                     {
@@ -105,16 +134,32 @@ namespace CloudStorage.API.Services
                 }
                 finally
                 {
-                    _channel?.Dispose();
-                    _connection?.Dispose();
+                    if (_channel != null)
+                    {
+                        _channel.Dispose();
+                        _channel = null;
+                    }
+                    if (_connection != null)
+                    {
+                        _connection.Dispose();
+                        _connection = null;
+                    }
                 }
             }
         }
 
         public override void Dispose()
         {
-            _channel?.Dispose();
-            _connection?.Dispose();
+            if (_channel != null)
+            {
+                _channel.Dispose();
+                _channel = null;
+            }
+            if (_connection != null)
+            {
+                _connection.Dispose();
+                _connection = null;
+            }
             base.Dispose();
         }
     }

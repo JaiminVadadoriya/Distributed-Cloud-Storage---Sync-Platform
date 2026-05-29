@@ -1,24 +1,56 @@
-<div class="manage-permissions">
-  <h4 class="section-title">Access Control</h4>
-  @if (isBusy()) {
-    <div class="loading-state"><div class="spinner"></div></div>
-  } @else if (permissions().length === 0) {
-    <p class="empty">No users have access to this file</p>
+<div class="space-y-10 animate-in fade-in duration-700 selection:bg-editorial-text selection:text-editorial-bg">
+  <div class="flex items-center justify-between pb-6 border-b border-editorial-text/20">
+    <div class="space-y-1">
+      <h3 class="font-mono text-[9px] uppercase tracking-[0.4em] text-editorial-text/40 italic">Structural_Access_List</h3>
+      <h2 class="font-sans text-2xl font-bold uppercase tracking-tight text-editorial-text">Identity_Nodes</h2>
+    </div>
+    @if (isBusy()) {
+      <div class="w-4 h-4 border border-editorial-text/20 border-t-editorial-text rounded-full animate-spin"></div>
+    }
+  </div>
+
+  @if (!isBusy() && permissions().length === 0) {
+    <div class="py-20 text-center border border-dashed border-editorial-text/10 group hover:border-editorial-text/30 transition-colors">
+      <p class="font-mono text-[10px] uppercase tracking-[0.6em] text-editorial-text/20">Isolation_Active: No_External_Access</p>
+    </div>
   } @else {
-    <div class="permission-list">
+    <div class="divide-y divide-editorial-text/5">
       @for (perm of permissions(); track perm.userId) {
-        <div class="permission-item">
-          <div class="user-info">
-            <span class="username">{{ perm.username }}</span>
-            <span class="email">{{ perm.email }}</span>
+        <div class="py-8 flex items-center justify-between group hover:bg-editorial-text/[0.01] transition-colors relative">
+          <div class="flex items-center gap-6">
+            <div class="w-10 h-10 border border-editorial-text/10 flex items-center justify-center font-mono text-xs font-bold text-editorial-text/20 group-hover:border-editorial-text group-hover:text-editorial-text transition-all">
+              {{ perm.userName.slice(0, 1).toUpperCase() }}
+            </div>
+            <div class="space-y-1">
+              <h4 class="font-sans text-sm font-bold uppercase tracking-tight text-editorial-text">{{ perm.userName }}</h4>
+              <p class="font-mono text-[9px] uppercase tracking-widest text-editorial-text/40">{{ perm.email }}</p>
+            </div>
           </div>
-          <div class="permission-actions">
-            <select [value]="perm.permissionType" (change)="changeRole(perm.userId, $any($event.target).value)" class="role-select">
-              <option value="Read">Read</option>
-              <option value="Write">Write</option>
-            </select>
-            <button class="remove-btn" (click)="removeAccess(perm.userId)">✕</button>
+
+          <div class="flex items-center gap-6">
+             <div class="relative">
+                <select [value]="perm.permissionType" 
+                        (change)="changeRole(perm.userId, $any($event.target).value)" 
+                        class="appearance-none bg-transparent border-b border-editorial-text/20 font-mono text-[9px] uppercase tracking-widest text-editorial-text/60 px-4 py-2 hover:border-editorial-text transition-all focus:outline-none cursor-pointer">
+                  <option value="Read">READ_ONLY</option>
+                  <option value="Write">READ_WRITE</option>
+                  <option value="Owner">OWNER_PROTOCOL</option>
+                </select>
+                <!-- Custom arrow -->
+                <div class="absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none opacity-20 group-hover:opacity-100">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="6 9 12 15 18 9"/></svg>
+                </div>
+             </div>
+
+             <button (click)="removeAccess(perm.userId)" 
+                     class="p-3 text-editorial-text/20 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100" 
+                     title="Terminate Access">
+               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+             </button>
           </div>
+
+          <!-- Decorative bottom indicator -->
+          <div class="absolute bottom-0 right-0 w-8 h-[1px] bg-editorial-text/10 group-hover:w-20 group-hover:bg-editorial-text transition-all"></div>
         </div>
       }
     </div>

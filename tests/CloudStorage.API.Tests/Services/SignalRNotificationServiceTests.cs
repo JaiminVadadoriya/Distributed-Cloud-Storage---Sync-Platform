@@ -45,7 +45,7 @@ namespace CloudStorage.API.Tests.Services
             _mockClients.Verify(c => c.Group($"user_{ownerId}"), Times.Once);
             _mockClientProxy.Verify(c => c.SendCoreAsync(
                 "FileEvent",
-                It.Is<object[]>(args => 
+                It.Is<object[]>(args =>
                     args.Length == 1 &&
                     ((FileEventDto)args[0]).FileId == fileId &&
                     ((FileEventDto)args[0]).EventType == "FileUploaded"),
@@ -66,7 +66,7 @@ namespace CloudStorage.API.Tests.Services
             _mockClients.Verify(c => c.Group($"user_{ownerId}"), Times.Once);
             _mockClientProxy.Verify(c => c.SendCoreAsync(
                 "FileEvent",
-                It.Is<object[]>(args => 
+                It.Is<object[]>(args =>
                     args.Length == 1 &&
                     ((FileEventDto)args[0]).FileId == fileId &&
                     ((FileEventDto)args[0]).EventType == "FileDeleted"),
@@ -86,7 +86,7 @@ namespace CloudStorage.API.Tests.Services
             _mockClients.Verify(c => c.Group($"user_{ownerId}"), Times.Once);
             _mockClientProxy.Verify(c => c.SendCoreAsync(
                 "FileEvent",
-                It.Is<object[]>(args => 
+                It.Is<object[]>(args =>
                     args.Length == 1 &&
                     ((FileEventDto)args[0]).EventType == "AllFilesDeleted"),
                 It.IsAny<CancellationToken>()), Times.Once);

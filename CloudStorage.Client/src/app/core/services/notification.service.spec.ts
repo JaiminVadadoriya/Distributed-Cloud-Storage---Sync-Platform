@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { NotificationService, ToastNotification } from './notification.service';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { NotificationService } from './notification.service';
 
 describe('NotificationService', () => {
   let service: NotificationService;
@@ -62,14 +62,16 @@ describe('NotificationService', () => {
     expect(toasts[0].type).toBe('warning');
   });
 
-  it('should remove toast after timeout', fakeAsync(() => {
+  it('should remove toast after timeout', () => {
+    vi.useFakeTimers();
     service.success('Timeout test');
     expect(service.toasts().length).toBe(1);
     
-    tick(5000);
+    vi.advanceTimersByTime(5000);
     
     expect(service.toasts().length).toBe(0);
-  }));
+    vi.useRealTimers();
+  });
 
   it('should allow manual removal of toast', () => {
     service.success('Manual remove');
