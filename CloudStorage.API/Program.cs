@@ -115,7 +115,9 @@ builder.Services.AddScoped<INotificationPersistenceService, NotificationPersiste
 builder.Services.AddScoped<CloudStorage.Domain.Interfaces.INotificationRepository, CloudStorage.Infrastructure.Repositories.NotificationRepository>();
 
 // RabbitMQ and Background processing
-builder.Services.AddSingleton<IMessageQueue, RabbitMqService>();
+builder.Services.AddSingleton<RabbitMqService>();
+builder.Services.AddSingleton<IMessageQueue>(sp => sp.GetRequiredService<RabbitMqService>());
+builder.Services.AddSingleton<IEventPublisher>(sp => sp.GetRequiredService<RabbitMqService>());
 builder.Services.AddHostedService<BackgroundWorkerService>();
 
 // Redis and Caching Configuration
@@ -135,15 +137,9 @@ builder.Services.AddScoped<ICacheService, RedisCacheService>();
 builder.Services.AddSignalR()
     .AddStackExchangeRedis(redisConnectionString);
 
-// Storage & Azure configuration
-var blobConnectionString = builder.Configuration["AzureBlob:ConnectionString"]
-    ?? "UseDevelopmentStorage=true";
-builder.Services.AddSingleton(x => new BlobServiceClient(blobConnectionString));
-builder.Services.AddScoped<IBlobSasService, BlobSasService>();
-builder.Services.AddScoped<IAzureChunkVerificationService, AzureChunkVerificationService>();
-
-// We are now explicitly using BlobChunkStorageService instead of the local ChunkStorageService
-builder.Services.AddScoped<IChunkStorageService, BlobChunkStorageService>();
+// Storage configuration
+builder.Services.AddCloudStorage(builder.Configuration);
+builder.Services.AddScoped<IDistributedLockService, RedisDistributedLockService>();
 
 // JWT Authentication
 builder.Services.AddAuthentication(options =>
@@ -198,8 +194,7 @@ builder.Services.AddCors(options =>
 // Health checks with specialized probes
 builder.Services.AddHealthChecks()
     .AddNpgSql(dbConnectionString!, name: "PostgreSQL")
-    .AddRedis(redisConnectionString, name: "Redis")
-    .AddAzureBlobStorage(name: "Azure_Blob_Storage");
+    .AddRedis(redisConnectionString, name: "Redis");
 
 // OpenTelemetry Configuration
 builder.Services.AddOpenTelemetry()

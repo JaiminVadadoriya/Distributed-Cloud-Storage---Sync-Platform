@@ -16,3 +16,7 @@ data:
   Jwt__Key: "YourSuperSecretKeyForJwtAuthentication"
   Jwt__Issuer: "CloudStorageAPI"
   Jwt__Audience: "CloudStorageClients"
+  StorageProvider__Active: "MinIO"
+  StorageProvider__MinIO__Endpoint: "minio-svc:9000"
+  StorageProvider__MinIO__BucketName: "cloudstorage-chunks"
+  StorageProvider__MinIO__UseSSL: "false"

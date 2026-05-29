@@ -2,79 +2,48 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using CloudStorage.Application.Interfaces;
+using CloudStorage.Infrastructure.Providers.Local;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace CloudStorage.Infrastructure.Services
 {
+    [Obsolete("Use IChunkStorageProvider")]
     public class ChunkStorageService : IChunkStorageService
     {
-        private readonly string _storageBasePath;
+        private readonly LocalStorageProvider _provider;
+        private readonly LocalChunkStorageProvider _chunkProvider;
 
         public ChunkStorageService(IConfiguration configuration)
         {
-            _storageBasePath = configuration["Storage:ChunkPath"] ?? "/app/storage/chunks";
-
-            // Ensure base directory exists
-            if (!Directory.Exists(_storageBasePath))
-            {
-                Directory.CreateDirectory(_storageBasePath);
-            }
+            var logger = new LoggerFactory().CreateLogger<LocalStorageProvider>();
+            _provider = new LocalStorageProvider(configuration, logger);
+            _chunkProvider = new LocalChunkStorageProvider(_provider);
         }
 
         public async Task<string> SaveChunkAsync(Guid fileId, int chunkIndex, Stream chunkData)
         {
-            var fileDirectory = Path.Combine(_storageBasePath, fileId.ToString());
-
-            if (!Directory.Exists(fileDirectory))
-            {
-                Directory.CreateDirectory(fileDirectory);
-            }
-
-            var chunkPath = Path.Combine(fileDirectory, $"{chunkIndex}.chunk");
-
-            using var fileStream = new FileStream(chunkPath, FileMode.Create, FileAccess.Write);
-            await chunkData.CopyToAsync(fileStream);
-
-            return chunkPath;
+            return await _chunkProvider.SaveChunkAsync(fileId, chunkIndex, chunkData);
         }
 
-        public Task<bool> ChunkExistsAsync(string hash)
+        public async Task<bool> ChunkExistsAsync(string hash)
         {
-            // This method checks filesystem, but deduplication is handled by DeduplicationService
-            // This is a placeholder for future optimization
-            return Task.FromResult(false);
+            return await Task.FromResult(false);
         }
 
-        public Task<Stream> GetChunkAsync(string storagePath)
+        public async Task<Stream> GetChunkAsync(string storagePath)
         {
-            if (!File.Exists(storagePath))
-            {
-                throw new FileNotFoundException($"Chunk not found at path: {storagePath}");
-            }
-
-            Stream stream = new FileStream(
-                storagePath,
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.Read,
-                bufferSize: 131072, // 128 KB OS read-ahead buffer
-                FileOptions.SequentialScan | FileOptions.Asynchronous);
-            return Task.FromResult(stream);
+            return await _chunkProvider.GetChunkAsync(storagePath);
         }
 
-        public Task DeleteChunkAsync(string storagePath)
+        public async Task DeleteChunkAsync(string storagePath)
         {
-            if (File.Exists(storagePath))
-            {
-                File.Delete(storagePath);
-            }
-
-            return Task.CompletedTask;
+            await _chunkProvider.DeleteChunkAsync(storagePath);
         }
 
-        public Task<string> GenerateSasUploadUrlAsync(Guid fileId, int chunkIndex, TimeSpan expiry)
+        public async Task<string> GenerateSasUploadUrlAsync(Guid fileId, int chunkIndex, TimeSpan expiry)
         {
-            throw new NotSupportedException("SAS URLs are only supported with Azure Blob Storage.");
+            throw new NotSupportedException("SAS URLs are not supported for local files. Use GenerateChunkUploadUrlAsync instead.");
         }
     }
 }

@@ -21,13 +21,16 @@ services:
       - Jwt__Key=TestKeyThatIsLongEnoughForHS256AlgorithmEncodingPurposes1234567890
       - Jwt__Issuer=CloudStorageApiTest
       - Jwt__Audience=CloudStorageClientsTest
-      - Storage__ChunkPath=/app/storage/chunks
-      - AzureBlob__ConnectionString=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite-test:10000/devstoreaccount1;
+      - StorageProvider__Active=MinIO
+      - StorageProvider__MinIO__Endpoint=minio-test:9000
+      - StorageProvider__MinIO__AccessKey=minioadmin
+      - StorageProvider__MinIO__SecretKey=minioadmin
+      - StorageProvider__MinIO__BucketName=cloudstorage-test-chunks
+      - StorageProvider__MinIO__UseSSL=false
       - Redis__ConnectionString=redis-test:6379
       - RabbitMQ__HostName=rabbitmq-test
       - RabbitMQ__UserName=guest
       - RabbitMQ__Password=guest
-      - AzureBlob__ContainerName=cloudstorage-test-chunks
       - Logging__LogLevel__Default=Information
       - Logging__LogLevel__Microsoft=Warning
     volumes:
@@ -35,8 +38,8 @@ services:
     depends_on:
       postgres-test:
         condition: service_healthy
-      azurite-test:
-        condition: service_started
+      minio-test:
+        condition: service_healthy
       redis-test:
         condition: service_healthy
       rabbitmq-test:
@@ -140,22 +143,22 @@ services:
     networks:
       - cloudstorage-test-network
 
-  azurite-test:
-    image: mcr.microsoft.com/azure-storage/azurite:latest
+  minio-test:
+    image: minio/minio:latest
     ports:
-      - "10010:10000"  # Different ports from dev
-      - "10011:10001"
-      - "10012:10002"
+      - "9010:9000"
+      - "9011:9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
     volumes:
-      - azurite_data_test:/data
-    command: >
-      azurite
-      --loose
-      --skipApiVersionCheck
-      --blobHost 0.0.0.0
-      --queueHost 0.0.0.0
-      --tableHost 0.0.0.0
-      --location /data
+      - minio_data_test:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
     networks:
       - cloudstorage-test-network
 
@@ -168,7 +171,7 @@ volumes:
     driver: local
   storage_data_test:
     driver: local
-  azurite_data_test:
+  minio_data_test:
     driver: local
 
 networks:

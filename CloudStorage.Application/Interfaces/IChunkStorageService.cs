@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 
 namespace CloudStorage.Application.Interfaces
 {
+    [Obsolete("Use IChunkStorageProvider")]
     public interface IChunkStorageService
     {
         Task<string> SaveChunkAsync(Guid fileId, int chunkIndex, Stream chunkData);

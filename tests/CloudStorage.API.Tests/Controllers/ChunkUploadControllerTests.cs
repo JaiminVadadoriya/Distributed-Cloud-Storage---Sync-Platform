@@ -1,9 +1,11 @@
 using System;
 using System.Security.Claims;
+using System.Threading;
 using System.Threading.Tasks;
 using CloudStorage.API.Controllers;
 using CloudStorage.Application.DTOs;
 using CloudStorage.Application.Interfaces;
+using CloudStorage.Application.Interfaces.Storage;
 using CloudStorage.Domain.Entities;
 using CloudStorage.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -17,10 +19,10 @@ namespace CloudStorage.API.Tests.Controllers
     {
         private readonly Mock<IFileMetadataRepository> _mockFileRepo;
         private readonly Mock<IRepository<FileChunk>> _mockChunkRepo;
-        private readonly Mock<IChunkStorageService> _mockChunkStorage;
+        private readonly Mock<IChunkStorageProvider> _mockChunkStorage;
         private readonly Mock<IDeduplicationService> _mockDeduplication;
-        private readonly Mock<IBlobSasService> _mockSasService;
-        private readonly Mock<IAzureChunkVerificationService> _mockVerificationService;
+        private readonly Mock<IStorageProviderFactory> _mockProviderFactory;
+        private readonly Mock<IChunkVerificationService> _mockVerificationService;
         private readonly Mock<INotificationService> _mockNotificationService;
         private readonly Mock<IMessageQueue> _mockMessageQueue;
         private readonly ChunkUploadController _controller;
@@ -30,18 +32,23 @@ namespace CloudStorage.API.Tests.Controllers
         {
             _mockFileRepo = new Mock<IFileMetadataRepository>();
             _mockChunkRepo = new Mock<IRepository<FileChunk>>();
-            _mockChunkStorage = new Mock<IChunkStorageService>();
+            _mockChunkStorage = new Mock<IChunkStorageProvider>();
             _mockDeduplication = new Mock<IDeduplicationService>();
-            _mockSasService = new Mock<IBlobSasService>();
-            _mockVerificationService = new Mock<IAzureChunkVerificationService>();
+            _mockProviderFactory = new Mock<IStorageProviderFactory>();
+            _mockVerificationService = new Mock<IChunkVerificationService>();
             _mockNotificationService = new Mock<INotificationService>();
             _mockMessageQueue = new Mock<IMessageQueue>();
+
+            var mockObjectProvider = new Mock<IObjectStorageProvider>();
+            mockObjectProvider.Setup(p => p.ProviderName).Returns("Azure");
+            _mockProviderFactory.Setup(f => f.GetProvider(It.IsAny<string>())).Returns(mockObjectProvider.Object);
+
             _controller = new ChunkUploadController(
                 _mockFileRepo.Object,
                 _mockChunkRepo.Object,
                 _mockChunkStorage.Object,
                 _mockDeduplication.Object,
-                _mockSasService.Object,
+                _mockProviderFactory.Object,
                 _mockVerificationService.Object,
                 _mockNotificationService.Object,
                 _mockMessageQueue.Object);
@@ -93,7 +100,7 @@ namespace CloudStorage.API.Tests.Controllers
 
             _mockFileRepo.Setup(x => x.GetBySessionIdAsync(sessionId)).ReturnsAsync(file);
             _mockDeduplication.Setup(x => x.IsChunkDuplicateAsync(It.IsAny<string>())).ReturnsAsync(false);
-            _mockChunkStorage.Setup(x => x.SaveChunkAsync(It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<System.IO.Stream>()))
+            _mockChunkStorage.Setup(x => x.SaveChunkAsync(It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<System.IO.Stream>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync("/path/to/chunk");
             _mockDeduplication.Setup(x => x.RegisterChunkAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<long>()))
                 .ReturnsAsync(new ChunkRegistry());
@@ -132,8 +139,8 @@ namespace CloudStorage.API.Tests.Controllers
             var dto = new CompleteUploadDto { SessionId = sessionId };
 
             _mockFileRepo.Setup(x => x.GetBySessionIdAsync(sessionId)).ReturnsAsync(file);
-            _mockVerificationService.Setup(x => x.VerifyAllChunksAsync(file.Id, file.ChunkCount))
-                .ReturnsAsync(new BlobChunkVerificationResultDto { IsValid = true });
+            _mockVerificationService.Setup(x => x.VerifyAllChunksAsync(file.Id, file.ChunkCount, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ChunkVerificationResult(true, Array.Empty<int>()));
 
             // Act
             var result = await _controller.CompleteUpload(dto);

@@ -39,13 +39,26 @@ namespace CloudStorage.Application.DTOs
         public string Status { get; set; } = string.Empty;
     }
 
-    public class SasUploadUrlRequestDto
+    public class PresignedUploadUrlRequestDto
     {
         public string SessionId { get; set; } = string.Empty;
         public int ChunkIndex { get; set; }
         public string Hash { get; set; } = string.Empty;
     }
 
+    [Obsolete("Use PresignedUploadUrlRequestDto")]
+    public class SasUploadUrlRequestDto : PresignedUploadUrlRequestDto
+    {
+    }
+
+    public class PresignedUploadUrlResponseDto
+    {
+        public string Url { get; set; } = string.Empty;
+        public string ObjectKey { get; set; } = string.Empty;
+        public DateTime ExpiresAt { get; set; }
+    }
+
+    [Obsolete("Use PresignedUploadUrlResponseDto")]
     public class SasUploadUrlResponseDto
     {
         public string SasUrl { get; set; } = string.Empty;
@@ -62,9 +75,14 @@ namespace CloudStorage.Application.DTOs
         public long Size { get; set; }
     }
 
-    public class BlobChunkVerificationResultDto
+    public class ChunkVerificationResultDto
     {
         public bool IsValid { get; set; }
         public int[] MissingChunkIndices { get; set; } = Array.Empty<int>();
+    }
+
+    [Obsolete("Use ChunkVerificationResultDto")]
+    public class BlobChunkVerificationResultDto : ChunkVerificationResultDto
+    {
     }
 }

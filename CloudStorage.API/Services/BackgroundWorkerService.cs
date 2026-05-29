@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using CloudStorage.Application.DTOs;
 using CloudStorage.Application.Interfaces;
+using CloudStorage.Application.Interfaces.Storage;
 using CloudStorage.Domain.Entities;
 using CloudStorage.Domain.Interfaces;
 using Microsoft.Extensions.Configuration;
@@ -80,7 +81,7 @@ namespace CloudStorage.API.Services
                                 _logger.LogInformation($"[WORKER] Starting verification for File: {fileId} ({chunkCount} chunks)");
 
                                 using var scope = _serviceProvider.CreateScope();
-                                var verifyService = scope.ServiceProvider.GetRequiredService<IAzureChunkVerificationService>();
+                                var verifyService = scope.ServiceProvider.GetRequiredService<IChunkVerificationService>();
                                 var fileRepository = scope.ServiceProvider.GetRequiredService<IFileMetadataRepository>();
 
                                 var result = await verifyService.VerifyAllChunksAsync(fileId, chunkCount);

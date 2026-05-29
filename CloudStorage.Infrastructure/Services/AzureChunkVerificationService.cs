@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace CloudStorage.Infrastructure.Services
 {
+    [Obsolete("Use IChunkVerificationService")]
     public class AzureChunkVerificationService : IAzureChunkVerificationService
     {
         private readonly IBlobSasService _sasService;

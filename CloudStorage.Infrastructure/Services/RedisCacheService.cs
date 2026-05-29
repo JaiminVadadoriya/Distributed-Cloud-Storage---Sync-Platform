@@ -18,9 +18,9 @@ namespace CloudStorage.Infrastructure.Services
             _redis = redis;
         }
 
-        public async Task<T?> GetAsync<T>(string key)
+        public async Task<T?> GetAsync<T>(string key, CancellationToken ct = default)
         {
-            var cachedResponse = await _cache.GetStringAsync(key);
+            var cachedResponse = await _cache.GetStringAsync(key, ct);
 
             if (string.IsNullOrEmpty(cachedResponse))
             {
@@ -30,7 +30,7 @@ namespace CloudStorage.Infrastructure.Services
             return JsonSerializer.Deserialize<T>(cachedResponse);
         }
 
-        public async Task SetAsync<T>(string key, T value, TimeSpan? absoluteExpireTime = null, TimeSpan? unusedExpireTime = null)
+        public async Task SetAsync<T>(string key, T value, TimeSpan? absoluteExpireTime = null, TimeSpan? unusedExpireTime = null, CancellationToken ct = default)
         {
             var options = new DistributedCacheEntryOptions();
 
@@ -52,22 +52,22 @@ namespace CloudStorage.Infrastructure.Services
 
             var serializedResponse = JsonSerializer.Serialize(value);
 
-            await _cache.SetStringAsync(key, serializedResponse, options);
+            await _cache.SetStringAsync(key, serializedResponse, options, ct);
         }
 
-        public async Task RemoveAsync(string key)
+        public async Task RemoveAsync(string key, CancellationToken ct = default)
         {
-            await _cache.RemoveAsync(key);
+            await _cache.RemoveAsync(key, ct);
         }
 
-        public async Task RemoveByPrefixAsync(string prefixKey)
+        public async Task RemoveByPrefixAsync(string prefixKey, CancellationToken ct = default)
         {
             var server = _redis.GetServer(_redis.GetEndPoints()[0]);
             var keys = server.Keys(pattern: $"{prefixKey}*");
 
             foreach (var key in keys)
             {
-                await _cache.RemoveAsync(key.ToString());
+                await _cache.RemoveAsync(key.ToString(), ct);
             }
         }
     }

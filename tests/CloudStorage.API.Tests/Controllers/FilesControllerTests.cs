@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CloudStorage.API.Controllers;
 using CloudStorage.Application.DTOs;
 using CloudStorage.Application.Interfaces;
+using CloudStorage.Application.Interfaces.Storage;
 using CloudStorage.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -16,8 +17,8 @@ namespace CloudStorage.API.Tests.Controllers
     public class FilesControllerTests
     {
         private readonly Mock<IFileService> _mockFileService;
-        private readonly Mock<IChunkStorageService> _mockChunkStorage;
-        private readonly Mock<IBlobSasService> _mockSasService;
+        private readonly Mock<IChunkStorageProvider> _mockChunkStorage;
+        private readonly Mock<IStorageProviderFactory> _mockProviderFactory;
         private readonly Mock<INotificationService> _mockNotificationService;
         private readonly FilesController _controller;
         private readonly int _testUserId = 1;
@@ -25,10 +26,10 @@ namespace CloudStorage.API.Tests.Controllers
         public FilesControllerTests()
         {
             _mockFileService = new Mock<IFileService>();
-            _mockChunkStorage = new Mock<IChunkStorageService>();
-            _mockSasService = new Mock<IBlobSasService>();
+            _mockChunkStorage = new Mock<IChunkStorageProvider>();
+            _mockProviderFactory = new Mock<IStorageProviderFactory>();
             _mockNotificationService = new Mock<INotificationService>();
-            _controller = new FilesController(_mockFileService.Object, _mockChunkStorage.Object, _mockSasService.Object, _mockNotificationService.Object);
+            _controller = new FilesController(_mockFileService.Object, _mockChunkStorage.Object, _mockProviderFactory.Object, _mockNotificationService.Object);
 
             // Mock User context
             var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]

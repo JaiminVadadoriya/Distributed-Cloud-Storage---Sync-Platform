@@ -9,7 +9,7 @@ using RabbitMQ.Client;
 
 namespace CloudStorage.Infrastructure.Services
 {
-    public class RabbitMqService : IMessageQueue, IDisposable
+    public class RabbitMqService : IMessageQueue, IEventPublisher, IDisposable
     {
         private readonly ConnectionFactory _factory;
         private IConnection? _connection;
@@ -94,6 +94,41 @@ namespace CloudStorage.Infrastructure.Services
                                             mandatory: false,
                                             basicProperties: properties,
                                             body: body);
+        }
+
+        public async Task PublishAsync<TEvent>(TEvent @event, CancellationToken ct = default) where TEvent : class
+        {
+            await EnsureConnectedAsync();
+
+            var eventName = @event.GetType().Name;
+            var exchangeName = "domain-events";
+
+            // Declare a topic exchange for domain events
+            await _channel!.ExchangeDeclareAsync(
+                exchange: exchangeName,
+                type: ExchangeType.Topic,
+                durable: true,
+                autoDelete: false,
+                arguments: null,
+                cancellationToken: ct);
+
+            var json = JsonSerializer.Serialize(@event);
+            var body = Encoding.UTF8.GetBytes(json);
+
+            var properties = new BasicProperties
+            {
+                Persistent = true,
+                MessageId = Guid.NewGuid().ToString(),
+                Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+            };
+
+            await _channel.BasicPublishAsync(
+                exchange: exchangeName,
+                routingKey: eventName,
+                mandatory: false,
+                basicProperties: properties,
+                body: body,
+                cancellationToken: ct);
         }
 
         public void Dispose()

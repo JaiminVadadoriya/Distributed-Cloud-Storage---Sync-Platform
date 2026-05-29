@@ -1,86 +1,49 @@
 using System;
 using System.Threading.Tasks;
 using Azure.Storage.Blobs;
-using Azure.Storage.Sas;
 using CloudStorage.Application.DTOs;
 using CloudStorage.Application.Interfaces;
+using CloudStorage.Infrastructure.Providers.Azure;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace CloudStorage.Infrastructure.Services
 {
+    [Obsolete("Use IObjectStorageProvider or IChunkStorageProvider")]
     public class BlobSasService : IBlobSasService
     {
-        private readonly BlobServiceClient _blobServiceClient;
-        private readonly string _containerName;
+        private readonly AzureBlobStorageProvider _provider;
+        private readonly AzureChunkStorageProvider _chunkProvider;
         private readonly int _sasExpiryMinutes;
 
         public BlobSasService(BlobServiceClient blobServiceClient, IConfiguration configuration)
         {
-            _blobServiceClient = blobServiceClient;
-            _containerName = configuration["AzureBlob:ContainerName"] ?? "cloudstorage-chunks";
+            var logger = new LoggerFactory().CreateLogger<AzureBlobStorageProvider>();
+            _provider = new AzureBlobStorageProvider(blobServiceClient, configuration, logger);
+            _chunkProvider = new AzureChunkStorageProvider(_provider);
             _sasExpiryMinutes = int.TryParse(configuration["AzureBlob:SasTokenExpiryMinutes"], out int expiry) ? expiry : 15;
         }
 
         public async Task<SasUploadUrlResponseDto> GenerateChunkUploadSasAsync(Guid fileId, int chunkIndex)
         {
-            var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
-            await containerClient.CreateIfNotExistsAsync();
-
-            var blobName = $"{fileId}/{chunkIndex}.chunk";
-            var blobClient = containerClient.GetBlobClient(blobName);
-
-            var sasBuilder = new BlobSasBuilder
-            {
-                BlobContainerName = _containerName,
-                BlobName = blobName,
-                Resource = "b",
-                StartsOn = DateTimeOffset.UtcNow.AddMinutes(-1), // Account for clock skew
-                ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(_sasExpiryMinutes)
-            };
-
-            sasBuilder.SetPermissions(BlobSasPermissions.Write);
-
-            var sasUri = blobClient.GenerateSasUri(sasBuilder);
-
+            var result = await _chunkProvider.GenerateChunkUploadUrlAsync(fileId, chunkIndex, TimeSpan.FromMinutes(_sasExpiryMinutes));
             return new SasUploadUrlResponseDto
             {
-                SasUrl = sasUri.ToString(),
-                BlobName = blobName,
-                ExpiresAt = sasBuilder.ExpiresOn.UtcDateTime
+                SasUrl = result.Url,
+                BlobName = result.ObjectKey,
+                ExpiresAt = result.ExpiresAt
             };
         }
 
         public async Task<string> GenerateDownloadSasUrlAsync(string blobName, string fileName)
         {
-            var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
-            var blobClient = containerClient.GetBlobClient(blobName);
-
-            var sasBuilder = new BlobSasBuilder
-            {
-                BlobContainerName = _containerName,
-                BlobName = blobName,
-                Resource = "b",
-                StartsOn = DateTimeOffset.UtcNow.AddMinutes(-5),
-                ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(_sasExpiryMinutes)
-            };
-
-            sasBuilder.SetPermissions(BlobSasPermissions.Read);
-
-            // Helpful for browser download filename if the user navigates directly
-            if (!string.IsNullOrEmpty(fileName))
-            {
-                sasBuilder.ContentDisposition = $"attachment; filename=\"{Uri.EscapeDataString(fileName)}\"";
-            }
-
-            var sasUri = blobClient.GenerateSasUri(sasBuilder);
-            return await Task.FromResult(sasUri.ToString());
+            var result = await _provider.GeneratePresignedDownloadUrlAsync(blobName, fileName, TimeSpan.FromMinutes(_sasExpiryMinutes));
+            return result.Url;
         }
 
         public async Task<bool> ChunkBlobExistsAsync(string blobName)
         {
-            var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
-            var blobClient = containerClient.GetBlobClient(blobName);
-            return await blobClient.ExistsAsync();
+            return await _provider.ExistsAsync(blobName);
         }
     }
 }

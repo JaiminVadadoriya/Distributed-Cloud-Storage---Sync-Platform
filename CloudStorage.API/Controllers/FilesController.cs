@@ -6,6 +6,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using CloudStorage.Application.DTOs;
 using CloudStorage.Application.Interfaces;
+using CloudStorage.Application.Interfaces.Storage;
+using CloudStorage.Infrastructure.Providers;
 using CloudStorage.Domain.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,19 +25,19 @@ namespace CloudStorage.API.Controllers
     public class FilesController : BaseApiController
     {
         private readonly IFileService _fileService;
-        private readonly IChunkStorageService _chunkStorage;
-        private readonly IBlobSasService _sasService;
+        private readonly IChunkStorageProvider _chunkStorage;
+        private readonly IStorageProviderFactory _providerFactory;
         private readonly INotificationService _notificationService;
 
         public FilesController(
             IFileService fileService,
-            IChunkStorageService chunkStorage,
-            IBlobSasService sasService,
+            IChunkStorageProvider chunkStorage,
+            IStorageProviderFactory providerFactory,
             INotificationService notificationService)
         {
             _fileService = fileService;
             _chunkStorage = chunkStorage;
-            _sasService = sasService;
+            _providerFactory = providerFactory;
             _notificationService = notificationService;
         }
 
@@ -283,26 +285,11 @@ namespace CloudStorage.API.Controllers
 
             foreach (var chunk in chunks)
             {
-                string blobName;
-                if (chunk.StoragePath.StartsWith("azure://", StringComparison.OrdinalIgnoreCase))
-                {
-                    blobName = chunk.StoragePath.Substring(8);
-                }
-                else if (Uri.IsWellFormedUriString(chunk.StoragePath, UriKind.Absolute))
-                {
-                    var uri = new Uri(chunk.StoragePath);
-                    var segments = uri.Segments;
-                    blobName = segments.Length >= 2
-                        ? segments[^2].TrimEnd('/') + "/" + segments[^1]
-                        : segments[^1];
-                }
-                else
-                {
-                    blobName = chunk.StoragePath;
-                }
-
-                var sasUrl = await _sasService.GenerateDownloadSasUrlAsync(blobName, file.FileName);
-                chunkDtos.Add(new { index = index++, size = chunk.Size, sasUrl });
+                var (providerName, cleanKey) = StoragePathResolver.Resolve(chunk.StoragePath);
+                var provider = _providerFactory.GetProvider(providerName);
+                
+                var presignedResult = await provider.GeneratePresignedDownloadUrlAsync(cleanKey, file.FileName, TimeSpan.FromMinutes(15));
+                chunkDtos.Add(new { index = index++, size = chunk.Size, sasUrl = presignedResult.Url });
             }
 
             return Ok(ApiResponse<object>.Ok(new

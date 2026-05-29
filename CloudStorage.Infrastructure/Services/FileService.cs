@@ -6,6 +6,7 @@ using CloudStorage.Application.DTOs;
 using CloudStorage.Application.Interfaces;
 using CloudStorage.Domain.Entities;
 using CloudStorage.Domain.Interfaces;
+using CloudStorage.Infrastructure.Providers;
 
 namespace CloudStorage.Infrastructure.Services
 {
@@ -96,11 +97,11 @@ namespace CloudStorage.Infrastructure.Services
                 Size: c.Size
             )).ToList();
 
-            // Verify local chunks exist on disk before proceeding (skips URL blob and azure protocol checks)
+            // Verify local chunks exist on disk before proceeding (skips URL blob and remote protocol checks)
             foreach (var chunk in chunkData)
             {
                 if (!chunk.StoragePath.StartsWith("http") &&
-                    !chunk.StoragePath.StartsWith("azure://") &&
+                    !StoragePathResolver.IsRemoteStorage(chunk.StoragePath) &&
                     !System.IO.File.Exists(chunk.StoragePath))
                 {
                     throw new System.IO.FileNotFoundException($"Chunk missing from storage: {System.IO.Path.GetFileName(chunk.StoragePath)}");

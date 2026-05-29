@@ -4,6 +4,7 @@ using CloudStorage.Application.DTOs;
 
 namespace CloudStorage.Application.Interfaces
 {
+    [Obsolete("Use IObjectStorageProvider or IChunkStorageProvider")]
     public interface IBlobSasService
     {
         Task<SasUploadUrlResponseDto> GenerateChunkUploadSasAsync(Guid fileId, int chunkIndex);

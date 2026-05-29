@@ -2,6 +2,8 @@ using System;
 using System.Threading.Tasks;
 using CloudStorage.Application.DTOs;
 using CloudStorage.Application.Interfaces;
+using CloudStorage.Application.Interfaces.Storage;
+using CloudStorage.Infrastructure.Providers;
 using CloudStorage.Domain.Entities;
 using CloudStorage.Domain.Interfaces;
 using System.Security.Cryptography;
@@ -21,20 +23,20 @@ namespace CloudStorage.API.Controllers
     {
         private readonly IFileMetadataRepository _fileRepository;
         private readonly IRepository<FileChunk> _chunkRepository;
-        private readonly IChunkStorageService _chunkStorage;
+        private readonly IChunkStorageProvider _chunkStorage;
         private readonly IDeduplicationService _deduplication;
-        private readonly IBlobSasService _sasService;
-        private readonly IAzureChunkVerificationService _verificationService;
+        private readonly IStorageProviderFactory _providerFactory;
+        private readonly IChunkVerificationService _verificationService;
         private readonly INotificationService _notificationService;
         private readonly IMessageQueue _messageQueue;
 
         public ChunkUploadController(
             IFileMetadataRepository fileRepository,
             IRepository<FileChunk> chunkRepository,
-            IChunkStorageService chunkStorage,
+            IChunkStorageProvider chunkStorage,
             IDeduplicationService deduplication,
-            IBlobSasService sasService,
-            IAzureChunkVerificationService verificationService,
+            IStorageProviderFactory providerFactory,
+            IChunkVerificationService verificationService,
             INotificationService notificationService,
             IMessageQueue messageQueue)
         {
@@ -42,7 +44,7 @@ namespace CloudStorage.API.Controllers
             _chunkRepository = chunkRepository;
             _chunkStorage = chunkStorage;
             _deduplication = deduplication;
-            _sasService = sasService;
+            _providerFactory = providerFactory;
             _verificationService = verificationService;
             _notificationService = notificationService;
             _messageQueue = messageQueue;
@@ -235,6 +237,7 @@ namespace CloudStorage.API.Controllers
         });
 
         [HttpPost("sas-url")]
+        [Obsolete("Use presigned-url instead")]
         public Task<IActionResult> GenerateSasUrl([FromBody] SasUploadUrlRequestDto dto) => ExecuteAsync(async () =>
         {
             var userId = GetUserId();
@@ -252,8 +255,42 @@ namespace CloudStorage.API.Controllers
                 return Ok(ApiResponse<object>.Ok(new { isDuplicate = true }, "Chunk deduplicated"));
             }
 
-            var sasResponse = await _sasService.GenerateChunkUploadSasAsync(fileMetadata.Id, dto.ChunkIndex);
+            var presignedResult = await _chunkStorage.GenerateChunkUploadUrlAsync(fileMetadata.Id, dto.ChunkIndex, TimeSpan.FromMinutes(15));
+            var sasResponse = new SasUploadUrlResponseDto
+            {
+                SasUrl = presignedResult.Url,
+                BlobName = presignedResult.ObjectKey,
+                ExpiresAt = presignedResult.ExpiresAt
+            };
             return Ok(ApiResponse<SasUploadUrlResponseDto>.Ok(sasResponse, "SAS URL generated"));
+        });
+
+        [HttpPost("presigned-url")]
+        public Task<IActionResult> GeneratePresignedUrl([FromBody] PresignedUploadUrlRequestDto dto) => ExecuteAsync(async () =>
+        {
+            var userId = GetUserId();
+            var fileMetadata = await _fileRepository.GetBySessionIdAsync(dto.SessionId);
+
+            if (fileMetadata == null)
+                return NotFound(ApiResponse.Fail("Upload session not found"));
+
+            if (fileMetadata.OwnerId != userId)
+                return StatusCode(403, ApiResponse.Fail("Unauthorized access to upload session"));
+
+            var isDuplicate = await _deduplication.IsChunkDuplicateAsync(dto.Hash);
+            if (isDuplicate)
+            {
+                return Ok(ApiResponse<object>.Ok(new { isDuplicate = true }, "Chunk deduplicated"));
+            }
+
+            var presignedResult = await _chunkStorage.GenerateChunkUploadUrlAsync(fileMetadata.Id, dto.ChunkIndex, TimeSpan.FromMinutes(15));
+            var response = new PresignedUploadUrlResponseDto
+            {
+                Url = presignedResult.Url,
+                ObjectKey = presignedResult.ObjectKey,
+                ExpiresAt = presignedResult.ExpiresAt
+            };
+            return Ok(ApiResponse<PresignedUploadUrlResponseDto>.Ok(response, "Presigned URL generated"));
         });
 
         [HttpPost("verify-chunk")]
@@ -268,9 +305,12 @@ namespace CloudStorage.API.Controllers
             if (fileMetadata.OwnerId != userId)
                 return StatusCode(403, ApiResponse.Fail("Unauthorized access to upload session"));
 
-            var exists = await _sasService.ChunkBlobExistsAsync(dto.BlobName);
+            var exists = await _chunkStorage.ChunkExistsAsync(dto.BlobName);
             if (!exists)
                 return BadRequest(ApiResponse.Fail("Chunk blob not found in storage"));
+
+            var activeProvider = _providerFactory.GetProvider().ProviderName;
+            var storagePath = StoragePathResolver.FormatPath(activeProvider, dto.BlobName);
 
             var fileChunk = new FileChunk
             {
@@ -279,7 +319,7 @@ namespace CloudStorage.API.Controllers
                 ChunkIndex = dto.ChunkIndex,
                 Size = dto.Size,
                 Hash = dto.Hash,
-                StoragePath = $"azure://{dto.BlobName}",
+                StoragePath = storagePath,
                 BlobUrl = dto.BlobName,
                 IsDuplicate = false,
                 CreatedAt = DateTime.UtcNow,
