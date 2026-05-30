@@ -12,7 +12,7 @@ The Distributed Cloud Storage Platform is a complete, scalable solution designed
 - **Security**: Apply industry-standard JWT authentication, HTTPS/HSTS, comprehensive CORS rules, and rate-limiting brute-force protections.
 
 ## 3. Architecture & Technologies
-- **Backend**: Built with .NET 9 ASP.NET Core, employing Entity Framework Core to interface with an underlying PostgreSQL database. It heavily relies on the Clean Architecture paradigm (Domain / Application / Infrastructure / API).
+- **Backend**: Built with .NET 10 ASP.NET Core, employing Entity Framework Core to interface with an underlying PostgreSQL database. It heavily relies on the Clean Architecture paradigm (Domain / Application / Infrastructure / API).
 - **Frontend**: Developed with Angular 21, adopting zoneless change detection and Tailwind CSS v4 to provide a premium, dynamic web interface.
 - **Mobile Client**: Flutter application built for Android utilizing the Android Camera2 API via advanced native standard MethodChannels.
 - **Cloud Storage**: Integration with Microsoft Azure Blob Storage for resilient, robust, off-premise chunk persistence via secure SAS tokens. 
@@ -22,10 +22,13 @@ The Distributed Cloud Storage Platform is a complete, scalable solution designed
 2. **Chunked Uploads**: Circumvents memory limits parsing large files up to 5MB chunks client-side, uploading concurrently to Blob Storage.
 3. **SignalR Push Notifications**: Disseminates UI-refresh events upon file mutation allowing for zero-refresh concurrent visibility.
 4. **Zoneless Performance enhancements**: By eliminating `zone.js` in Angular, rendering overhead dramatically fell, speeding up heavy component interactions.
-5. **Security Hardening**: Enforced security headers (`X-Content-Type-Options: nosniff`), rigid frame options, and rate limiters on endpoints. 
+5. **Security Hardening & Zero-Trust**: Configured secure, strict Content-Security-Policy (CSP) headers eliminating all `'unsafe-inline'` script executions, enforced rate limiters across auth and upload endpoints, secured container privileges, and separate secret management.
+6. **Observability Stack**: Integrated OpenTelemetry to collect, correlate, and export metrics to Prometheus, structured logs to Loki, and distributed tracing spans (including database query details) to Jaeger, all visualizable in unified Grafana dashboards.
+7. **Supply Chain Hardening**: Configured automated Trivy configuration scanning, CycloneDX SBOM generation, and pinned all GitHub Actions references in workflows to immutable commit SHAs.
 
 ## 5. Testing & Validation
-- **Unit Testing**: 100% test coverage across core uploading and synchronization Application layers on xUnit and Moq.
+- **Integration & Unit Testing**: Comprehensive test coverage across all layers using xUnit, Moq, and WebApplicationFactory. An automated suite of **327 tests** validates domain entities, business logic services, database interactions, and API controllers.
+- **E2E Testing**: Established persona-based end-to-end browser tests using Playwright, simulating user journeys, admin controls, resilience scenarios, and accessibility audits.
 - **Load Testing**: Confirmed stability via k6 simulated user tests uploading high-throughput file increments.
 - **Linting**: Achieved completely clean lint environments across both frontend (ESLint) and backend (Roslyn attributes).
 

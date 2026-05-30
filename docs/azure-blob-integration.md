@@ -41,7 +41,7 @@ Azurite runs locally on port `10000`. The API server is natively configured to c
 ## Architecture & Responsibilities
 
 - **`BlobChunkStorageService`**: Replaces the local chunk storage layer. Interacts with the `Azure.Storage.Blobs` SDK. 
-- **`BlobSasService`**: Generates short-lived, restrictively permissioned (`Create` | `Write`) SAS URLs so clients can write blob chunks securely without requiring account keys.
+- **`BlobSasService`**: Generates short-lived, restrictively permissioned (`Write` only) SAS URLs so clients can write blob chunks securely without requiring account keys.
 - **`AzureChunkVerificationService`**: Before finalizing any upload, this server-side validation checks that the chunk blobs actually exist in the blob container.
 
 ## Direct Upload Flow (Client Integration)

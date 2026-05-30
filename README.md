@@ -18,7 +18,9 @@ A scalable, distributed cloud storage and synchronization platform built with **
 - **Distributed Caching** — **Redis** for metadata, permissions, and SignalR backplane
 - **Async Background Tasks** — **RabbitMQ** + **BackgroundWorkerService** for offloading dedup/integrity checks
 - **HTTP/2 & Compression** — Optimized network transfers with Gzip and multiplexed connections
-- **Observability** — **Prometheus** metrics scraping and **Grafana** dashboards for real-time monitoring
+- **Zero-Trust Security & CSP** — Strict Content-Security-Policy (CSP) headers without `unsafe-inline` scripts, secure container privileges, and separate Kubernetes Secret credentials
+- **Observability (Traces, Metrics, Logs)** — Full OpenTelemetry correlation including **Loki** for logs, **Prometheus** for metrics, and **Jaeger** for tracing, provisioned automatically in **Grafana**
+- **Supply Chain Security** — Pinned GitHub Actions commit SHAs, **Trivy** IaC/configuration vulnerability scanning, and CycloneDX/SPDX **SBOM** generation
 - **Email Testing** — **Mailpit** local SMTP server captures all outbound emails (password resets) during development
 - **Local Azure Emulation** — **Azurite** emulates Azure Blob Storage in the development environment
 - **Upload Throttling** — `UploadThrottlingMiddleware` limits each user to 5 concurrent chunk uploads (Redis-backed)
@@ -178,6 +180,8 @@ docker-compose up --build
 | Swagger           | http://localhost:8000/swagger             | OpenAPI UI via LB |
 | Grafana           | http://localhost:3000 (admin/admin)       | Pre-built API dashboards |
 | Prometheus        | http://localhost:9090                     | Metrics scraping |
+| Loki              | http://localhost:3100                     | Log collection backend |
+| Jaeger            | http://localhost:16686                    | Distributed tracing UI |
 | RabbitMQ UI       | http://localhost:15672 (guest/guest)      | Management console |
 | Mailpit (Email)   | http://localhost:8025                     | Captures all outbound emails |
 | Azurite (Blob)    | http://localhost:10000                    | Local Azure Blob emulator |
@@ -334,6 +338,7 @@ npm test
 | [Architecture](docs/ARCHITECTURE.md)   | System overview, layer details, data flows      |
 | [Design](docs/DESIGN.md)               | Design patterns, schema, API design, future plans |
 | [CI/CD](docs/CI-CD.md)                 | Pipeline architecture, secrets, deployment guide |
+| [Secret Rotation](docs/SECRET_ROTATION.md) | Rotating credentials and purging git history |
 | [Masterplan](masterplan.md)            | Project roadmap, phases, and objectives         |
 | [Azure Blob Int.](docs/azure-blob-integration.md) | Direct upload to Azure with SAS tokens          |
 

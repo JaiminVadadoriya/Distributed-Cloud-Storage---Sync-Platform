@@ -11,7 +11,7 @@
 - **Challenge**: Traditional file upload scenarios struggle with resuming after a crash and handling simultaneous collaborative updates.
 
 ### Slide 3: Our Solution
-- **Overview**: An end-to-end framework consisting of an ASP.NET Core 9 Clean Architecture backend, an Angular 21 web client, and a native Flutter mobile app with custom camera capabilities.
+- **Overview**: An end-to-end framework consisting of an ASP.NET Core 10 Clean Architecture backend, an Angular 21 web client, and a native Flutter mobile app with custom camera capabilities.
 - **Key Features**: 
   - 5MB chunked resilient uploads to Azure Blob Storage
   - Fast SHA-256 Deduplication

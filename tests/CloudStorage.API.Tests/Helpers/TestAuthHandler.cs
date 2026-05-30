@@ -24,11 +24,28 @@ namespace CloudStorage.API.Tests.Helpers
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
+            if (!Request.Headers.ContainsKey("Authorization"))
+            {
+                return Task.FromResult(AuthenticateResult.NoResult());
+            }
+
+            var userId = "1";
+            var role = "Admin";
+
+            if (Request.Headers.TryGetValue("X-Test-User-Id", out var headerUserId))
+            {
+                userId = headerUserId.ToString();
+            }
+            if (Request.Headers.TryGetValue("X-Test-Role", out var headerRole))
+            {
+                role = headerRole.ToString();
+            }
+
             var claims = new[]
             {
-                new Claim("id", "1"),
-                new Claim(ClaimTypes.Name, "Test User"),
-                new Claim(ClaimTypes.Role, "Admin")
+                new Claim("id", userId),
+                new Claim(ClaimTypes.Name, $"Test User {userId}"),
+                new Claim(ClaimTypes.Role, role)
             };
             var identity = new ClaimsIdentity(claims, "Test");
             var principal = new ClaimsPrincipal(identity);

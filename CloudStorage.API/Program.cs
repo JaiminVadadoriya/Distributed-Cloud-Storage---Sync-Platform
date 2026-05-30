@@ -268,6 +268,13 @@ builder.Services.AddOpenTelemetry()
         {
             metrics.AddOtlpExporter();
         }
+    })
+    .WithLogging(logging =>
+    {
+        if (!isTesting)
+        {
+            logging.AddOtlpExporter();
+        }
     });
 
 // Rate limiting
@@ -339,7 +346,7 @@ app.Use(async (context, next) =>
     context.Response.Headers.Append("X-Frame-Options", "DENY");
     context.Response.Headers.Append("X-XSS-Protection", "0");
     context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
-    var csp = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ws: wss:;";
+    var csp = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ws: wss:;";
     context.Response.Headers.Append("Content-Security-Policy", csp);
     context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
     await next();

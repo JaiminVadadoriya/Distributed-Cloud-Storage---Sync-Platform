@@ -54,7 +54,9 @@ To provide explicit visual feedback on real-time events, a custom notification s
 7. The `SignalRService` on the other tab emits the event through the `fileUploaded$` observable.
 8. The `DashboardComponent` receives the event, displays a success toast notification ("File uploaded: example.txt"), and reloads the file list and stats.
 
-## Future Considerations
+## 5. Offline & Delta Sync Integration
 
-- **Delta Sync Integration**: The frontend currently refreshes the full file list upon receiving a SignalR event. Future optimizations could wire the `DeltaSyncController` into the frontend, using the `sinceUtc` token to specifically inject or remove items from the local state list.
-- **Offline Mode Support**: Combining Delta Sync with IndexedDB to support true offline persistence.
+The real-time synchronization layer is fully integrated with our **Offline Mode** infrastructure:
+- **IndexedDB Sync Engine**: When the client goes offline, state changes (such as deletes, renames) are queued locally in IndexedDB as pending operations, and the user continues working.
+- **Delta Sync Replay**: Upon coming back online, the `SyncEngineService` makes a request to `GET /api/sync/delta?sinceUtc={lastSyncTimestamp}` to fetch all changes that occurred on the server while the client was disconnected.
+- **Conflict Resolution UI**: The client runs a version vector comparison against the server version. If concurrent edits are detected, it opens an interactive **Conflict Resolution Dialog** allowing the user to select which version to preserve (Keep Local vs. Keep Server) before replays occur.

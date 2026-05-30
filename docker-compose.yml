@@ -199,6 +199,16 @@ services:
       - ./monitoring/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
     depends_on:
       - jaeger
+      - loki
+    networks:
+      - cloudstorage-network
+
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
     networks:
       - cloudstorage-network
 

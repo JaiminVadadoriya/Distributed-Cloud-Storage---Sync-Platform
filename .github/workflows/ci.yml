@@ -27,15 +27,15 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@48ab28a6f5dba2aab696b0521e11a182847a9561 # v3.26.11
         with:
           languages: 'csharp, javascript-typescript'
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@607f30098679c619b5b29f940c6e9a6573cbb02a # v4.1.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
@@ -46,7 +46,30 @@ jobs:
         run: dotnet build CloudStorage.sln --configuration Release --no-restore
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@48ab28a6f5dba2aab696b0521e11a182847a9561 # v3.26.11
+
+  # ─────────────────────────────────────────────
+  # Security Scan (IaC, Docker, and K8s Configs)
+  # ─────────────────────────────────────────────
+  security-scan:
+    name: Security Scan (IaC & Configs)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Run Trivy Vulnerability Scanner (IaC)
+        uses: aquasecurity/trivy-action@18f259c909653174eeab752d572c4c810d7a6411 # v0.29.0
+        with:
+          scan-type: 'config'
+          hide-progress: false
+          format: 'table'
+          exit-code: '0' # Audit only, do not break the build
+          ignore-unfixed: true
 
   # ─────────────────────────────────────────────
   # Backend: Restore → Build → Test & Coverage → Audit
@@ -72,15 +95,15 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup .NET ${{ env.DOTNET_VERSION }}
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@607f30098679c619b5b29f940c6e9a6573cbb02a # v4.1.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Cache NuGet packages
-        uses: actions/cache@v4
+        uses: actions/cache@0c907a75c2c80ebcb7f08297f4d2eb70763296c5 # v4.2.1
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
@@ -110,7 +133,7 @@ jobs:
         run: dotnet test tests/CloudStorage.API.Tests --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger "trx;LogFileName=api-results.trx"
 
       - name: Enforce Code Coverage Threshold (80%)
-        uses: irongut/CodeCoverageSummary@v1.3.0
+        uses: irongut/CodeCoverageSummary@c9a6b5722322cd7acd3450c18d1847e9ff158864 # v1.3.0
         with:
           filename: ./TestResults/**/coverage.cobertura.xml
           badge: true
@@ -122,8 +145,20 @@ jobs:
           output: both
           thresholds: '80 80'
 
+      - name: Generate SBOM
+        uses: anchore/sbom-action@df80a983ac6d27390610897f2d9e7472cf497c23 # v0.17.9
+        with:
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: Upload SBOM Artifact
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: sbom
+          path: sbom.spdx.json
+
       - name: Upload test results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         if: always()
         with:
           name: backend-test-results
@@ -141,10 +176,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@39630291d748f00153110279a09678e9947aa621 # v4.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -166,7 +201,7 @@ jobs:
         run: npm run build -- --configuration production
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         with:
           name: frontend-dist
           path: CloudStorage.Client/dist/
@@ -189,10 +224,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Setup Node.js ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@39630291d748f00153110279a09678e9947aa621 # v4.1.0
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -211,7 +246,7 @@ jobs:
         run: npx playwright test --project=${{ matrix.browser }} --shard=${{ matrix.shard }}
 
       - name: Upload Playwright HTML report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         if: always()
         with:
           name: playwright-report-${{ matrix.browser }}-${{ strategy.job-index }}
@@ -219,7 +254,7 @@ jobs:
           retention-days: 14
 
       - name: Upload Playwright test results (JUnit)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
         if: always()
         with:
           name: playwright-junit-${{ matrix.browser }}-${{ strategy.job-index }}
@@ -240,21 +275,21 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@c3040c11789d6e40ba7c2a033f6782a60d170c67 # v3.8.0
 
       - name: Extract metadata (API)
         id: meta-api
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@369eb22beea7891096bab198753a3d9ca04b19c2 # v5.6.1
         with:
           images: ${{ env.API_IMAGE }}
           tags: |
@@ -262,7 +297,7 @@ jobs:
             type=raw,value=latest
 
       - name: Build and push API image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
           context: .
           file: CloudStorage.API/Dockerfile
@@ -274,7 +309,7 @@ jobs:
 
       - name: Extract metadata (Client)
         id: meta-client
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@369eb22beea7891096bab198753a3d9ca04b19c2 # v5.6.1
         with:
           images: ${{ env.CLIENT_IMAGE }}
           tags: |
@@ -282,7 +317,7 @@ jobs:
             type=raw,value=latest
 
       - name: Build and push Client image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
           context: CloudStorage.Client
           file: CloudStorage.Client/Dockerfile

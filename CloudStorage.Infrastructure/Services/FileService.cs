@@ -113,6 +113,16 @@ namespace CloudStorage.Infrastructure.Services
 
         public async Task<FileResponseDto> CreateFileMetadataAsync(FileUploadDto dto, int ownerId)
         {
+            var user = await _userRepository.GetByIdAsync(ownerId);
+            if (user == null)
+                throw new InvalidOperationException("User not found");
+
+            var stats = await GetDashboardStatsAsync(ownerId);
+            if (stats.TotalStorageBytes + dto.Size > user.StorageQuota)
+            {
+                throw new InvalidOperationException("QUOTA_EXCEEDED: Insufficient storage quota remaining.");
+            }
+
             var fileMetadata = new FileMetadata
             {
                 Id = Guid.NewGuid(),
@@ -134,8 +144,7 @@ namespace CloudStorage.Infrastructure.Services
 
             await _activityService.LogActivityAsync(ownerId, "UPLOAD", "FILE", fileMetadata.Id.ToString(), $"File '{fileMetadata.FileName}' uploaded successfully.");
 
-            var owner = await _userRepository.GetByIdAsync(ownerId);
-            return fileMetadata.ToResponseDto(owner?.Username ?? "Unknown");
+            return fileMetadata.ToResponseDto(user.Username);
         }
 
         public async Task DeleteFileAsync(Guid fileId, int userId)

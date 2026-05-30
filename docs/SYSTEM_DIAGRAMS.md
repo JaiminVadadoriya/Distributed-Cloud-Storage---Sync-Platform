@@ -4,7 +4,7 @@ This document contains visual representations of the system architecture for the
 
 ## 1. High-Level Architecture
 
-The system utilizes a split frontend/backend architecture, with the backend built on .NET 9 and PostgreSQL, and the frontend on Angular 21.
+The system utilizes a split frontend/backend architecture, with the backend built on .NET 10 and PostgreSQL, and the frontend on Angular 21.
 
 ```mermaid
 graph TD
@@ -14,7 +14,7 @@ graph TD
     end
 
     subgraph API Layer
-        API[CloudStorage.API - .NET 9]
+        API[CloudStorage.API - .NET 10]
         Hub[SignalR Storage Hub]
     end
 
@@ -173,12 +173,14 @@ graph LR
     Worker --> DB
     Worker --> Storage[(Local/Cloud Storage)]
 
-    subgraph "Monitoring"
+    subgraph "Observability Stack"
         Prom[Prometheus]
+        Loki[Loki]
+        Jaeger[Jaeger]
         Graf[Grafana]
     end
 
-    API1 & API2 & API3 -.-> |Metrics| Prom
-    Prom -.-> Graf
+    API1 & API2 & API3 -.-> |Metrics/Logs/Traces| Prom & Loki & Jaeger
+    Prom & Loki & Jaeger -.-> Graf
 ```
 ```

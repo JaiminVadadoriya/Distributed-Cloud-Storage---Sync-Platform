@@ -19,7 +19,7 @@ This document details the security measures implemented for the Cloud Storage AP
 
 ## 2. Security Headers
 
-Every response includes these headers via custom middleware:
+Every response includes secure headers configured in the API (`Program.cs`) and the frontend NGINX routing (`nginx.conf`):
 
 | Header | Value | Purpose |
 |--------|-------|---------|
@@ -27,19 +27,19 @@ Every response includes these headers via custom middleware:
 | `X-Frame-Options` | `DENY` | Clickjacking protection |
 | `X-XSS-Protection` | `0` | Disabled (modern CSP supersedes) |
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | Limits referrer leakage |
-| `Content-Security-Policy` | `default-src 'self'` | Restricts resource loading |
+| `Content-Security-Policy` | `default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ws: wss:;` | Restricts resource loading, disabling `'unsafe-inline'` script execution to eliminate XSS vectors |
 | `Permissions-Policy` | `camera=(), microphone=(), geolocation=()` | Disables device APIs |
 
 ---
 
 ## 3. Rate Limiting
 
-Three tiered policies protect against abuse:
+Three fixed-window rate-limiting policies protect application endpoints:
 
 | Policy | Limit | Window | Applied To |
 |--------|-------|--------|------------|
 | `global` | 100 requests | 60 seconds | `FilesController` |
-| `auth` | 10 requests | 60 seconds | `AuthController` (brute-force protection) |
+| `auth` | 30 requests | 60 seconds | `AuthController` (brute-force protection) |
 | `upload` | 200 requests | 60 seconds | `ChunkUploadController` |
 
 Rate-limited responses return **HTTP 429** with JSON body: `{ "message": "Too many requests. Please try again later." }`
@@ -68,7 +68,7 @@ Azure Storage encrypts all data at rest with **Microsoft-managed keys (SSE-MK)**
 
 | Controller | Auth Required | Rate Limit | Notes |
 |------------|:---:|:---:|-------|
-| `AuthController` | No (login/register) | `auth` (10/min) | Logout requires `[Authorize]` |
+| `AuthController` | No (login/register) | `auth` (30/min) | Logout requires `[Authorize]` |
 | `ChunkUploadController` | ✅ `[Authorize]` | `upload` (200/min) | 110 MB body limit on chunk upload |
 | `FilesController` | ✅ `[Authorize]` | `global` (100/min) | Owner-only access enforced |
 | `DeltaSyncController` | ✅ `[Authorize]` | — | Owner-only access via `GetUserId()` |
@@ -83,23 +83,27 @@ Azure Storage encrypts all data at rest with **Microsoft-managed keys (SSE-MK)**
 
 ---
 
-## 7. JWT Key Management
+## 7. JWT & Secrets Management
 
-> [!IMPORTANT]
-> The JWT signing key in `appsettings.json` is for **development only**.
+All secrets, including JWT signing keys, PostgreSQL passwords, and message queue credentials, have been completely migrated out of source code configurations.
 
-**Production best practice:**
-```bash
-# Use environment variables (docker-compose already does this)
-Jwt__Key=<your-production-secret-minimum-32-characters>
+- **Local Development**: Configuration keys are loaded via a local `.env` environment variables file (gitignored).
+- **Kubernetes Deployments**: Credentials are dynamically mounted from base64-encoded `Secret` objects.
 
-# Or use Azure Key Vault / User Secrets
-dotnet user-secrets set "Jwt:Key" "<production-key>"
-```
+For procedures on updating active secrets and sanitizing repository histories of historical credentials, please see the [**Secret Rotation Guide**](SECRET_ROTATION.md).
 
 ---
 
-## 8. Load Testing
+## 8. Supply Chain Hardening
+
+We enforce strict software supply chain security standards in our CI/CD workflows:
+- **Action Pinning**: All GitHub Actions are pinned to explicit, immutable commit SHAs instead of mutable tags to prevent hijacking.
+- **IaC Scanning**: Automated **Trivy** configuration audits scan Kubernetes YAML files and Dockerfiles for structural security issues.
+- **SBOM Generation**: Automatic **CycloneDX/SPDX Software Bill of Materials (SBOM)** is compiled and uploaded as part of release workflows.
+
+---
+
+## 9. Load Testing
 
 Two PowerShell scripts are available in [`scripts/`](../scripts/):
 
