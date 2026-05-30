@@ -4,6 +4,7 @@ using CloudStorage.Application.DTOs;
 using CloudStorage.Application.Interfaces;
 using CloudStorage.Application.Interfaces.Storage;
 using CloudStorage.Infrastructure.Providers;
+using CloudStorage.Application.Interfaces.Upload;
 using CloudStorage.Domain.Entities;
 using CloudStorage.Domain.Interfaces;
 using System.Security.Cryptography;
@@ -29,6 +30,7 @@ namespace CloudStorage.API.Controllers
         private readonly IChunkVerificationService _verificationService;
         private readonly INotificationService _notificationService;
         private readonly IMessageQueue _messageQueue;
+        private readonly IUploadOrchestrator _uploadOrchestrator;
 
         public ChunkUploadController(
             IFileMetadataRepository fileRepository,
@@ -38,7 +40,8 @@ namespace CloudStorage.API.Controllers
             IStorageProviderFactory providerFactory,
             IChunkVerificationService verificationService,
             INotificationService notificationService,
-            IMessageQueue messageQueue)
+            IMessageQueue messageQueue,
+            IUploadOrchestrator uploadOrchestrator)
         {
             _fileRepository = fileRepository;
             _chunkRepository = chunkRepository;
@@ -48,6 +51,7 @@ namespace CloudStorage.API.Controllers
             _verificationService = verificationService;
             _notificationService = notificationService;
             _messageQueue = messageQueue;
+            _uploadOrchestrator = uploadOrchestrator;
         }
 
         public class UploadChunkRequestDto
@@ -330,6 +334,37 @@ namespace CloudStorage.API.Controllers
             await _deduplication.RegisterChunkAsync(dto.Hash, fileChunk.StoragePath, dto.Size);
 
             return Ok(ApiResponse.Ok("Chunk verified and registered successfully"));
+        });
+
+        [HttpPost("orchestrated-upload")]
+        [DisableRequestSizeLimit]
+        public Task<IActionResult> OrchestratedUpload([FromForm] IFormFile file, [FromForm] string sessionId) => ExecuteAsync(async () =>
+        {
+            var userId = GetUserId();
+            var fileMetadata = await _fileRepository.GetBySessionIdAsync(sessionId);
+
+            if (fileMetadata == null)
+                return NotFound(ApiResponse.Fail("Upload session not found"));
+
+            if (fileMetadata.OwnerId != userId)
+                return StatusCode(403, ApiResponse.Fail("Unauthorized access to upload session"));
+
+            using var stream = file.OpenReadStream();
+            
+            var result = await _uploadOrchestrator.OrchestrateUploadAsync(
+                fileMetadata.Id,
+                fileMetadata.FileName,
+                stream,
+                file.Length,
+                new StorageUploadOptions { ContentType = file.ContentType, Overwrite = true },
+                null
+            );
+
+            fileMetadata.Status = UploadStatus.Complete;
+            fileMetadata.StoragePath = result.StoragePath;
+            await _fileRepository.UpdateAsync(fileMetadata);
+
+            return Ok(ApiResponse.Ok("File uploaded and orchestrated successfully"));
         });
     }
 }

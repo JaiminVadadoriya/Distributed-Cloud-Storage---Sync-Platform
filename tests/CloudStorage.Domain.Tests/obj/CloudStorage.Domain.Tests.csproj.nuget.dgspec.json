@@ -760,6 +760,14 @@
               "target": "Package",
               "version": "[10.0.8, )"
             },
+            "Microsoft.Extensions.Http.Resilience": {
+              "target": "Package",
+              "version": "[10.0.8, )"
+            },
+            "Microsoft.Extensions.Resilience": {
+              "target": "Package",
+              "version": "[10.0.8, )"
+            },
             "Minio": {
               "target": "Package",
               "version": "[7.0.0, )"

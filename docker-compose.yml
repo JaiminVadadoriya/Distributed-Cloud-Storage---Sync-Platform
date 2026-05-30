@@ -23,6 +23,8 @@ services:
       - RabbitMQ__HostName=rabbitmq
       - RabbitMQ__UserName=guest
       - RabbitMQ__Password=guest
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_SERVICE_NAME=CloudStorage.API
     volumes:
       - storage_data:/app/storage/chunks
     depends_on:
@@ -177,6 +179,26 @@ services:
     environment:
       MP_MAX_MESSAGES: 500
     restart: unless-stopped
+    networks:
+      - cloudstorage-network
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "4317"
+    networks:
+      - cloudstorage-network
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:latest
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - ./monitoring/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml
+    depends_on:
+      - jaeger
     networks:
       - cloudstorage-network
 

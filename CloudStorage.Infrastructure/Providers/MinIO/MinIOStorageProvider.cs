@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Minio;
 using Minio.DataModel.Args;
+using CloudStorage.Infrastructure.Providers.Capabilities;
 
 namespace CloudStorage.Infrastructure.Providers.MinIO
 {
@@ -197,6 +198,8 @@ namespace CloudStorage.Infrastructure.Providers.MinIO
             SupportsRangeRequests: true,
             SupportsMultipartUpload: true
         );
+
+        public IStorageCapabilities DetailedCapabilities => new MinIOCapabilities();
 
         public async Task<bool> IsHealthyAsync(CancellationToken ct = default)
         {

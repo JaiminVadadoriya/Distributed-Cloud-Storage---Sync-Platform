@@ -14,6 +14,17 @@ using CloudStorage.Infrastructure.Providers.Local;
 using CloudStorage.Infrastructure.Providers.GCP;
 using CloudStorage.Application.Interfaces;
 using CloudStorage.Infrastructure.Services;
+using CloudStorage.Application.Interfaces.Replication;
+using CloudStorage.Infrastructure.Replication;
+using CloudStorage.Application.Interfaces.Tiering;
+using CloudStorage.Infrastructure.Tiering;
+using CloudStorage.Application.Interfaces.Routing;
+using CloudStorage.Infrastructure.Routing;
+using CloudStorage.Application.Interfaces.Upload;
+using CloudStorage.Infrastructure.Upload;
+using CloudStorage.Application.Interfaces.Security;
+using CloudStorage.Infrastructure.Security;
+using CloudStorage.API.Services;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -73,6 +84,22 @@ namespace CloudStorage.API.Extensions
             // 5. Register Factory and Resolver Services
             services.AddScoped<IStorageProviderFactory, StorageProviderFactory>();
             services.AddScoped<IChunkVerificationService, ChunkVerificationService>();
+            services.AddSingleton<ICapabilityNegotiator, CapabilityNegotiator>();
+            services.AddScoped<IReplicationCoordinator, ReplicationCoordinator>();
+            services.AddScoped<IReplicationProvider, ReplicationProvider>();
+            services.AddHostedService<ReplicationWorkerService>();
+            services.AddScoped<IStorageTieringService, StorageTieringService>();
+            services.AddScoped<ILifecyclePolicyEngine, LifecyclePolicyEngine>();
+            services.AddScoped<IStorageCostAnalyzer, StorageCostAnalyzer>();
+            services.AddHostedService<LifecycleWorkerService>();
+            services.AddScoped<IProviderHealthService, ProviderHealthService>();
+            services.AddScoped<IStorageRoutingEngine, StorageRoutingEngine>();
+            services.AddScoped<IFailoverCoordinator, FailoverCoordinator>();
+            services.AddScoped<IUploadOrchestrator, UploadOrchestrator>();
+            services.AddScoped<StreamUploadStrategy>();
+            services.AddScoped<MultipartUploadStrategy>();
+            services.AddScoped<BlockBlobUploadStrategy>();
+            services.AddScoped<ResumableUploadStrategy>();
 
             // 6. Register default resolved providers
             services.AddScoped<IObjectStorageProvider>(sp => 
@@ -87,6 +114,10 @@ namespace CloudStorage.API.Extensions
 
             // 8. Register dynamic storage health check
             services.AddHealthChecks().AddCheck<StorageHealthCheck>("Storage_Provider");
+
+            // 9. Register Security Services
+            services.AddSingleton<IEncryptionKeyService, AesEncryptionKeyService>();
+            services.AddSingleton<IIntegrityVerifier, Sha256IntegrityVerifier>();
 
             return services;
         }

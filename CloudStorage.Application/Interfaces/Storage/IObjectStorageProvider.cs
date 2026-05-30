@@ -19,6 +19,7 @@ namespace CloudStorage.Application.Interfaces.Storage
         Task<PresignedUrlResult> GeneratePresignedDownloadUrlAsync(string objectKey, string? downloadFileName = null, TimeSpan? expiry = null, CancellationToken ct = default);
         
         StorageProviderCapabilities Capabilities { get; }
+        IStorageCapabilities DetailedCapabilities { get; }
         
         Task<bool> IsHealthyAsync(CancellationToken ct = default);
     }

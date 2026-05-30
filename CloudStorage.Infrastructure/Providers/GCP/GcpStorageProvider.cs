@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using CloudStorage.Application.Interfaces.Storage;
+using CloudStorage.Infrastructure.Providers.Capabilities;
 
 namespace CloudStorage.Infrastructure.Providers.GCP
 {
@@ -51,6 +52,8 @@ namespace CloudStorage.Infrastructure.Providers.GCP
             SupportsRangeRequests: false,
             SupportsMultipartUpload: false
         );
+
+        public IStorageCapabilities DetailedCapabilities => new GcpCapabilities();
 
         public Task<bool> IsHealthyAsync(CancellationToken ct = default)
         {

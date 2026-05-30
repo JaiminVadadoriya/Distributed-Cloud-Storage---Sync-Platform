@@ -94,6 +94,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
                 .Build();
 
             services.AddSingleton<IConfiguration>(config);
+            services.AddSingleton<CloudStorage.Application.Interfaces.Routing.IStorageRoutingEngine>(new Mock<CloudStorage.Application.Interfaces.Routing.IStorageRoutingEngine>().Object);
             services.AddSingleton<IStorageProviderFactory, StorageProviderFactory>();
             
             var sp = services.BuildServiceProvider();
@@ -182,6 +183,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
                 .Build();
 
             services.AddSingleton<IConfiguration>(config);
+            services.AddSingleton<CloudStorage.Application.Interfaces.Routing.IStorageRoutingEngine>(new Mock<CloudStorage.Application.Interfaces.Routing.IStorageRoutingEngine>().Object);
             services.AddSingleton<IStorageProviderFactory, StorageProviderFactory>();
             
             var sp = services.BuildServiceProvider();
@@ -198,7 +200,10 @@ namespace CloudStorage.Infrastructure.Tests.Services
         public void StorageProviderFactory_GetAvailableProviders_ReturnsExpectedList()
         {
             // Arrange
-            var factory = new StorageProviderFactory(new Mock<IServiceProvider>().Object, new Mock<IConfiguration>().Object);
+            var factory = new StorageProviderFactory(
+                new Mock<IServiceProvider>().Object, 
+                new Mock<IConfiguration>().Object,
+                new Mock<CloudStorage.Application.Interfaces.Routing.IStorageRoutingEngine>().Object);
 
             // Act
             var providers = factory.GetAvailableProviders();

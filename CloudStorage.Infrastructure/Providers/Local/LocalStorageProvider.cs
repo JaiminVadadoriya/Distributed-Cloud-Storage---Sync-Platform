@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using CloudStorage.Application.Interfaces.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using CloudStorage.Infrastructure.Providers.Capabilities;
 
 namespace CloudStorage.Infrastructure.Providers.Local
 {
@@ -154,6 +155,8 @@ namespace CloudStorage.Infrastructure.Providers.Local
             SupportsRangeRequests: true,
             SupportsMultipartUpload: false
         );
+
+        public IStorageCapabilities DetailedCapabilities => new LocalCapabilities();
 
         public Task<bool> IsHealthyAsync(CancellationToken ct = default)
         {

@@ -111,6 +111,10 @@
               "target": "Package",
               "version": "[1.15.1, )"
             },
+            "OpenTelemetry.Instrumentation.StackExchangeRedis": {
+              "target": "Package",
+              "version": "[1.10.0-beta.1, )"
+            },
             "Swashbuckle.AspNetCore": {
               "target": "Package",
               "version": "[10.1.7, )"
@@ -1310,6 +1314,14 @@
               "version": "[10.0.8, )"
             },
             "Microsoft.Extensions.Diagnostics.HealthChecks": {
+              "target": "Package",
+              "version": "[10.0.8, )"
+            },
+            "Microsoft.Extensions.Http.Resilience": {
+              "target": "Package",
+              "version": "[10.0.8, )"
+            },
+            "Microsoft.Extensions.Resilience": {
               "target": "Package",
               "version": "[10.0.8, )"
             },

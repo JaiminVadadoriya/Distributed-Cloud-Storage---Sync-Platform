@@ -6,6 +6,7 @@ using CloudStorage.API.Controllers;
 using CloudStorage.Application.DTOs;
 using CloudStorage.Application.Interfaces;
 using CloudStorage.Application.Interfaces.Storage;
+using CloudStorage.Application.Interfaces.Upload;
 using CloudStorage.Domain.Entities;
 using CloudStorage.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -25,6 +26,7 @@ namespace CloudStorage.API.Tests.Controllers
         private readonly Mock<IChunkVerificationService> _mockVerificationService;
         private readonly Mock<INotificationService> _mockNotificationService;
         private readonly Mock<IMessageQueue> _mockMessageQueue;
+        private readonly Mock<IUploadOrchestrator> _mockUploadOrchestrator;
         private readonly ChunkUploadController _controller;
         private readonly int _testUserId = 1;
 
@@ -38,6 +40,7 @@ namespace CloudStorage.API.Tests.Controllers
             _mockVerificationService = new Mock<IChunkVerificationService>();
             _mockNotificationService = new Mock<INotificationService>();
             _mockMessageQueue = new Mock<IMessageQueue>();
+            _mockUploadOrchestrator = new Mock<IUploadOrchestrator>();
 
             var mockObjectProvider = new Mock<IObjectStorageProvider>();
             mockObjectProvider.Setup(p => p.ProviderName).Returns("Azure");
@@ -51,7 +54,8 @@ namespace CloudStorage.API.Tests.Controllers
                 _mockProviderFactory.Object,
                 _mockVerificationService.Object,
                 _mockNotificationService.Object,
-                _mockMessageQueue.Object);
+                _mockMessageQueue.Object,
+                _mockUploadOrchestrator.Object);
 
             // Mock User context
             var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]

@@ -9,6 +9,7 @@ using Azure.Storage.Sas;
 using CloudStorage.Application.Interfaces.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using CloudStorage.Infrastructure.Providers.Capabilities;
 
 namespace CloudStorage.Infrastructure.Providers.Azure
 {
@@ -178,6 +179,8 @@ namespace CloudStorage.Infrastructure.Providers.Azure
             SupportsRangeRequests: true,
             SupportsMultipartUpload: true
         );
+
+        public IStorageCapabilities DetailedCapabilities => new AzureCapabilities();
 
         public async Task<bool> IsHealthyAsync(CancellationToken ct = default)
         {

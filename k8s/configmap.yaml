@@ -20,3 +20,5 @@ data:
   StorageProvider__MinIO__Endpoint: "minio-svc:9000"
   StorageProvider__MinIO__BucketName: "cloudstorage-chunks"
   StorageProvider__MinIO__UseSSL: "false"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+  OTEL_SERVICE_NAME: "CloudStorage.API"

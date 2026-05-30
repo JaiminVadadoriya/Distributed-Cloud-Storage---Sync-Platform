@@ -9,6 +9,7 @@ using Amazon.S3.Util;
 using CloudStorage.Application.Interfaces.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using CloudStorage.Infrastructure.Providers.Capabilities;
 
 namespace CloudStorage.Infrastructure.Providers.S3
 {
@@ -159,6 +160,8 @@ namespace CloudStorage.Infrastructure.Providers.S3
             SupportsRangeRequests: true,
             SupportsMultipartUpload: true
         );
+
+        public IStorageCapabilities DetailedCapabilities => new S3Capabilities();
 
         public async Task<bool> IsHealthyAsync(CancellationToken ct = default)
         {

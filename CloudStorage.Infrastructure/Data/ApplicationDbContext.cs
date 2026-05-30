@@ -22,6 +22,7 @@ namespace CloudStorage.Infrastructure.Data
         public DbSet<ActivityLog> ActivityLogs { get; set; } = null!;
         public DbSet<FolderPermission> FolderPermissions { get; set; } = null!;
         public DbSet<Notification> Notifications { get; set; } = null!;
+        public DbSet<StorageObjectLifecycle> StorageObjectLifecycles { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -231,6 +232,15 @@ namespace CloudStorage.Infrastructure.Data
                 entity.HasIndex(n => n.UserId);
                 entity.HasIndex(n => n.CreatedAt);
                 entity.HasIndex(n => new { n.UserId, n.IsRead });
+            });
+
+            modelBuilder.Entity<StorageObjectLifecycle>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.HasIndex(e => e.FileId);
+                entity.HasIndex(e => e.ObjectKey);
+                entity.Property(e => e.ObjectKey).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.ProviderName).IsRequired().HasMaxLength(100);
             });
 
             base.OnModelCreating(modelBuilder);

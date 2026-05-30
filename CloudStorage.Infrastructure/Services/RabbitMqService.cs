@@ -75,25 +75,45 @@ namespace CloudStorage.Infrastructure.Services
         {
             await EnsureConnectedAsync();
 
+            System.Collections.Generic.Dictionary<string, object?>? arguments = null;
+            if (queueName == "replication-tasks")
+            {
+                arguments = new System.Collections.Generic.Dictionary<string, object?>
+                {
+                    { "x-dead-letter-exchange", "domain-events-dlx" },
+                    { "x-dead-letter-routing-key", "replication-tasks-retry" }
+                };
+            }
+
             await _channel!.QueueDeclareAsync(queue: queueName,
                                              durable: true,
                                              exclusive: false,
                                              autoDelete: false,
-                                             arguments: null);
+                                             arguments: arguments);
 
             var json = JsonSerializer.Serialize(message);
             var body = Encoding.UTF8.GetBytes(json);
 
             var properties = new BasicProperties
             {
-                Persistent = true
+                Persistent = true,
+                MessageId = Guid.NewGuid().ToString(),
+                Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             };
 
+            var headers = new System.Collections.Generic.Dictionary<string, object?>();
+            if (message != null)
+            {
+                headers["Type"] = message.GetType().FullName ?? message.GetType().Name;
+            }
+            headers["x-retry-count"] = 0;
+            properties.Headers = headers;
+
             await _channel.BasicPublishAsync(exchange: "",
-                                            routingKey: queueName,
-                                            mandatory: false,
-                                            basicProperties: properties,
-                                            body: body);
+                                             routingKey: queueName,
+                                             mandatory: false,
+                                             basicProperties: properties,
+                                             body: body);
         }
 
         public async Task PublishAsync<TEvent>(TEvent @event, CancellationToken ct = default) where TEvent : class
@@ -121,6 +141,14 @@ namespace CloudStorage.Infrastructure.Services
                 MessageId = Guid.NewGuid().ToString(),
                 Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds())
             };
+
+            var headers = new System.Collections.Generic.Dictionary<string, object?>();
+            if (@event != null)
+            {
+                headers["Type"] = @event.GetType().FullName ?? @event.GetType().Name;
+            }
+            headers["x-retry-count"] = 0;
+            properties.Headers = headers;
 
             await _channel.BasicPublishAsync(
                 exchange: exchangeName,

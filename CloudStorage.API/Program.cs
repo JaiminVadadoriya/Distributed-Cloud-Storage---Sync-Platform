@@ -197,23 +197,39 @@ builder.Services.AddHealthChecks()
     .AddRedis(redisConnectionString, name: "Redis");
 
 // OpenTelemetry Configuration
+var isTesting = builder.Environment.EnvironmentName == "Testing";
 builder.Services.AddOpenTelemetry()
     .ConfigureResource(resource => resource
         .AddService(serviceName: "CloudStorage.API"))
-    .WithTracing(tracing => tracing
-        .AddAspNetCoreInstrumentation(options =>
+    .WithTracing(tracing =>
+    {
+        tracing.AddAspNetCoreInstrumentation(options =>
         {
             options.Filter = httpContext => !httpContext.Request.Path.StartsWithSegments("/health");
         })
+        .AddSource("CloudStorage.Storage")
         .AddEntityFrameworkCoreInstrumentation()
-        .AddHttpClientInstrumentation()
-        .AddOtlpExporter())
-    .WithMetrics(metrics => metrics
-        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation();
+
+        if (!isTesting)
+        {
+            tracing.AddRedisInstrumentation()
+                   .AddOtlpExporter();
+        }
+    })
+    .WithMetrics(metrics =>
+    {
+        metrics.AddAspNetCoreInstrumentation()
         .AddMeter("System.Net.Http")
         .AddMeter("System.Net.NameResolution")
-        .AddRuntimeInstrumentation()
-        .AddOtlpExporter());
+        .AddMeter("CloudStorage.Storage")
+        .AddRuntimeInstrumentation();
+
+        if (!isTesting)
+        {
+            metrics.AddOtlpExporter();
+        }
+    });
 
 // Rate limiting
 builder.Services.AddRateLimiter(options =>

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "xEbztos8RyI=",
+  "dgSpecHash": "ns/pDfud4wo=",
   "success": true,
   "projectFilePath": "D:\\college\\cloud-storage\\CloudStorage.API\\CloudStorage.API.csproj",
   "expectedPackageFiles": [
@@ -32,9 +32,18 @@
     "C:\\Users\\Lenovo\\.nuget\\packages\\microsoft.entityframeworkcore.analyzers\\10.0.8\\microsoft.entityframeworkcore.analyzers.10.0.8.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\microsoft.entityframeworkcore.design\\10.0.8\\microsoft.entityframeworkcore.design.10.0.8.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\microsoft.entityframeworkcore.relational\\10.0.8\\microsoft.entityframeworkcore.relational.10.0.8.nupkg.sha512",
+    "C:\\Users\\Lenovo\\.nuget\\packages\\microsoft.extensions.ambientmetadata.application\\10.1.0\\microsoft.extensions.ambientmetadata.application.10.1.0.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\microsoft.extensions.apidescription.server\\10.0.0\\microsoft.extensions.apidescription.server.10.0.0.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\microsoft.extensions.caching.stackexchangeredis\\10.0.8\\microsoft.extensions.caching.stackexchangeredis.10.0.8.nupkg.sha512",
+    "C:\\Users\\Lenovo\\.nuget\\packages\\microsoft.extensions.compliance.abstractions\\10.1.0\\microsoft.extensions.compliance.abstractions.10.1.0.nupkg.sha512",
+    "C:\\Users\\Lenovo\\.nuget\\packages\\microsoft.extensions.dependencyinjection.autoactivation\\10.1.0\\microsoft.extensions.dependencyinjection.autoactivation.10.1.0.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\microsoft.extensions.dependencymodel\\10.0.8\\microsoft.extensions.dependencymodel.10.0.8.nupkg.sha512",
+    "C:\\Users\\Lenovo\\.nuget\\packages\\microsoft.extensions.diagnostics.exceptionsummarization\\10.1.0\\microsoft.extensions.diagnostics.exceptionsummarization.10.1.0.nupkg.sha512",
+    "C:\\Users\\Lenovo\\.nuget\\packages\\microsoft.extensions.http.diagnostics\\10.1.0\\microsoft.extensions.http.diagnostics.10.1.0.nupkg.sha512",
+    "C:\\Users\\Lenovo\\.nuget\\packages\\microsoft.extensions.http.resilience\\10.1.0\\microsoft.extensions.http.resilience.10.1.0.nupkg.sha512",
+    "C:\\Users\\Lenovo\\.nuget\\packages\\microsoft.extensions.resilience\\10.1.0\\microsoft.extensions.resilience.10.1.0.nupkg.sha512",
+    "C:\\Users\\Lenovo\\.nuget\\packages\\microsoft.extensions.telemetry\\10.1.0\\microsoft.extensions.telemetry.10.1.0.nupkg.sha512",
+    "C:\\Users\\Lenovo\\.nuget\\packages\\microsoft.extensions.telemetry.abstractions\\10.1.0\\microsoft.extensions.telemetry.abstractions.10.1.0.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\microsoft.identitymodel.abstractions\\8.18.0\\microsoft.identitymodel.abstractions.8.18.0.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\microsoft.identitymodel.jsonwebtokens\\8.18.0\\microsoft.identitymodel.jsonwebtokens.8.18.0.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\microsoft.identitymodel.logging\\8.18.0\\microsoft.identitymodel.logging.8.18.0.nupkg.sha512",
@@ -58,7 +67,11 @@
     "C:\\Users\\Lenovo\\.nuget\\packages\\opentelemetry.instrumentation.entityframeworkcore\\1.15.0-beta.1\\opentelemetry.instrumentation.entityframeworkcore.1.15.0-beta.1.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\opentelemetry.instrumentation.http\\1.15.1\\opentelemetry.instrumentation.http.1.15.1.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\opentelemetry.instrumentation.runtime\\1.15.1\\opentelemetry.instrumentation.runtime.1.15.1.nupkg.sha512",
+    "C:\\Users\\Lenovo\\.nuget\\packages\\opentelemetry.instrumentation.stackexchangeredis\\1.10.0-beta.1\\opentelemetry.instrumentation.stackexchangeredis.1.10.0-beta.1.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\pipelines.sockets.unofficial\\2.2.16\\pipelines.sockets.unofficial.2.2.16.nupkg.sha512",
+    "C:\\Users\\Lenovo\\.nuget\\packages\\polly.core\\8.4.2\\polly.core.8.4.2.nupkg.sha512",
+    "C:\\Users\\Lenovo\\.nuget\\packages\\polly.extensions\\8.4.2\\polly.extensions.8.4.2.nupkg.sha512",
+    "C:\\Users\\Lenovo\\.nuget\\packages\\polly.ratelimiting\\8.4.2\\polly.ratelimiting.8.4.2.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\prometheus-net\\8.2.1\\prometheus-net.8.2.1.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\prometheus-net.aspnetcore\\8.2.1\\prometheus-net.aspnetcore.8.2.1.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\rabbitmq.client\\7.2.1\\rabbitmq.client.7.2.1.nupkg.sha512",
@@ -80,5 +93,30 @@
     "C:\\Users\\Lenovo\\.nuget\\packages\\system.memory.data\\10.0.1\\system.memory.data.10.0.1.nupkg.sha512",
     "C:\\Users\\Lenovo\\.nuget\\packages\\system.reactive\\6.0.1\\system.reactive.6.0.1.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1603",
+      "level": "Warning",
+      "message": "CloudStorage.Infrastructure depends on Microsoft.Extensions.Http.Resilience (>= 10.0.8) but Microsoft.Extensions.Http.Resilience 10.0.8 was not found. Microsoft.Extensions.Http.Resilience 10.1.0 was resolved instead.",
+      "projectPath": "D:\\college\\cloud-storage\\CloudStorage.API\\CloudStorage.API.csproj",
+      "warningLevel": 1,
+      "filePath": "D:\\college\\cloud-storage\\CloudStorage.API\\CloudStorage.API.csproj",
+      "libraryId": "Microsoft.Extensions.Http.Resilience",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    },
+    {
+      "code": "NU1603",
+      "level": "Warning",
+      "message": "CloudStorage.Infrastructure depends on Microsoft.Extensions.Resilience (>= 10.0.8) but Microsoft.Extensions.Resilience 10.0.8 was not found. Microsoft.Extensions.Resilience 10.1.0 was resolved instead.",
+      "projectPath": "D:\\college\\cloud-storage\\CloudStorage.API\\CloudStorage.API.csproj",
+      "warningLevel": 1,
+      "filePath": "D:\\college\\cloud-storage\\CloudStorage.API\\CloudStorage.API.csproj",
+      "libraryId": "Microsoft.Extensions.Resilience",
+      "targetGraphs": [
+        "net10.0"
+      ]
+    }
+  ]
 }

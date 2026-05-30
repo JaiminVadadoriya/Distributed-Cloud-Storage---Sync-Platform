@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using CloudStorage.Domain.Enums;
 
 namespace CloudStorage.Application.Interfaces.Storage
 {
@@ -31,11 +32,31 @@ namespace CloudStorage.Application.Interfaces.Storage
 
     public record ChunkVerificationResult(bool IsValid, int[] MissingChunkIndices);
 
+    [Obsolete("Use IStorageCapabilities instead.")]
     public record StorageProviderCapabilities(
         bool SupportsPresignedUrls, 
         bool SupportsServerSideEncryption, 
         bool SupportsRangeRequests, 
         bool SupportsMultipartUpload, 
         long? MaxObjectSize = null
+    );
+
+
+    public record ReplicationPolicy(
+        string PolicyId,
+        string SourceProvider,
+        string TargetProvider,
+        string DestinationBucket,
+        bool IsActive,
+        string Mode = "ActivePassive"
+    );
+
+    public record LifecycleRule(
+        string RuleId,
+        string Prefix,
+        int? TransitionAfterDays,
+        StorageTier? TargetTier,
+        int? ExpirationDays,
+        bool IsActive
     );
 }
