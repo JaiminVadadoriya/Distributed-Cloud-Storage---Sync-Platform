@@ -15,5 +15,7 @@ namespace CloudStorage.Application.Interfaces.Storage
         long MaxPartSizeBytes { get; }
         long MaxObjectSizeBytes { get; }
         int MaxConcurrentUploads { get; }
+        string Region { get; }
+        string Jurisdiction { get; }
     }
 }

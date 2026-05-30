@@ -15,5 +15,7 @@ namespace CloudStorage.Infrastructure.Providers.Capabilities
         public long MaxPartSizeBytes => 4000L * 1024 * 1024; // 4000 MB
         public long MaxObjectSizeBytes => 4750000000000L; // ~4.75 TB
         public int MaxConcurrentUploads => 8;
+        public string Region => "eastus";
+        public string Jurisdiction => "US-EU";
     }
 }

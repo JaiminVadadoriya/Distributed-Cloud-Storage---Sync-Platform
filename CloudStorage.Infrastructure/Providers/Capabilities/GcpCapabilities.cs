@@ -15,5 +15,7 @@ namespace CloudStorage.Infrastructure.Providers.Capabilities
         public long MaxPartSizeBytes => 5L * 1024 * 1024 * 1024;
         public long MaxObjectSizeBytes => 5L * 1024 * 1024 * 1024 * 1024;
         public int MaxConcurrentUploads => 5;
+        public string Region => "us-east1";
+        public string Jurisdiction => "US";
     }
 }
