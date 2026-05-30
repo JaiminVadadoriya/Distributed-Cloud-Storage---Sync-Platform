@@ -1773,6 +1773,7 @@
           "Microsoft.AspNetCore.Authentication.JwtBearer": "10.0.8",
           "Microsoft.AspNetCore.SignalR.StackExchangeRedis": "10.0.8",
           "Microsoft.Extensions.Caching.StackExchangeRedis": "10.0.8",
+          "Microsoft.OpenApi": "2.4.1",
           "OpenTelemetry.Exporter.OpenTelemetryProtocol": "1.15.3",
           "OpenTelemetry.Extensions.Hosting": "1.15.3",
           "OpenTelemetry.Instrumentation.AspNetCore": "1.15.2",
@@ -1838,7 +1839,10 @@
         },
         "runtime": {
           "bin/placeholder/CloudStorage.Infrastructure.dll": {}
-        }
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ]
       }
     }
   },

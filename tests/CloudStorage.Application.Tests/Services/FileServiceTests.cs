@@ -267,25 +267,42 @@ namespace CloudStorage.Application.Tests.Services
         }
 
         [Fact]
-        public async Task DeleteAllUserFilesAsync_ShouldMarkAllUserFilesAsDeleted()
+        public async Task DeleteAllUserFilesAsync_ShouldCallRepositoryDeleteAllUserFiles()
+        {
+            // Arrange
+            var userId = 1;
+
+            // Act
+            await _fileService.DeleteAllUserFilesAsync(userId);
+
+            // Assert
+            _fileRepositoryMock.Verify(r => r.DeleteAllUserFilesAsync(userId), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetStorageBreakdownAsync_ShouldCategorizeFilesCorrectly()
         {
             // Arrange
             var userId = 1;
             var files = new List<FileMetadata>
             {
-                new FileMetadata { Id = Guid.NewGuid(), FileName = "file1.txt", OwnerId = userId, IsDeleted = false },
-                new FileMetadata { Id = Guid.NewGuid(), FileName = "file2.txt", OwnerId = userId, IsDeleted = false }
+                new FileMetadata { Id = Guid.NewGuid(), FileName = "image.png", ContentType = "image/png", Size = 100, OwnerId = userId, Status = UploadStatus.Complete },
+                new FileMetadata { Id = Guid.NewGuid(), FileName = "video.mp4", ContentType = "video/mp4", Size = 200, OwnerId = userId, Status = UploadStatus.Complete },
+                new FileMetadata { Id = Guid.NewGuid(), FileName = "doc.pdf", ContentType = "application/pdf", Size = 300, OwnerId = userId, Status = UploadStatus.Complete },
+                new FileMetadata { Id = Guid.NewGuid(), FileName = "other.zip", ContentType = "application/zip", Size = 400, OwnerId = userId, Status = UploadStatus.Complete }
             };
 
             _fileRepositoryMock.Setup(r => r.GetUserFilesAsync(userId, false))
                 .ReturnsAsync(files);
 
             // Act
-            await _fileService.DeleteAllUserFilesAsync(userId);
+            var result = await _fileService.GetStorageBreakdownAsync(userId);
 
             // Assert
-            Assert.All(files, f => Assert.True(f.IsDeleted));
-            _fileRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<FileMetadata>()), Times.Exactly(2));
+            Assert.Equal(100, result.Images);
+            Assert.Equal(200, result.Videos);
+            Assert.Equal(300, result.Documents);
+            Assert.Equal(400, result.Others);
         }
     }
 }

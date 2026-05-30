@@ -55,18 +55,32 @@ jobs:
     needs: deploy-staging
 
     steps:
-      - name: Wait for services to start
-        run: sleep 30
+      - name: Wait for Staging API readiness
+        run: |
+          echo "Waiting for staging API to be ready..."
+          TIMEOUT=60
+          INTERVAL=5
+          ELAPSED=0
+          until curl -s -f "${{ vars.STAGING_URL }}/health/ready" || [ $ELAPSED -eq $TIMEOUT ]; do
+            echo "Staging API not ready yet... waiting $INTERVAL seconds."
+            sleep $INTERVAL
+            let ELAPSED=ELAPSED+INTERVAL
+          done
+          if ! curl -s -f "${{ vars.STAGING_URL }}/health/ready"; then
+            echo "Timeout reached! Staging API is not ready."
+            exit 1
+          fi
+          echo "Staging API is ready!"
 
       - name: Health check - API liveness
         run: |
           curl --fail --retry 5 --retry-delay 10 \
-            ${{ vars.STAGING_URL }}/health
+            ${{ vars.STAGING_URL }}/health/live
 
       - name: Health check - API readiness
         run: |
           curl --fail --retry 5 --retry-delay 10 \
-            ${{ vars.STAGING_URL }}/health
+            ${{ vars.STAGING_URL }}/health/ready
 
       - name: Health check - Client
         run: |
@@ -109,6 +123,17 @@ jobs:
 
       - name: Verify production health
         run: |
-          sleep 30
-          curl --fail --retry 5 --retry-delay 10 \
-            ${{ vars.PRODUCTION_URL }}/health
+          echo "Waiting for production API to be ready..."
+          TIMEOUT=60
+          INTERVAL=5
+          ELAPSED=0
+          until curl -s -f "${{ vars.PRODUCTION_URL }}/health/ready" || [ $ELAPSED -eq $TIMEOUT ]; do
+            echo "Production API not ready yet... waiting $INTERVAL seconds."
+            sleep $INTERVAL
+            let ELAPSED=ELAPSED+INTERVAL
+          done
+          if ! curl -s -f "${{ vars.PRODUCTION_URL }}/health/ready"; then
+            echo "Timeout reached! Production API is not ready."
+            exit 1
+          fi
+          echo "Production API is ready!"

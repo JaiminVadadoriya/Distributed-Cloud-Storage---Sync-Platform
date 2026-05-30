@@ -82,20 +82,22 @@ namespace CloudStorage.Infrastructure.Repositories
 
         private async Task<bool> HasFolderPermissionAsync(Guid folderId, int userId, PermissionType minimumPermission)
         {
-            // Limit recursion depth to avoid deep traversal issues
-            const int maxDepth = 10;
-            Guid? currentFolderId = folderId;
-            int depth = 0;
+            // Fetch all parent folders recursively in one SQL query to avoid sequential DB round-trips
+            var folders = await _context.Folders
+                .FromSqlInterpolated($@"
+                    WITH RECURSIVE FolderHierarchy AS (
+                        SELECT * FROM ""Folders"" WHERE ""Id"" = {folderId}
+                        UNION ALL
+                        SELECT f.* FROM ""Folders"" f
+                        INNER JOIN FolderHierarchy fh ON f.""Id"" = fh.""ParentFolderId""
+                    )
+                    SELECT * FROM FolderHierarchy")
+                .Include(f => f.Permissions)
+                .AsNoTracking()
+                .ToListAsync();
 
-            while (currentFolderId.HasValue && depth < maxDepth)
+            foreach (var folder in folders)
             {
-                var folder = await _context.Folders
-                    .Include(f => f.Permissions)
-                    .FirstOrDefaultAsync(f => f.Id == currentFolderId.Value);
-
-                if (folder == null)
-                    break;
-
                 // Folder owner inherits all permissions
                 if (folder.OwnerId == userId)
                     return true;
@@ -104,9 +106,6 @@ namespace CloudStorage.Infrastructure.Repositories
                 var folderPermission = folder.Permissions?.FirstOrDefault(p => p.UserId == userId);
                 if (folderPermission != null && folderPermission.PermissionType >= minimumPermission)
                     return true;
-
-                currentFolderId = folder.ParentFolderId;
-                depth++;
             }
 
             return false;
@@ -133,6 +132,29 @@ namespace CloudStorage.Infrastructure.Repositories
             return await _dbSet
                 .Include(f => f.Chunks.OrderBy(c => c.ChunkIndex))
                 .FirstOrDefaultAsync(f => f.Id == id);
+        }
+
+        public async Task DeleteAllUserFilesAsync(int userId)
+        {
+            await _dbSet
+                .Where(f => f.OwnerId == userId && !f.IsDeleted)
+                .ExecuteUpdateAsync(s => s
+                    .SetProperty(f => f.IsDeleted, true)
+                    .SetProperty(f => f.LastModifiedAt, DateTime.UtcNow));
+        }
+
+        public async Task<IEnumerable<FileMetadata>> GetVersionChainAsync(Guid fileId)
+        {
+            return await _dbSet
+                .FromSqlInterpolated($@"
+                    WITH RECURSIVE VersionHierarchy AS (
+                        SELECT * FROM ""FileMetadata"" WHERE ""Id"" = {fileId}
+                        UNION ALL
+                        SELECT fm.* FROM ""FileMetadata"" fm
+                        INNER JOIN VersionHierarchy vh ON fm.""Id"" = vh.""ParentVersionId""
+                    )
+                    SELECT * FROM VersionHierarchy")
+                .ToListAsync();
         }
     }
 }

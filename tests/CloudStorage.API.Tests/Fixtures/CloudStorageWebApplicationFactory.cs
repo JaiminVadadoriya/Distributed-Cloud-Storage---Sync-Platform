@@ -6,6 +6,7 @@ using CloudStorage.Infrastructure.Data;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Moq;
 
 namespace CloudStorage.API.Tests.Fixtures
 {
@@ -44,6 +45,17 @@ namespace CloudStorage.API.Tests.Fixtures
                 services.AddScoped(_ => Moq.Mock.Of<CloudStorage.Application.Interfaces.INotificationService>());
                 services.AddScoped(_ => Moq.Mock.Of<CloudStorage.Application.Interfaces.IBlobSasService>());
                 services.AddScoped(_ => Moq.Mock.Of<CloudStorage.Application.Interfaces.IChunkStorageService>());
+
+                // Mock Redis for throttling middleware
+                services.RemoveAll<StackExchange.Redis.IConnectionMultiplexer>();
+                var mockRedis = new Moq.Mock<StackExchange.Redis.IConnectionMultiplexer>();
+                var mockDb = new Moq.Mock<StackExchange.Redis.IDatabase>();
+                mockRedis.Setup(r => r.GetDatabase(Moq.It.IsAny<int>(), Moq.It.IsAny<object>())).Returns(mockDb.Object);
+                mockDb.Setup(d => d.StringIncrementAsync(Moq.It.IsAny<StackExchange.Redis.RedisKey>(), Moq.It.IsAny<long>(), Moq.It.IsAny<StackExchange.Redis.CommandFlags>()))
+                      .ReturnsAsync(1);
+                mockDb.Setup(d => d.StringDecrementAsync(Moq.It.IsAny<StackExchange.Redis.RedisKey>(), Moq.It.IsAny<long>(), Moq.It.IsAny<StackExchange.Redis.CommandFlags>()))
+                      .ReturnsAsync(0);
+                services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(mockRedis.Object);
 
                 services.AddDbContext<ApplicationDbContext>(options =>
                 {

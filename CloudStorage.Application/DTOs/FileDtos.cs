@@ -50,6 +50,7 @@ namespace CloudStorage.Application.DTOs
     {
         public Guid Id { get; set; }
         public string FileName { get; set; } = string.Empty;
+        public string ContentType { get; set; } = string.Empty;
         public long Size { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime LastModifiedAt { get; set; }
@@ -127,5 +128,13 @@ namespace CloudStorage.Application.DTOs
         public long AvgSpeedBps { get; set; }
         public int TotalRetries { get; set; }
         public int FailedCount { get; set; }
+    }
+
+    public class StorageBreakdownDto
+    {
+        public long Images { get; set; }
+        public long Videos { get; set; }
+        public long Documents { get; set; }
+        public long Others { get; set; }
     }
 }

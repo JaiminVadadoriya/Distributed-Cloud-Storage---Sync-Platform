@@ -1665,7 +1665,10 @@
         },
         "runtime": {
           "bin/placeholder/CloudStorage.Infrastructure.dll": {}
-        }
+        },
+        "frameworkReferences": [
+          "Microsoft.AspNetCore.App"
+        ]
       }
     }
   },
@@ -4863,6 +4866,7 @@
       "Microsoft.AspNetCore.SignalR.StackExchangeRedis >= 10.0.8",
       "Microsoft.EntityFrameworkCore.Design >= 10.0.8",
       "Microsoft.Extensions.Caching.StackExchangeRedis >= 10.0.8",
+      "Microsoft.OpenApi >= 2.4.1",
       "OpenTelemetry.Exporter.OpenTelemetryProtocol >= 1.15.3",
       "OpenTelemetry.Extensions.Hosting >= 1.15.3",
       "OpenTelemetry.Instrumentation.AspNetCore >= 1.15.2",
@@ -4960,6 +4964,10 @@
           "Microsoft.Extensions.Caching.StackExchangeRedis": {
             "target": "Package",
             "version": "[10.0.8, )"
+          },
+          "Microsoft.OpenApi": {
+            "target": "Package",
+            "version": "[2.4.1, )"
           },
           "OpenTelemetry.Exporter.OpenTelemetryProtocol": {
             "target": "Package",

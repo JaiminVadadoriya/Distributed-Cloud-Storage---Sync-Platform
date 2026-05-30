@@ -15,5 +15,7 @@ namespace CloudStorage.Domain.Interfaces
         Task<IEnumerable<FileMetadata>> GetSharedFilesAsync(int userId);
         Task<IEnumerable<FileMetadata>> SearchAsync(int userId, string query);
         Task<bool> HasPermissionAsync(Guid fileId, int userId, PermissionType minimumPermission);
+        Task DeleteAllUserFilesAsync(int userId);
+        Task<IEnumerable<FileMetadata>> GetVersionChainAsync(Guid fileId);
     }
 }

@@ -246,11 +246,10 @@ namespace CloudStorage.Infrastructure.Services
             if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
                 return Enumerable.Empty<UserSearchResultDto>();
 
-            var normalizedQuery = query.ToLower();
             var users = await _context.Users
                 .Where(u => u.IsActive && (
-                    u.Email.ToLower().Contains(normalizedQuery) ||
-                    u.Username.ToLower().Contains(normalizedQuery)))
+                    EF.Functions.ILike(u.Email, $"%{query}%") ||
+                    EF.Functions.ILike(u.Username, $"%{query}%")))
                 .Take(10)
                 .Select(u => new UserSearchResultDto
                 {
@@ -284,7 +283,7 @@ namespace CloudStorage.Infrastructure.Services
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(GetAccessTokenExpirationMinutes()),
+                expires: DateTime.UtcNow.AddMinutes(GetAccessTokenExpirationMinutes()),
                 signingCredentials: creds
             );
 

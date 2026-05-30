@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Logging;
 
 namespace CloudStorage.API.Controllers
 {
@@ -28,17 +29,20 @@ namespace CloudStorage.API.Controllers
         private readonly IChunkStorageProvider _chunkStorage;
         private readonly IStorageProviderFactory _providerFactory;
         private readonly INotificationService _notificationService;
+        private readonly ILogger<FilesController> _logger;
 
         public FilesController(
             IFileService fileService,
             IChunkStorageProvider chunkStorage,
             IStorageProviderFactory providerFactory,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            ILogger<FilesController> logger)
         {
             _fileService = fileService;
             _chunkStorage = chunkStorage;
             _providerFactory = providerFactory;
             _notificationService = notificationService;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -58,8 +62,9 @@ namespace CloudStorage.API.Controllers
         [HttpGet("storage-breakdown")]
         public Task<IActionResult> GetStorageBreakdown() => ExecuteAsync(async () =>
         {
-            GetUserId(); // Validate auth
-            return Ok(ApiResponse<object>.Ok(null!, "Storage breakdown retrieved successfully"));
+            var userId = GetUserId();
+            var breakdown = await _fileService.GetStorageBreakdownAsync(userId);
+            return Ok(ApiResponse<StorageBreakdownDto>.Ok(breakdown, "Storage breakdown retrieved successfully"));
         });
 
         [HttpGet("shared")]
@@ -105,7 +110,7 @@ namespace CloudStorage.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[ERROR] GetFileChunkPaths Failed | FileId: {id} | Error: {ex}");
+                _logger.LogError(ex, "[ERROR] GetFileChunkPaths Failed | FileId: {FileId}", id);
                 Response.StatusCode = 500;
                 return;
             }
@@ -218,7 +223,7 @@ namespace CloudStorage.API.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[ERROR] File Download Failed | FileId: {id} | UserId: {userId} | Error: {ex}");
+                _logger.LogError(ex, "[ERROR] File Download Failed | FileId: {FileId} | UserId: {UserId}", id, userId);
                 if (!Response.HasStarted)
                     Response.StatusCode = 500;
             }

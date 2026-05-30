@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using CloudStorage.Application.Interfaces;
 using Microsoft.Extensions.Configuration;
 using RabbitMQ.Client;
+using Polly;
+using Polly.Retry;
 
 namespace CloudStorage.Infrastructure.Services
 {
@@ -15,6 +17,17 @@ namespace CloudStorage.Infrastructure.Services
         private IConnection? _connection;
         private IChannel? _channel;
         private readonly SemaphoreSlim _connectionLock = new(1, 1);
+
+        private static readonly ResiliencePipeline _publishPipeline = new ResiliencePipelineBuilder()
+            .AddRetry(new RetryStrategyOptions
+            {
+                ShouldHandle = new PredicateBuilder().Handle<Exception>(),
+                MaxRetryAttempts = 3,
+                BackoffType = DelayBackoffType.Exponential,
+                UseJitter = true,
+                Delay = TimeSpan.FromSeconds(1)
+            })
+            .Build();
 
         public RabbitMqService(IConfiguration configuration)
         {
@@ -109,11 +122,15 @@ namespace CloudStorage.Infrastructure.Services
             headers["x-retry-count"] = 0;
             properties.Headers = headers;
 
-            await _channel.BasicPublishAsync(exchange: "",
-                                             routingKey: queueName,
-                                             mandatory: false,
-                                             basicProperties: properties,
-                                             body: body);
+            await _publishPipeline.ExecuteAsync(async token =>
+            {
+                await _channel.BasicPublishAsync(exchange: "",
+                                                 routingKey: queueName,
+                                                 mandatory: false,
+                                                 basicProperties: properties,
+                                                 body: body,
+                                                 cancellationToken: token);
+            });
         }
 
         public async Task PublishAsync<TEvent>(TEvent @event, CancellationToken ct = default) where TEvent : class
@@ -150,13 +167,16 @@ namespace CloudStorage.Infrastructure.Services
             headers["x-retry-count"] = 0;
             properties.Headers = headers;
 
-            await _channel.BasicPublishAsync(
-                exchange: exchangeName,
-                routingKey: eventName,
-                mandatory: false,
-                basicProperties: properties,
-                body: body,
-                cancellationToken: ct);
+            await _publishPipeline.ExecuteAsync(async token =>
+            {
+                await _channel.BasicPublishAsync(
+                    exchange: exchangeName,
+                    routingKey: eventName,
+                    mandatory: false,
+                    basicProperties: properties,
+                    body: body,
+                    cancellationToken: token);
+            }, ct);
         }
 
         public void Dispose()

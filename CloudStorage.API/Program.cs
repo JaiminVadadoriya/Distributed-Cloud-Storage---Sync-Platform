@@ -33,6 +33,7 @@ Console.WriteLine("CloudStorage API System Starting... Version: 2.0-Scalable");
 
 // Add services to the container
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddHttpContextAccessor();
 
@@ -54,7 +55,26 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
 });
 
 // Configure Swagger
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(opt =>
+{
+    opt.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo { Title = "CloudStorage API", Version = "v1" });
+    opt.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.OpenApiSecurityScheme
+    {
+        In = Microsoft.OpenApi.ParameterLocation.Header,
+        Description = "Please enter token",
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        Scheme = "bearer"
+    });
+    opt.AddSecurityRequirement(doc => new Microsoft.OpenApi.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.OpenApiSecuritySchemeReference("Bearer"),
+            new List<string>()
+        }
+    });
+});
 
 builder.Services.AddResponseCaching();
 
@@ -193,8 +213,27 @@ builder.Services.AddCors(options =>
 
 // Health checks with specialized probes
 builder.Services.AddHealthChecks()
-    .AddNpgSql(dbConnectionString!, name: "PostgreSQL")
-    .AddRedis(redisConnectionString, name: "Redis");
+    .AddNpgSql(dbConnectionString!, name: "PostgreSQL", tags: new[] { "ready" })
+    .AddRedis(redisConnectionString, name: "Redis", tags: new[] { "ready" })
+    .AddUrlGroup(new Uri((builder.Configuration["StorageProvider:MinIO:Endpoint"] ?? "localhost:9000").Replace("minio:", "localhost:").Insert(0, "http://")), name: "MinIO", tags: new[] { "ready" })
+    .AddCheck("RabbitMQ", ct =>
+    {
+        try
+        {
+            var factory = new RabbitMQ.Client.ConnectionFactory
+            {
+                HostName = builder.Configuration["RabbitMQ:HostName"] ?? "localhost",
+                UserName = builder.Configuration["RabbitMQ:UserName"] ?? "guest",
+                Password = builder.Configuration["RabbitMQ:Password"] ?? "guest"
+            };
+            using var connection = Task.Run(() => factory.CreateConnectionAsync(), ct).GetAwaiter().GetResult();
+            return HealthCheckResult.Healthy();
+        }
+        catch (Exception ex)
+        {
+            return HealthCheckResult.Unhealthy("RabbitMQ is unreachable", ex);
+        }
+    }, tags: new[] { "ready" });
 
 // OpenTelemetry Configuration
 var isTesting = builder.Environment.EnvironmentName == "Testing";
@@ -274,6 +313,23 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
+app.UseExceptionHandler(exceptionHandlerApp =>
+{
+    exceptionHandlerApp.Run(async context =>
+    {
+        context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/json";
+        
+        var exceptionHandlerPathFeature = context.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerPathFeature>();
+        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+        
+        logger.LogError(exceptionHandlerPathFeature?.Error, "Unhandled API Exception occurred");
+        
+        var errorResponse = new { success = false, message = "An unexpected error occurred. Please try again later." };
+        await context.Response.WriteAsJsonAsync(errorResponse);
+    });
+});
+
 // Configure the HTTP request pipeline
 
 // Security headers middleware
@@ -317,7 +373,18 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<FileStorageHub>("/hubs/storage");
 app.MapMetrics(); // Exposes /metrics
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => false
+});
+app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
 
 if (!app.Environment.IsEnvironment("Testing"))
 {

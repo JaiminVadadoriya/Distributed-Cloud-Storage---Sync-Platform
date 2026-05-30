@@ -9,6 +9,7 @@ using CloudStorage.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http;
 using BCrypt.Net;
 
 namespace CloudStorage.Infrastructure.Services
@@ -19,66 +20,119 @@ namespace CloudStorage.Infrastructure.Services
         private readonly IRefreshTokenService _refreshTokenService;
         private readonly ILogger<AdminService> _logger;
         private readonly HealthCheckService _healthCheckService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ICacheService _cache;
 
         public AdminService(
             ApplicationDbContext context,
             IRefreshTokenService refreshTokenService,
             ILogger<AdminService> logger,
-            HealthCheckService healthCheckService)
+            HealthCheckService healthCheckService,
+            IHttpContextAccessor httpContextAccessor,
+            ICacheService cache)
         {
             _context = context;
             _refreshTokenService = refreshTokenService;
             _logger = logger;
             _healthCheckService = healthCheckService;
+            _httpContextAccessor = httpContextAccessor;
+            _cache = cache;
         }
 
         public async Task<AdminDashboardStatsDto> GetDashboardStatsAsync()
         {
+            const string cacheKey = "admin:dashboard:stats";
+            var cachedStats = await _cache.GetAsync<AdminDashboardStatsDto>(cacheKey);
+            if (cachedStats != null)
+            {
+                _logger.LogInformation("Returning cached admin dashboard statistics");
+                return cachedStats;
+            }
+
             _logger.LogInformation("Fetching admin dashboard statistics from real-time data");
 
-            var totalFiles = await _context.FileMetadata.AsNoTracking().CountAsync(f => !f.IsDeleted);
-            var totalUsers = await _context.Users.AsNoTracking().CountAsync();
-            var suspendedUsers = await _context.Users.AsNoTracking().CountAsync(u => !u.IsActive);
-            var totalStorageUsed = await _context.FileMetadata.AsNoTracking().Where(f => !f.IsDeleted).SumAsync(f => f.Size);
-            var totalStorageLimit = await _context.Users.AsNoTracking().SumAsync(u => u.StorageQuota);
+            // Execute base counts in parallel to prevent sequential DB round-trip blocks
+            var totalFilesTask = _context.FileMetadata.AsNoTracking().CountAsync(f => !f.IsDeleted);
+            var totalUsersTask = _context.Users.AsNoTracking().CountAsync();
+            var suspendedUsersTask = _context.Users.AsNoTracking().CountAsync(u => !u.IsActive);
+            var totalStorageUsedTask = _context.FileMetadata.AsNoTracking().Where(f => !f.IsDeleted).SumAsync(f => f.Size);
+            var totalStorageLimitTask = _context.Users.AsNoTracking().SumAsync(u => u.StorageQuota);
 
             var now = DateTime.UtcNow;
             var today = now.Date;
             var last24h = now.AddHours(-24);
             var previous24h = last24h.AddHours(-24);
             var lastWeek = today.AddDays(-7);
-            var previousWeek = lastWeek.AddDays(-7);
 
-            // Calculate Trends
-            var activeUsersNow = await _context.Users.CountAsync(u => u.LastLoginAt >= last24h);
-            var activeUsersPrev = await _context.Users.CountAsync(u => u.LastLoginAt >= previous24h && u.LastLoginAt < last24h);
+            var activeUsersNowTask = _context.Users.CountAsync(u => u.LastLoginAt >= last24h);
+            var activeUsersPrevTask = _context.Users.CountAsync(u => u.LastLoginAt >= previous24h && u.LastLoginAt < last24h);
+            var uploadsTodayTask = _context.ActivityLogs.CountAsync(a => a.Timestamp >= today && a.Action == "UPLOAD");
+            var downloadsTodayTask = _context.ActivityLogs.CountAsync(a => a.Timestamp >= today && (a.Action == "DOWNLOAD" || a.Action == "DOWNLOAD_CHUNK"));
+            var newUsersThisWeekTask = _context.Users.CountAsync(u => u.CreatedAt >= lastWeek);
+            var totalRecentTrafficTask = _context.ActivityLogs.CountAsync(a => a.Timestamp >= last24h);
+
+            // Fetch bulk date-grouped aggregates for history
+            var startDate = today.AddDays(-6);
+            var trafficDataTask = _context.ActivityLogs.AsNoTracking()
+                .Where(a => a.Timestamp >= startDate)
+                .GroupBy(a => a.Timestamp.Date)
+                .Select(g => new { Date = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            var filesCreatedBeforeRangeTask = _context.FileMetadata.AsNoTracking()
+                .Where(f => f.CreatedAt < startDate && !f.IsDeleted)
+                .SumAsync(f => f.Size);
+
+            var filesCreatedInRangeTask = _context.FileMetadata.AsNoTracking()
+                .Where(f => f.CreatedAt >= startDate && !f.IsDeleted)
+                .GroupBy(f => f.CreatedAt.Date)
+                .Select(g => new { Date = g.Key, Size = g.Sum(f => f.Size) })
+                .ToListAsync();
+
+            await Task.WhenAll(
+                totalFilesTask, totalUsersTask, suspendedUsersTask, totalStorageUsedTask, totalStorageLimitTask,
+                activeUsersNowTask, activeUsersPrevTask, uploadsTodayTask, downloadsTodayTask, newUsersThisWeekTask,
+                totalRecentTrafficTask, trafficDataTask, filesCreatedBeforeRangeTask, filesCreatedInRangeTask
+            );
+
+            var totalFiles = totalFilesTask.Result;
+            var totalUsers = totalUsersTask.Result;
+            var suspendedUsers = suspendedUsersTask.Result;
+            var totalStorageUsed = totalStorageUsedTask.Result;
+            var totalStorageLimit = totalStorageLimitTask.Result;
+            var activeUsersNow = activeUsersNowTask.Result;
+            var activeUsersPrev = activeUsersPrevTask.Result;
+            var uploadsToday = uploadsTodayTask.Result;
+            var downloadsToday = downloadsTodayTask.Result;
+            var newUsersThisWeek = newUsersThisWeekTask.Result;
+            var totalRecentTraffic = totalRecentTrafficTask.Result;
+
+            var trafficData = trafficDataTask.Result.ToDictionary(t => t.Date, t => t.Count);
+            var filesCreatedInRange = filesCreatedInRangeTask.Result.ToDictionary(f => f.Date, f => f.Size);
+            var filesCreatedBeforeRange = filesCreatedBeforeRangeTask.Result;
+
             var usersTrend = activeUsersPrev == 0 ? 0 : Math.Round(((double)(activeUsersNow - activeUsersPrev) / activeUsersPrev) * 100, 1);
 
-            var uploadsToday = await _context.ActivityLogs.CountAsync(a => a.Timestamp >= today && a.Action == "UPLOAD");
-            var downloadsToday = await _context.ActivityLogs.CountAsync(a => a.Timestamp >= today && (a.Action == "DOWNLOAD" || a.Action == "DOWNLOAD_CHUNK"));
-            var newUsersThisWeek = await _context.Users.CountAsync(u => u.CreatedAt >= lastWeek);
-
-            // Generate History (Last 7 Days)
+            // Populate histories in memory
             var storageHistory = new List<double>();
             var trafficHistory = new List<double>();
+            long runningSizeSum = filesCreatedBeforeRange;
+
             for (int i = 6; i >= 0; i--)
             {
                 var date = today.AddDays(-i);
-                var nextDate = date.AddDays(1);
+                
+                // Storage history
+                filesCreatedInRange.TryGetValue(date, out var sizeAddedToday);
+                runningSizeSum += sizeAddedToday;
+                storageHistory.Add((double)runningSizeSum / (1024 * 1024 * 1024)); // GB
 
-                // For storage, we'd ideally have snapshots. As a proxy, we'll use cumulative size at that point.
-                var sizeAtDate = await _context.FileMetadata.AsNoTracking()
-                    .Where(f => f.CreatedAt < nextDate && !f.IsDeleted)
-                    .SumAsync(f => f.Size);
-                storageHistory.Add((double)sizeAtDate / (1024 * 1024 * 1024)); // GB
-
-                var trafficAtDate = await _context.ActivityLogs.AsNoTracking()
-                    .CountAsync(a => a.Timestamp >= date && a.Timestamp < nextDate);
-                trafficHistory.Add(trafficAtDate);
+                // Traffic history
+                trafficData.TryGetValue(date, out var trafficTodayCount);
+                trafficHistory.Add(trafficTodayCount);
             }
 
             // Calculate Regional Telemetry (Simulated mapping from real traffic)
-            var totalRecentTraffic = await _context.ActivityLogs.CountAsync(a => a.Timestamp >= last24h);
             var regionalTraffic = new List<RegionalNodeDto>
             {
                 new() { Id = "NA_HUB", RegionName = "North America", X = 200, Y = 150, Intensity = CalculateIntensity(totalRecentTraffic, 0.35) },
@@ -89,7 +143,7 @@ namespace CloudStorage.Infrastructure.Services
                 new() { Id = "AU_HUB", RegionName = "Australia", X = 800, Y = 380, Intensity = CalculateIntensity(totalRecentTraffic, 0.05) }
             };
 
-            return new AdminDashboardStatsDto
+            var statsDto = new AdminDashboardStatsDto
             {
                 TotalFiles = totalFiles,
                 TotalUsers = totalUsers,
@@ -101,13 +155,16 @@ namespace CloudStorage.Infrastructure.Services
                 DownloadsToday = downloadsToday,
                 NewUsersThisWeek = newUsersThisWeek,
                 ActiveSessionsNow = activeUsersNow,
-                FilesTrend = 0, // Would require file snapshot tracking
+                FilesTrend = 0,
                 UsersTrend = usersTrend,
                 StorageTrend = 0,
                 StorageHistory = storageHistory,
                 TrafficHistory = trafficHistory,
                 RegionalTraffic = regionalTraffic
             };
+
+            await _cache.SetAsync(cacheKey, statsDto, TimeSpan.FromSeconds(60));
+            return statsDto;
         }
 
         private double CalculateIntensity(int totalTraffic, double weight)
@@ -171,8 +228,8 @@ namespace CloudStorage.Infrastructure.Services
                 DiskUsed = drive.TotalSize - drive.AvailableFreeSpace,
                 DiskTotal = drive.TotalSize,
                 Uptime = (int)(DateTime.UtcNow - process.StartTime.ToUniversalTime()).TotalSeconds,
-                ActiveConnections = _context.Users.Count(u => u.LastLoginAt >= DateTime.UtcNow.AddMinutes(-5)),
-                RequestsPerMinute = _context.ActivityLogs.Count(a => a.Timestamp >= DateTime.UtcNow.AddMinutes(-1)),
+                ActiveConnections = await _context.Users.CountAsync(u => u.LastLoginAt >= DateTime.UtcNow.AddMinutes(-5)),
+                RequestsPerMinute = await _context.ActivityLogs.CountAsync(a => a.Timestamp >= DateTime.UtcNow.AddMinutes(-1)),
                 ErrorRate = isHealthy ? 0.01 : 0.15,
                 AvgResponseMs = 45, // Placeholder for real middleware telemetry
                 Checks = report.Entries.Select(e => new ServiceCheckDto
@@ -188,6 +245,9 @@ namespace CloudStorage.Infrastructure.Services
         public async Task<IEnumerable<AdminAuditDto>> GetRecentAuditLogsAsync(int count = 50)
         {
             _logger.LogInformation("Retrieving {Count} recent audit logs", count);
+            var httpContext = _httpContextAccessor.HttpContext;
+            var remoteIp = httpContext?.Connection.RemoteIpAddress?.ToString() ?? "127.0.0.1";
+
             return await _context.ActivityLogs
                 .AsNoTracking()
                 .OrderByDescending(a => a.Timestamp)
@@ -202,7 +262,7 @@ namespace CloudStorage.Infrastructure.Services
                     TargetName = a.EntityId, // In real app, we might join to get the name
                     Details = a.Details,
                     PerformedAt = a.Timestamp,
-                    IpAddress = "127.0.0.1" // Mocked IP for now
+                    IpAddress = remoteIp
                 })
                 .ToListAsync();
         }

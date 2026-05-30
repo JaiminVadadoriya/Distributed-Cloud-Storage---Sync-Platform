@@ -5,15 +5,11 @@ metadata:
   namespace: cloud-storage
 data:
   ASPNETCORE_ENVIRONMENT: "Production"
-  ConnectionStrings__DefaultConnection: "Host=postgres-svc;Database=cloudstorage;Username=postgres;Password=postgres;Maximum Pool Size=100;Minimum Pool Size=10;Connection Idle Lifetime=300;"
   Redis__ConnectionString: "redis-svc:6379"
   RabbitMQ__HostName: "rabbitmq-svc"
-  RabbitMQ__UserName: "guest"
-  RabbitMQ__Password: "guest"
   Cache__DefaultTTLMinutes: "60"
   CDN__BaseUrl: "https://cdn.example.com"
   CDN__CacheTTLSeconds: "86400"
-  Jwt__Key: "YourSuperSecretKeyForJwtAuthentication"
   Jwt__Issuer: "CloudStorageAPI"
   Jwt__Audience: "CloudStorageClients"
   StorageProvider__Active: "MinIO"

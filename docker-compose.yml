@@ -9,20 +9,20 @@ services:
       replicas: 3
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Host=postgres;Database=CloudStorageDb;Username=postgres;Password=yourpassword
-      - Jwt__Key=ThisIsASuperSecretKeyThatShouldBeLongEnoughForHS256Algorithm
-      - Jwt__Issuer=CloudStorageApi
-      - Jwt__Audience=CloudStorageClients
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=${DB_NAME:-CloudStorageDb};Username=${DB_USER:-postgres};Password=${DB_PASSWORD:-yourpassword}
+      - Jwt__Key=${JWT_KEY:-ThisIsASuperSecretKeyThatShouldBeLongEnoughForHS256Algorithm}
+      - Jwt__Issuer=${JWT_ISSUER:-CloudStorageApi}
+      - Jwt__Audience=${JWT_AUDIENCE:-CloudStorageClients}
       - StorageProvider__Active=MinIO
       - StorageProvider__MinIO__Endpoint=minio:9000
-      - StorageProvider__MinIO__AccessKey=minioadmin
-      - StorageProvider__MinIO__SecretKey=minioadmin
-      - StorageProvider__MinIO__BucketName=cloudstorage-chunks
+      - StorageProvider__MinIO__AccessKey=${MINIO_ROOT_USER:-minioadmin}
+      - StorageProvider__MinIO__SecretKey=${MINIO_ROOT_PASSWORD:-minioadmin}
+      - StorageProvider__MinIO__BucketName=${MINIO_BUCKET_NAME:-cloudstorage-chunks}
       - StorageProvider__MinIO__UseSSL=false
       - Redis__ConnectionString=redis:6379
       - RabbitMQ__HostName=rabbitmq
-      - RabbitMQ__UserName=guest
-      - RabbitMQ__Password=guest
+      - RabbitMQ__UserName=${RABBITMQ_USER:-guest}
+      - RabbitMQ__Password=${RABBITMQ_PASSWORD:-guest}
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
       - OTEL_SERVICE_NAME=CloudStorage.API
     volumes:
@@ -73,9 +73,9 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: CloudStorageDb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: yourpassword
+      POSTGRES_DB: ${DB_NAME:-CloudStorageDb}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-yourpassword}
       PGDATA: /var/lib/postgresql/data/pgdata
     command: [ "postgres", "-c", "shared_buffers=256MB", "-c", "work_mem=4MB", "-c", "max_connections=200", "-c", "effective_cache_size=768MB" ]
     ports:
@@ -112,8 +112,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      - MINIO_ROOT_USER=minioadmin
-      - MINIO_ROOT_PASSWORD=minioadmin
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER:-minioadmin}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD:-minioadmin}
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
@@ -128,8 +128,8 @@ services:
   rabbitmq:
     image: rabbitmq:3-management-alpine
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -165,7 +165,7 @@ services:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
       - grafana_data:/var/lib/grafana
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
     depends_on:
       - prometheus
     networks:

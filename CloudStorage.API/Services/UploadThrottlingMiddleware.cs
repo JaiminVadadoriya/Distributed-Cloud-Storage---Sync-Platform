@@ -2,20 +2,20 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Caching.Distributed;
+using StackExchange.Redis;
 
 namespace CloudStorage.API.Services
 {
     public class UploadThrottlingMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly IDistributedCache _cache;
+        private readonly IConnectionMultiplexer _redis;
         private const int MaxConcurrentUploads = 5;
 
-        public UploadThrottlingMiddleware(RequestDelegate next, IDistributedCache cache)
+        public UploadThrottlingMiddleware(RequestDelegate next, IConnectionMultiplexer redis)
         {
             _next = next;
-            _cache = cache;
+            _redis = redis;
         }
 
         public async Task InvokeAsync(HttpContext context)
@@ -27,24 +27,25 @@ namespace CloudStorage.API.Services
                 if (!string.IsNullOrEmpty(userId))
                 {
                     var cacheKey = $"upload_throttle:{userId}";
+                    var db = _redis.GetDatabase();
 
-                    // Note: In a real-world scenario with Redis, you'd use a Lua script 
-                    // or Redis sorted sets for an exact atomic semaphore.
-                    // Here we use a basic string increment via DistributedCache extension 
-                    // if it supported it, but we'll manually get/set for simplicity.
+                    // Increment atomically
+                    long currentCount = await db.StringIncrementAsync(cacheKey);
 
-                    var currentCountStr = await _cache.GetStringAsync(cacheKey);
-                    int currentCount = string.IsNullOrEmpty(currentCountStr) ? 0 : int.Parse(currentCountStr);
-
-                    if (currentCount >= MaxConcurrentUploads)
+                    // Set TTL on first increment
+                    if (currentCount == 1)
                     {
+                        await db.KeyExpireAsync(cacheKey, TimeSpan.FromMinutes(5));
+                    }
+
+                    if (currentCount > MaxConcurrentUploads)
+                    {
+                        // Rollback increment and reject
+                        await db.StringDecrementAsync(cacheKey);
                         context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
                         await context.Response.WriteAsJsonAsync(new { message = "Maximum concurrent chunk uploads reached. Please try again later." });
                         return;
                     }
-
-                    // Increment
-                    await _cache.SetStringAsync(cacheKey, (currentCount + 1).ToString(), new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) });
 
                     try
                     {
@@ -52,16 +53,8 @@ namespace CloudStorage.API.Services
                     }
                     finally
                     {
-                        // Decrement
-                        var countAfterStr = await _cache.GetStringAsync(cacheKey);
-                        if (!string.IsNullOrEmpty(countAfterStr))
-                        {
-                            int countAfter = int.Parse(countAfterStr);
-                            if (countAfter > 0)
-                            {
-                                await _cache.SetStringAsync(cacheKey, (countAfter - 1).ToString(), new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) });
-                            }
-                        }
+                        // Decrement atomically
+                        await db.StringDecrementAsync(cacheKey);
                     }
                     return;
                 }

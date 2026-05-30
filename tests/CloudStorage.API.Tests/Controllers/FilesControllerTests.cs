@@ -9,6 +9,7 @@ using CloudStorage.Application.Interfaces.Storage;
 using CloudStorage.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -20,6 +21,7 @@ namespace CloudStorage.API.Tests.Controllers
         private readonly Mock<IChunkStorageProvider> _mockChunkStorage;
         private readonly Mock<IStorageProviderFactory> _mockProviderFactory;
         private readonly Mock<INotificationService> _mockNotificationService;
+        private readonly Mock<ILogger<FilesController>> _mockLogger;
         private readonly FilesController _controller;
         private readonly int _testUserId = 1;
 
@@ -29,7 +31,8 @@ namespace CloudStorage.API.Tests.Controllers
             _mockChunkStorage = new Mock<IChunkStorageProvider>();
             _mockProviderFactory = new Mock<IStorageProviderFactory>();
             _mockNotificationService = new Mock<INotificationService>();
-            _controller = new FilesController(_mockFileService.Object, _mockChunkStorage.Object, _mockProviderFactory.Object, _mockNotificationService.Object);
+            _mockLogger = new Mock<ILogger<FilesController>>();
+            _controller = new FilesController(_mockFileService.Object, _mockChunkStorage.Object, _mockProviderFactory.Object, _mockNotificationService.Object, _mockLogger.Object);
 
             // Mock User context
             var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]

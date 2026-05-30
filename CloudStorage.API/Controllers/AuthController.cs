@@ -24,6 +24,7 @@ namespace CloudStorage.API.Controllers
         }
 
         [HttpPost("register")]
+        [AllowAnonymous]
         public Task<IActionResult> Register(RegisterDto dto) => ExecuteAsync(async () =>
         {
             var user = new User

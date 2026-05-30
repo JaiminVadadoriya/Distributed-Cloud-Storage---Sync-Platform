@@ -11,6 +11,7 @@ using CloudStorage.Domain.Entities;
 using CloudStorage.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
@@ -27,6 +28,9 @@ namespace CloudStorage.API.Tests.Controllers
         private readonly Mock<INotificationService> _mockNotificationService;
         private readonly Mock<IMessageQueue> _mockMessageQueue;
         private readonly Mock<IUploadOrchestrator> _mockUploadOrchestrator;
+        private readonly Mock<IFileService> _mockFileService;
+        private readonly Mock<IAuthService> _mockAuthService;
+        private readonly Mock<ILogger<ChunkUploadController>> _mockLogger;
         private readonly ChunkUploadController _controller;
         private readonly int _testUserId = 1;
 
@@ -41,10 +45,19 @@ namespace CloudStorage.API.Tests.Controllers
             _mockNotificationService = new Mock<INotificationService>();
             _mockMessageQueue = new Mock<IMessageQueue>();
             _mockUploadOrchestrator = new Mock<IUploadOrchestrator>();
+            _mockFileService = new Mock<IFileService>();
+            _mockAuthService = new Mock<IAuthService>();
+            _mockLogger = new Mock<ILogger<ChunkUploadController>>();
 
             var mockObjectProvider = new Mock<IObjectStorageProvider>();
             mockObjectProvider.Setup(p => p.ProviderName).Returns("Azure");
             _mockProviderFactory.Setup(f => f.GetProvider(It.IsAny<string>())).Returns(mockObjectProvider.Object);
+
+            _mockAuthService.Setup(s => s.GetUserByIdAsync(It.IsAny<int>()))
+                .ReturnsAsync(new User { Id = _testUserId, Username = "testuser", StorageQuota = 10L * 1024 * 1024 * 1024 });
+
+            _mockFileService.Setup(s => s.GetDashboardStatsAsync(It.IsAny<int>()))
+                .ReturnsAsync(new DashboardStatsDto { TotalStorageBytes = 100 });
 
             _controller = new ChunkUploadController(
                 _mockFileRepo.Object,
@@ -55,7 +68,10 @@ namespace CloudStorage.API.Tests.Controllers
                 _mockVerificationService.Object,
                 _mockNotificationService.Object,
                 _mockMessageQueue.Object,
-                _mockUploadOrchestrator.Object);
+                _mockUploadOrchestrator.Object,
+                _mockFileService.Object,
+                _mockAuthService.Object,
+                _mockLogger.Object);
 
             // Mock User context
             var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]

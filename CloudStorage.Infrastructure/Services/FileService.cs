@@ -235,17 +235,65 @@ namespace CloudStorage.Infrastructure.Services
             return stats;
         }
 
-        public async Task DeleteAllUserFilesAsync(int userId)
+        public async Task<StorageBreakdownDto> GetStorageBreakdownAsync(int userId)
         {
             var files = await _fileRepository.GetUserFilesAsync(userId);
-            var nonDeletedFiles = files.Where(f => !f.IsDeleted).ToList();
+            
+            long images = 0;
+            long videos = 0;
+            long documents = 0;
+            long others = 0;
 
-            foreach (var file in nonDeletedFiles)
+            foreach (var file in files)
             {
-                file.IsDeleted = true;
-                file.LastModifiedAt = DateTime.UtcNow;
-                await _fileRepository.UpdateAsync(file);
+                var extension = System.IO.Path.GetExtension(file.FileName).ToLowerInvariant();
+                var contentType = file.ContentType?.ToLowerInvariant() ?? string.Empty;
+
+                if (contentType.StartsWith("image/") || 
+                    extension == ".jpg" || extension == ".jpeg" || extension == ".png" || 
+                    extension == ".gif" || extension == ".bmp" || extension == ".webp" || extension == ".svg")
+                {
+                    images += file.Size;
+                }
+                else if (contentType.StartsWith("video/") || 
+                         extension == ".mp4" || extension == ".mkv" || extension == ".avi" || 
+                         extension == ".mov" || extension == ".wmv" || extension == ".flv" || extension == ".webm")
+                {
+                    videos += file.Size;
+                }
+                else if (contentType.StartsWith("text/") || 
+                         contentType == "application/pdf" ||
+                         contentType == "application/msword" ||
+                         contentType == "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+                         contentType == "application/vnd.ms-excel" ||
+                         contentType == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+                         contentType == "application/vnd.ms-powerpoint" ||
+                         contentType == "application/vnd.openxmlformats-officedocument.presentationml.presentation" ||
+                         extension == ".pdf" || extension == ".doc" || extension == ".docx" || 
+                         extension == ".xls" || extension == ".xlsx" || extension == ".ppt" || 
+                         extension == ".pptx" || extension == ".txt" || extension == ".md" || 
+                         extension == ".csv" || extension == ".rtf")
+                {
+                    documents += file.Size;
+                }
+                else
+                {
+                    others += file.Size;
+                }
             }
+
+            return new StorageBreakdownDto
+            {
+                Images = images,
+                Videos = videos,
+                Documents = documents,
+                Others = others
+            };
+        }
+
+        public async Task DeleteAllUserFilesAsync(int userId)
+        {
+            await _fileRepository.DeleteAllUserFilesAsync(userId);
         }
 
         public async Task PurgeUserDriveAsync(int userId)
@@ -279,21 +327,18 @@ namespace CloudStorage.Infrastructure.Services
             if (file == null || file.IsDeleted)
                 throw new Exception("File not found");
 
-            // Collect all versions by walking the ParentVersionId chain
-            var versions = new List<FileMetadata> { file };
-            var current = file;
-            while (current.ParentVersionId.HasValue)
-            {
-                var parent = await _fileRepository.GetByIdAsync(current.ParentVersionId.Value);
-                if (parent == null) break;
-                versions.Add(parent);
-                current = parent;
-            }
+            // Fetch the entire version chain in a single recursive CTE query
+            var versions = await _fileRepository.GetVersionChainAsync(fileId);
+
+            // Fetch owner usernames in a single query
+            var ownerIds = versions.Select(v => v.OwnerId).Distinct().ToList();
+            var ownersList = await _userRepository.FindAsync(u => ownerIds.Contains(u.Id));
+            var ownersDict = ownersList.ToDictionary(u => u.Id, u => u.Username);
 
             var result = new List<FileVersionDto>();
             foreach (var v in versions.OrderByDescending(v => v.Version))
             {
-                var owner = await _userRepository.GetByIdAsync(v.OwnerId);
+                ownersDict.TryGetValue(v.OwnerId, out var username);
                 result.Add(new FileVersionDto
                 {
                     Id = v.Id,
@@ -302,7 +347,7 @@ namespace CloudStorage.Infrastructure.Services
                     Hash = v.Hash,
                     CreatedAt = v.CreatedAt,
                     LastModifiedAt = v.LastModifiedAt,
-                    ModifiedByUsername = owner?.Username ?? "Unknown"
+                    ModifiedByUsername = username ?? "Unknown"
                 });
             }
 
@@ -441,7 +486,7 @@ namespace CloudStorage.Infrastructure.Services
             var result = new List<FilePermissionListDto>();
             foreach (var perm in file.Permissions)
             {
-                var user = await _userRepository.GetByIdAsync(perm.UserId);
+                var user = perm.User;
                 result.Add(new FilePermissionListDto
                 {
                     UserId = perm.UserId,

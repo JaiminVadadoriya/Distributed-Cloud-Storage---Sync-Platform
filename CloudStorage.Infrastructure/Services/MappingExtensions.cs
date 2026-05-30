@@ -18,6 +18,7 @@ namespace CloudStorage.Infrastructure.Services
             {
                 Id = file.Id,
                 FileName = file.FileName,
+                ContentType = file.ContentType,
                 Size = file.Size,
                 CreatedAt = file.CreatedAt,
                 LastModifiedAt = file.LastModifiedAt,

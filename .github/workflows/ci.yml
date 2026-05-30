@@ -15,7 +15,41 @@ env:
 
 jobs:
   # ─────────────────────────────────────────────
-  # Backend: Restore → Build → Test
+  # CodeQL Analysis for Static Security Scanning
+  # ─────────────────────────────────────────────
+  codeql-analysis:
+    name: CodeQL Static Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: 'csharp, javascript-typescript'
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore CloudStorage.sln
+
+      - name: Build C# API
+        run: dotnet build CloudStorage.sln --configuration Release --no-restore
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  # ─────────────────────────────────────────────
+  # Backend: Restore → Build → Test & Coverage → Audit
   # ─────────────────────────────────────────────
   backend-build:
     name: Backend Build & Test
@@ -55,22 +89,38 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore CloudStorage.sln
 
+      - name: NuGet Package Vulnerability Check
+        run: dotnet list package --vulnerable --include-transitive
+
       - name: Build solution
         run: dotnet build CloudStorage.sln --configuration Release --no-restore
 
       - name: Run Domain tests
-        run: dotnet test tests/CloudStorage.Domain.Tests --configuration Release --no-build --logger "trx;LogFileName=domain-results.trx" --results-directory ./TestResults
+        run: dotnet test tests/CloudStorage.Domain.Tests --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger "trx;LogFileName=domain-results.trx"
 
       - name: Run Application tests
-        run: dotnet test tests/CloudStorage.Application.Tests --configuration Release --no-build --logger "trx;LogFileName=application-results.trx" --results-directory ./TestResults
+        run: dotnet test tests/CloudStorage.Application.Tests --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger "trx;LogFileName=application-results.trx"
 
       - name: Run Infrastructure tests
-        run: dotnet test tests/CloudStorage.Infrastructure.Tests --configuration Release --no-build --logger "trx;LogFileName=infrastructure-results.trx" --results-directory ./TestResults
+        run: dotnet test tests/CloudStorage.Infrastructure.Tests --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger "trx;LogFileName=infrastructure-results.trx"
         env:
           ConnectionStrings__DefaultConnection: "Host=localhost;Database=CloudStorageTestDb;Username=postgres;Password=testpassword"
 
       - name: Run API tests
-        run: dotnet test tests/CloudStorage.API.Tests --configuration Release --no-build --logger "trx;LogFileName=api-results.trx" --results-directory ./TestResults
+        run: dotnet test tests/CloudStorage.API.Tests --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger "trx;LogFileName=api-results.trx"
+
+      - name: Enforce Code Coverage Threshold (80%)
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: ./TestResults/**/coverage.cobertura.xml
+          badge: true
+          fail_below_min: true
+          format: markdown
+          hide_branch_rate: false
+          hide_complexity: false
+          indicators: true
+          output: both
+          thresholds: '80 80'
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
@@ -80,7 +130,7 @@ jobs:
           path: ./TestResults/*.trx
 
   # ─────────────────────────────────────────────
-  # Frontend: Install → Lint → Test → Build
+  # Frontend: Install → Lint → Audit → Test → Build
   # ─────────────────────────────────────────────
   frontend-build:
     name: Frontend Build & Test
@@ -103,8 +153,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test -- --run
+      - name: Run Angular Linter
+        run: npm run lint
+
+      - name: npm Package Vulnerability Check
+        run: npm audit --audit-level=high || echo "Vulnerabilities detected. Please review."
+
+      - name: Run Frontend Tests (Vitest with Coverage)
+        run: npm run test:ci
 
       - name: Build production bundle
         run: npm run build -- --configuration production
@@ -116,12 +172,17 @@ jobs:
           path: CloudStorage.Client/dist/
 
   # ─────────────────────────────────────────────
-  # E2E: Playwright (mock mode, Chromium only)
+  # E2E: Playwright (Mock mode, Sharded, Multi-browser)
   # ─────────────────────────────────────────────
   e2e-test:
-    name: Playwright E2E Tests
+    name: Playwright E2E Tests - ${{ matrix.browser }} - Chunk ${{ matrix.shard }}
     runs-on: ubuntu-latest
     needs: [frontend-build]
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+        shard: [1/2, 2/2]
     defaults:
       run:
         working-directory: CloudStorage.Client
@@ -140,20 +201,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browsers (Chromium only)
-        run: npx playwright install --with-deps chromium
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps ${{ matrix.browser }}
 
       - name: Run E2E tests (mock mode)
         env:
           CI: true
           TEST_MODE: mock
-        run: npm run e2e:fast
+        run: npx playwright test --project=${{ matrix.browser }} --shard=${{ matrix.shard }}
 
       - name: Upload Playwright HTML report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.browser }}-${{ strategy.job-index }}
           path: CloudStorage.Client/playwright-report/
           retention-days: 14
 
@@ -161,7 +222,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-junit
+          name: playwright-junit-${{ matrix.browser }}-${{ strategy.job-index }}
           path: CloudStorage.Client/test-results.xml
           retention-days: 14
 

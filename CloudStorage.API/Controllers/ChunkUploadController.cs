@@ -10,6 +10,7 @@ using CloudStorage.Domain.Interfaces;
 using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Logging;
 
 namespace CloudStorage.API.Controllers
 {
@@ -31,6 +32,9 @@ namespace CloudStorage.API.Controllers
         private readonly INotificationService _notificationService;
         private readonly IMessageQueue _messageQueue;
         private readonly IUploadOrchestrator _uploadOrchestrator;
+        private readonly IFileService _fileService;
+        private readonly IAuthService _authService;
+        private readonly ILogger<ChunkUploadController> _logger;
 
         public ChunkUploadController(
             IFileMetadataRepository fileRepository,
@@ -41,7 +45,10 @@ namespace CloudStorage.API.Controllers
             IChunkVerificationService verificationService,
             INotificationService notificationService,
             IMessageQueue messageQueue,
-            IUploadOrchestrator uploadOrchestrator)
+            IUploadOrchestrator uploadOrchestrator,
+            IFileService fileService,
+            IAuthService authService,
+            ILogger<ChunkUploadController> logger)
         {
             _fileRepository = fileRepository;
             _chunkRepository = chunkRepository;
@@ -52,6 +59,9 @@ namespace CloudStorage.API.Controllers
             _notificationService = notificationService;
             _messageQueue = messageQueue;
             _uploadOrchestrator = uploadOrchestrator;
+            _fileService = fileService;
+            _authService = authService;
+            _logger = logger;
         }
 
         public class UploadChunkRequestDto
@@ -66,9 +76,20 @@ namespace CloudStorage.API.Controllers
         public Task<IActionResult> InitiateUpload([FromBody] InitiateUploadDto dto) => ExecuteAsync(async () =>
         {
             var userId = GetUserId();
+
+            var user = await _authService.GetUserByIdAsync(userId);
+            if (user == null)
+                return Unauthorized(ApiResponse.Fail("User not found"));
+
+            var stats = await _fileService.GetDashboardStatsAsync(userId);
+            if (stats.TotalStorageBytes + dto.FileSize > user.StorageQuota)
+            {
+                return StatusCode(402, ApiResponse.Fail("QUOTA_EXCEEDED: Insufficient storage quota remaining."));
+            }
+
             var sessionId = Guid.NewGuid().ToString();
 
-            Console.WriteLine($"[TX_INIT] User: {userId} | Session: {sessionId} | File: {dto.FileName}");
+            _logger.LogInformation("[TX_INIT] User: {UserId} | Session: {SessionId} | File: {FileName}", userId, sessionId, dto.FileName);
 
             var fileMetadata = new FileMetadata
             {
@@ -126,7 +147,7 @@ namespace CloudStorage.API.Controllers
 
                 if (!string.Equals(computedHash, request.Hash, StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine($"[TX_ERR] Integrity Mismatch | Session: {request.SessionId} | Index: {request.ChunkIndex} | Client: {request.Hash} | Server: {computedHash}");
+                    _logger.LogError("[TX_ERR] Integrity Mismatch | Session: {SessionId} | Index: {ChunkIndex} | Client: {ClientHash} | Server: {ServerHash}", request.SessionId, request.ChunkIndex, request.Hash, computedHash);
                     return BadRequest(ApiResponse.Fail("CHUNK_CORRUPTION_DETECTED: Computed hash does not match provided hash."));
                 }
             }
@@ -348,6 +369,16 @@ namespace CloudStorage.API.Controllers
 
             if (fileMetadata.OwnerId != userId)
                 return StatusCode(403, ApiResponse.Fail("Unauthorized access to upload session"));
+
+            var user = await _authService.GetUserByIdAsync(userId);
+            if (user == null)
+                return Unauthorized(ApiResponse.Fail("User not found"));
+
+            var stats = await _fileService.GetDashboardStatsAsync(userId);
+            if (stats.TotalStorageBytes + file.Length > user.StorageQuota)
+            {
+                return StatusCode(402, ApiResponse.Fail("QUOTA_EXCEEDED: Insufficient storage quota remaining."));
+            }
 
             using var stream = file.OpenReadStream();
             
