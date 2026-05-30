@@ -18,11 +18,24 @@ namespace CloudStorage.Infrastructure.Security
 
         public AesEncryptionKeyService(IConfiguration configuration)
         {
-            var masterKeyString = configuration["Security:MasterKey"] ?? "default-antigravity-master-key-must-be-32-bytes-long!";
+            var masterKeyString = configuration["Security:MasterKey"];
+            if (string.IsNullOrEmpty(masterKeyString))
+            {
+                throw new InvalidOperationException("CRITICAL CONFIGURATION ERROR: Security:MasterKey is missing or not configured.");
+            }
+
+            if (masterKeyString.Length < 16)
+            {
+                throw new InvalidOperationException("CRITICAL CONFIGURATION ERROR: Security:MasterKey is too short. It must be at least 16 characters long.");
+            }
             
-            // Derive a 256-bit KEK from the configured master key string using PBKDF2
-            using var derive = new Rfc2898DeriveBytes(masterKeyString, Encoding.UTF8.GetBytes("antigravity-salt"), 10000, HashAlgorithmName.SHA256);
-            _masterKek = derive.GetBytes(32);
+            // Derive a 256-bit KEK from the configured master key string using PBKDF2 static method (resolving SYSLIB0060)
+            _masterKek = Rfc2898DeriveBytes.Pbkdf2(
+                masterKeyString,
+                Encoding.UTF8.GetBytes("antigravity-salt"),
+                10000,
+                HashAlgorithmName.SHA256,
+                32);
         }
 
         private byte[] GetOrCreateDek(string keyId)

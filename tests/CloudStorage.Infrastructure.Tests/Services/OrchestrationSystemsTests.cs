@@ -115,7 +115,9 @@ namespace CloudStorage.Infrastructure.Tests.Services
         public async Task AesEncryptionKeyService_EncryptAndDecrypt_MultipleKeys_Succeeds()
         {
             // Arrange
-            var config = new ConfigurationBuilder().Build();
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new[] { new KeyValuePair<string, string?>("Security:MasterKey", "some-super-secret-key-32-characters") })
+                .Build();
             var service = new AesEncryptionKeyService(config);
             var plaintext = Encoding.UTF8.GetBytes("shared secrets");
 
@@ -135,7 +137,9 @@ namespace CloudStorage.Infrastructure.Tests.Services
         public async Task AesEncryptionKeyService_Decrypt_WithInvalidKey_ThrowsException()
         {
             // Arrange
-            var config = new ConfigurationBuilder().Build();
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new[] { new KeyValuePair<string, string?>("Security:MasterKey", "some-super-secret-key-32-characters") })
+                .Build();
             var service = new AesEncryptionKeyService(config);
             var plaintext = Encoding.UTF8.GetBytes("secret");
             var encrypted = await service.EncryptAsync(plaintext, "key-1");
@@ -148,7 +152,9 @@ namespace CloudStorage.Infrastructure.Tests.Services
         public async Task AesEncryptionKeyService_Decrypt_WithCorruptedPayload_ThrowsException()
         {
             // Arrange
-            var config = new ConfigurationBuilder().Build();
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new[] { new KeyValuePair<string, string?>("Security:MasterKey", "some-super-secret-key-32-characters") })
+                .Build();
             var service = new AesEncryptionKeyService(config);
             var plaintext = Encoding.UTF8.GetBytes("secret");
             var encrypted = await service.EncryptAsync(plaintext, "key-1");
@@ -162,7 +168,9 @@ namespace CloudStorage.Infrastructure.Tests.Services
         public async Task AesEncryptionKeyService_RotateKey_IncrementsVersion()
         {
             // Arrange
-            var config = new ConfigurationBuilder().Build();
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new[] { new KeyValuePair<string, string?>("Security:MasterKey", "some-super-secret-key-32-characters") })
+                .Build();
             var service = new AesEncryptionKeyService(config);
             var keyId = "key-rotate";
 
@@ -182,7 +190,9 @@ namespace CloudStorage.Infrastructure.Tests.Services
         public async Task AesEncryptionKeyService_GetKeyMetadata_RetrievesCorrectMetadata()
         {
             // Arrange
-            var config = new ConfigurationBuilder().Build();
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new[] { new KeyValuePair<string, string?>("Security:MasterKey", "some-super-secret-key-32-characters") })
+                .Build();
             var service = new AesEncryptionKeyService(config);
             var keyId = "key-meta";
 

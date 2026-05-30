@@ -33,12 +33,29 @@ namespace CloudStorage.Infrastructure.Providers.Local
 
         private string GetFullPath(string objectKey)
         {
+            var baseFullPath = Path.GetFullPath(_basePath);
+            if (!baseFullPath.EndsWith(Path.DirectorySeparatorChar.ToString()))
+            {
+                baseFullPath += Path.DirectorySeparatorChar;
+            }
+
+            string fullPath;
             if (Path.IsPathRooted(objectKey))
             {
-                return objectKey;
+                fullPath = Path.GetFullPath(objectKey);
             }
-            var cleanKey = objectKey.Replace("..", "").Replace("\\", "/").TrimStart('/');
-            return Path.Combine(_basePath, cleanKey);
+            else
+            {
+                var cleanKey = objectKey.Replace("..", "").Replace("\\", "/").TrimStart('/');
+                fullPath = Path.GetFullPath(Path.Combine(_basePath, cleanKey));
+            }
+
+            if (!fullPath.StartsWith(baseFullPath, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UnauthorizedAccessException("Path traversal attempt detected.");
+            }
+
+            return fullPath;
         }
 
         public async Task<StorageUploadResult> UploadAsync(string objectKey, Stream data, StorageUploadOptions? options = null, CancellationToken ct = default)

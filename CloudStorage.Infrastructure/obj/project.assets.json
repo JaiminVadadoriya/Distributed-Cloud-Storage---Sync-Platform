@@ -2,7 +2,7 @@
   "version": 3,
   "targets": {
     "net10.0": {
-      "AWSSDK.Core/4.0.7.3": {
+      "AWSSDK.Core/4.0.7.4": {
         "type": "package",
         "compile": {
           "lib/net8.0/AWSSDK.Core.dll": {
@@ -15,10 +15,10 @@
           }
         }
       },
-      "AWSSDK.S3/4.0.23.4": {
+      "AWSSDK.S3/4.0.23.5": {
         "type": "package",
         "dependencies": {
-          "AWSSDK.Core": "[4.0.7.3, 5.0.0)"
+          "AWSSDK.Core": "[4.0.7.4, 5.0.0)"
         },
         "compile": {
           "lib/net8.0/AWSSDK.S3.dll": {
@@ -170,7 +170,7 @@
           }
         }
       },
-      "Microsoft.Extensions.AmbientMetadata.Application/10.1.0": {
+      "Microsoft.Extensions.AmbientMetadata.Application/10.6.0": {
         "type": "package",
         "compile": {
           "lib/net10.0/Microsoft.Extensions.AmbientMetadata.Application.dll": {
@@ -202,7 +202,7 @@
           "buildTransitive/net8.0/_._": {}
         }
       },
-      "Microsoft.Extensions.Compliance.Abstractions/10.1.0": {
+      "Microsoft.Extensions.Compliance.Abstractions/10.6.0": {
         "type": "package",
         "compile": {
           "lib/net10.0/Microsoft.Extensions.Compliance.Abstractions.dll": {
@@ -215,7 +215,7 @@
           }
         }
       },
-      "Microsoft.Extensions.DependencyInjection.AutoActivation/10.1.0": {
+      "Microsoft.Extensions.DependencyInjection.AutoActivation/10.6.0": {
         "type": "package",
         "compile": {
           "lib/net10.0/Microsoft.Extensions.DependencyInjection.AutoActivation.dll": {
@@ -231,7 +231,7 @@
           "buildTransitive/net8.0/_._": {}
         }
       },
-      "Microsoft.Extensions.Diagnostics.ExceptionSummarization/10.1.0": {
+      "Microsoft.Extensions.Diagnostics.ExceptionSummarization/10.6.0": {
         "type": "package",
         "compile": {
           "lib/net10.0/Microsoft.Extensions.Diagnostics.ExceptionSummarization.dll": {
@@ -260,10 +260,10 @@
           }
         }
       },
-      "Microsoft.Extensions.Http.Diagnostics/10.1.0": {
+      "Microsoft.Extensions.Http.Diagnostics/10.6.0": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Extensions.Telemetry": "10.1.0"
+          "Microsoft.Extensions.Telemetry": "10.6.0"
         },
         "compile": {
           "lib/net10.0/Microsoft.Extensions.Http.Diagnostics.dll": {
@@ -279,11 +279,11 @@
           "buildTransitive/net8.0/_._": {}
         }
       },
-      "Microsoft.Extensions.Http.Resilience/10.1.0": {
+      "Microsoft.Extensions.Http.Resilience/10.6.0": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Extensions.Http.Diagnostics": "10.1.0",
-          "Microsoft.Extensions.Resilience": "10.1.0"
+          "Microsoft.Extensions.Http.Diagnostics": "10.6.0",
+          "Microsoft.Extensions.Resilience": "10.6.0"
         },
         "compile": {
           "lib/net10.0/Microsoft.Extensions.Http.Resilience.dll": {
@@ -299,11 +299,11 @@
           "buildTransitive/net8.0/Microsoft.Extensions.Http.Resilience.targets": {}
         }
       },
-      "Microsoft.Extensions.Resilience/10.1.0": {
+      "Microsoft.Extensions.Resilience/10.6.0": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Extensions.Diagnostics.ExceptionSummarization": "10.1.0",
-          "Microsoft.Extensions.Telemetry.Abstractions": "10.1.0",
+          "Microsoft.Extensions.Diagnostics.ExceptionSummarization": "10.6.0",
+          "Microsoft.Extensions.Telemetry.Abstractions": "10.6.0",
           "Polly.Extensions": "8.4.2",
           "Polly.RateLimiting": "8.4.2"
         },
@@ -321,12 +321,12 @@
           "buildTransitive/net8.0/_._": {}
         }
       },
-      "Microsoft.Extensions.Telemetry/10.1.0": {
+      "Microsoft.Extensions.Telemetry/10.6.0": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Extensions.AmbientMetadata.Application": "10.1.0",
-          "Microsoft.Extensions.DependencyInjection.AutoActivation": "10.1.0",
-          "Microsoft.Extensions.Telemetry.Abstractions": "10.1.0"
+          "Microsoft.Extensions.AmbientMetadata.Application": "10.6.0",
+          "Microsoft.Extensions.DependencyInjection.AutoActivation": "10.6.0",
+          "Microsoft.Extensions.Telemetry.Abstractions": "10.6.0"
         },
         "compile": {
           "lib/net10.0/Microsoft.Extensions.Telemetry.dll": {
@@ -342,10 +342,10 @@
           "buildTransitive/net8.0/_._": {}
         }
       },
-      "Microsoft.Extensions.Telemetry.Abstractions/10.1.0": {
+      "Microsoft.Extensions.Telemetry.Abstractions/10.6.0": {
         "type": "package",
         "dependencies": {
-          "Microsoft.Extensions.Compliance.Abstractions": "10.1.0"
+          "Microsoft.Extensions.Compliance.Abstractions": "10.6.0"
         },
         "compile": {
           "lib/net10.0/Microsoft.Extensions.Telemetry.Abstractions.dll": {
@@ -441,7 +441,7 @@
           }
         }
       },
-      "Npgsql/10.0.2": {
+      "Npgsql/10.0.3": {
         "type": "package",
         "compile": {
           "lib/net10.0/Npgsql.dll": {
@@ -454,12 +454,12 @@
           }
         }
       },
-      "Npgsql.EntityFrameworkCore.PostgreSQL/10.0.1": {
+      "Npgsql.EntityFrameworkCore.PostgreSQL/10.0.2": {
         "type": "package",
         "dependencies": {
           "Microsoft.EntityFrameworkCore": "[10.0.4, 11.0.0)",
           "Microsoft.EntityFrameworkCore.Relational": "[10.0.4, 11.0.0)",
-          "Npgsql": "10.0.2"
+          "Npgsql": "10.0.3"
         },
         "compile": {
           "lib/net10.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll": {
@@ -543,7 +543,7 @@
           }
         }
       },
-      "StackExchange.Redis/2.13.1": {
+      "StackExchange.Redis/2.13.17": {
         "type": "package",
         "dependencies": {
           "Pipelines.Sockets.Unofficial": "2.2.16",
@@ -667,15 +667,15 @@
     }
   },
   "libraries": {
-    "AWSSDK.Core/4.0.7.3": {
-      "sha512": "F7x7IREeF8nd5pQUz0bYQf7TyrREZBQBqUdswkeGf1BWg91uHT8/lvENTb8+cN5xLxbf+m06FANDOD+GK8NrHw==",
+    "AWSSDK.Core/4.0.7.4": {
+      "sha512": "qNlzH2ygJ6JG8uefpvws782PnJlkVEwqRD5vz4fR8wFfwWU3ttyAjiwEOPEYcxl84mhQdYGI9gR+kroGFI2+wA==",
       "type": "package",
-      "path": "awssdk.core/4.0.7.3",
+      "path": "awssdk.core/4.0.7.4",
       "hasTools": true,
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
-        "awssdk.core.4.0.7.3.nupkg.sha512",
+        "awssdk.core.4.0.7.4.nupkg.sha512",
         "awssdk.core.nuspec",
         "images/AWSLogo.png",
         "lib/net472/AWSSDK.Core.dll",
@@ -689,17 +689,17 @@
         "tools/account-management.ps1"
       ]
     },
-    "AWSSDK.S3/4.0.23.4": {
-      "sha512": "hcCTuMCPVk2cX83sQfvSF/e9uOPxK5KxpuhR9LZVFAKqwUMr2fnrsDXwWu3t3h4Vw+Urx4vTjV9V/PV2KLAUtQ==",
+    "AWSSDK.S3/4.0.23.5": {
+      "sha512": "B7UPvqeZD/jIO1eMhCiNRfcvGChjP2yAHIj0NIIhXUVoH2u56YKkIR5CR7lmZfagJN8bCMMZpuxDbYBzgENZ0g==",
       "type": "package",
-      "path": "awssdk.s3/4.0.23.4",
+      "path": "awssdk.s3/4.0.23.5",
       "hasTools": true,
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "analyzers/dotnet/cs/AWSSDK.S3.CodeAnalysis.dll",
         "analyzers/dotnet/cs/SharedAnalysisCode.dll",
-        "awssdk.s3.4.0.23.4.nupkg.sha512",
+        "awssdk.s3.4.0.23.5.nupkg.sha512",
         "awssdk.s3.nuspec",
         "images/AWSLogo.png",
         "lib/net472/AWSSDK.S3.dll",
@@ -914,10 +914,10 @@
         "microsoft.entityframeworkcore.relational.nuspec"
       ]
     },
-    "Microsoft.Extensions.AmbientMetadata.Application/10.1.0": {
-      "sha512": "+T2Ax2fgw7T7nlhio+ZtgSyYGfevHCOXNPqO0vxA+f2HmbtfwAnIwHEE/jm1/4uFRDDP8PEENpxAhbucg+wUWg==",
+    "Microsoft.Extensions.AmbientMetadata.Application/10.6.0": {
+      "sha512": "MPAI1c5QqkDgEyEvsSj7KPPWHlTCqvXxtfp7JISul4P54GfDkSs+S7Vyq7tmS7MzpEjuH/6xrsFlUqAPlLyTUA==",
       "type": "package",
-      "path": "microsoft.extensions.ambientmetadata.application/10.1.0",
+      "path": "microsoft.extensions.ambientmetadata.application/10.6.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -935,7 +935,7 @@
         "lib/net9.0/Microsoft.Extensions.AmbientMetadata.Application.xml",
         "lib/netstandard2.0/Microsoft.Extensions.AmbientMetadata.Application.dll",
         "lib/netstandard2.0/Microsoft.Extensions.AmbientMetadata.Application.xml",
-        "microsoft.extensions.ambientmetadata.application.10.1.0.nupkg.sha512",
+        "microsoft.extensions.ambientmetadata.application.10.6.0.nupkg.sha512",
         "microsoft.extensions.ambientmetadata.application.nuspec"
       ]
     },
@@ -968,10 +968,10 @@
         "useSharedDesignerContext.txt"
       ]
     },
-    "Microsoft.Extensions.Compliance.Abstractions/10.1.0": {
-      "sha512": "M3JWrgZMkVzyEybZzNkTiC/e8U1ipXTi8xm8bj+PHHp4AcEmhmIEqnxRS0VHVCKZjLkOPt2hY2CIisUFQ6gqLA==",
+    "Microsoft.Extensions.Compliance.Abstractions/10.6.0": {
+      "sha512": "L8zTKn8e2LCQbsDFLWFm6fZQ54F/1FisLx43nkEof4HmmsO2HaZHshV85+qF8HXO48MlGJdrWUg+uVBj/WDmmw==",
       "type": "package",
-      "path": "microsoft.extensions.compliance.abstractions/10.1.0",
+      "path": "microsoft.extensions.compliance.abstractions/10.6.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -985,14 +985,14 @@
         "lib/net9.0/Microsoft.Extensions.Compliance.Abstractions.xml",
         "lib/netstandard2.0/Microsoft.Extensions.Compliance.Abstractions.dll",
         "lib/netstandard2.0/Microsoft.Extensions.Compliance.Abstractions.xml",
-        "microsoft.extensions.compliance.abstractions.10.1.0.nupkg.sha512",
+        "microsoft.extensions.compliance.abstractions.10.6.0.nupkg.sha512",
         "microsoft.extensions.compliance.abstractions.nuspec"
       ]
     },
-    "Microsoft.Extensions.DependencyInjection.AutoActivation/10.1.0": {
-      "sha512": "O052pqWkdVNXaj3n9E4x6nLL7sG860434gLh7XHhFp/KpyAY9/rCk9NJUinYfQnDkAA8UgCHimVZz+lTjnEwzQ==",
+    "Microsoft.Extensions.DependencyInjection.AutoActivation/10.6.0": {
+      "sha512": "FoX/prFoqjogPV1DleOnakFM9yzu8m4dK8Z0d9f8pPTf00PkEvd2Vulncijd/rykUX3aXERMMxsX6c/9QSAOaA==",
       "type": "package",
-      "path": "microsoft.extensions.dependencyinjection.autoactivation/10.1.0",
+      "path": "microsoft.extensions.dependencyinjection.autoactivation/10.6.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -1010,14 +1010,14 @@
         "lib/net9.0/Microsoft.Extensions.DependencyInjection.AutoActivation.xml",
         "lib/netstandard2.0/Microsoft.Extensions.DependencyInjection.AutoActivation.dll",
         "lib/netstandard2.0/Microsoft.Extensions.DependencyInjection.AutoActivation.xml",
-        "microsoft.extensions.dependencyinjection.autoactivation.10.1.0.nupkg.sha512",
+        "microsoft.extensions.dependencyinjection.autoactivation.10.6.0.nupkg.sha512",
         "microsoft.extensions.dependencyinjection.autoactivation.nuspec"
       ]
     },
-    "Microsoft.Extensions.Diagnostics.ExceptionSummarization/10.1.0": {
-      "sha512": "Q76peCoP6vXXf95RLFeMGzcaQs8l3lk+n/ZOTi2i+OLd3R0HzzB0Fswjua4NY1viIbA1s6l1mqRjQbxY7+Jylw==",
+    "Microsoft.Extensions.Diagnostics.ExceptionSummarization/10.6.0": {
+      "sha512": "dpkWVFSg8JT1BBL33+lF3pY52En3y8qoHvtc5esMx8TVrxRXuzqIjca6MqyODpGfg5/NK4bpOYZDYBOAr8PSrA==",
       "type": "package",
-      "path": "microsoft.extensions.diagnostics.exceptionsummarization/10.1.0",
+      "path": "microsoft.extensions.diagnostics.exceptionsummarization/10.6.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -1035,7 +1035,7 @@
         "lib/net9.0/Microsoft.Extensions.Diagnostics.ExceptionSummarization.xml",
         "lib/netstandard2.0/Microsoft.Extensions.Diagnostics.ExceptionSummarization.dll",
         "lib/netstandard2.0/Microsoft.Extensions.Diagnostics.ExceptionSummarization.xml",
-        "microsoft.extensions.diagnostics.exceptionsummarization.10.1.0.nupkg.sha512",
+        "microsoft.extensions.diagnostics.exceptionsummarization.10.6.0.nupkg.sha512",
         "microsoft.extensions.diagnostics.exceptionsummarization.nuspec"
       ]
     },
@@ -1058,10 +1058,10 @@
         "microsoft.extensions.diagnostics.healthchecks.nuspec"
       ]
     },
-    "Microsoft.Extensions.Http.Diagnostics/10.1.0": {
-      "sha512": "RA1Egggf5o7/5AI5TIxOmmV7T06X2jvA9nSlJazU++X/pgu48EDAjDflTq/+kAk0FHUm9ZpAiBVdWfOP2opAbQ==",
+    "Microsoft.Extensions.Http.Diagnostics/10.6.0": {
+      "sha512": "p7nJYUYk5M0k1bWeRYQr/6k5KO2XpmUIIHgmlFZGirZJxXEShSz66Q5OX2Y8Yfaz9bIhSNqAbnn5B3zhNR2Sxg==",
       "type": "package",
-      "path": "microsoft.extensions.http.diagnostics/10.1.0",
+      "path": "microsoft.extensions.http.diagnostics/10.6.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -1079,14 +1079,14 @@
         "lib/net9.0/Microsoft.Extensions.Http.Diagnostics.xml",
         "lib/netstandard2.0/Microsoft.Extensions.Http.Diagnostics.dll",
         "lib/netstandard2.0/Microsoft.Extensions.Http.Diagnostics.xml",
-        "microsoft.extensions.http.diagnostics.10.1.0.nupkg.sha512",
+        "microsoft.extensions.http.diagnostics.10.6.0.nupkg.sha512",
         "microsoft.extensions.http.diagnostics.nuspec"
       ]
     },
-    "Microsoft.Extensions.Http.Resilience/10.1.0": {
-      "sha512": "rwDoQBB93yQjd1XtcZBnOLRX23LW7Z49TIAp1sn7i2r/pW3y4iB8E+EEL0ZyOPuEZxT9xEVN9y39KWlG1FDPkQ==",
+    "Microsoft.Extensions.Http.Resilience/10.6.0": {
+      "sha512": "Diw9HdFABHx0EQTjfanXKuV6zSEyHEEH11ZGdsNxNf/3gsLEiBPXUximDG0EwYt1iIalH0JFlI1DXqpE4VjDpQ==",
       "type": "package",
-      "path": "microsoft.extensions.http.resilience/10.1.0",
+      "path": "microsoft.extensions.http.resilience/10.6.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -1105,14 +1105,14 @@
         "lib/net9.0/Microsoft.Extensions.Http.Resilience.xml",
         "lib/netstandard2.0/Microsoft.Extensions.Http.Resilience.dll",
         "lib/netstandard2.0/Microsoft.Extensions.Http.Resilience.xml",
-        "microsoft.extensions.http.resilience.10.1.0.nupkg.sha512",
+        "microsoft.extensions.http.resilience.10.6.0.nupkg.sha512",
         "microsoft.extensions.http.resilience.nuspec"
       ]
     },
-    "Microsoft.Extensions.Resilience/10.1.0": {
-      "sha512": "NzA+c4m2q92qZPjiZLFm+ToeQC3KFqzP+Dr/1pV5y9d7H/hDM2Yxno0kcw5DGpSvS0s6Pwsp+FWMdk/kXBPZ7g==",
+    "Microsoft.Extensions.Resilience/10.6.0": {
+      "sha512": "n3ARODKBYCZAJEaDiWqXQnrjh9FXBs1yTwmWUUNgvLdJmLo/MTtz60M2t1By1jIt+I3u82/W4L5xJy8abzPUyw==",
       "type": "package",
-      "path": "microsoft.extensions.resilience/10.1.0",
+      "path": "microsoft.extensions.resilience/10.6.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -1130,14 +1130,14 @@
         "lib/net9.0/Microsoft.Extensions.Resilience.xml",
         "lib/netstandard2.0/Microsoft.Extensions.Resilience.dll",
         "lib/netstandard2.0/Microsoft.Extensions.Resilience.xml",
-        "microsoft.extensions.resilience.10.1.0.nupkg.sha512",
+        "microsoft.extensions.resilience.10.6.0.nupkg.sha512",
         "microsoft.extensions.resilience.nuspec"
       ]
     },
-    "Microsoft.Extensions.Telemetry/10.1.0": {
-      "sha512": "OFnpwOBRZZXMMySvM7eJsEQ87ED5SaRbxHg/an1u89MWHw0mXUUbx5WPb5XFN0uS8kJPe6M+ZMRYwRP0nJeDPA==",
+    "Microsoft.Extensions.Telemetry/10.6.0": {
+      "sha512": "wbcC4zPaEGG53znXd4VDw3ZGITX352q80oW1iyK8rOGaJNof1zimVfZjn6E/Glw0ttZoiyHN0wf8b4KRk/rMAw==",
       "type": "package",
-      "path": "microsoft.extensions.telemetry/10.1.0",
+      "path": "microsoft.extensions.telemetry/10.6.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -1155,14 +1155,14 @@
         "lib/net9.0/Microsoft.Extensions.Telemetry.xml",
         "lib/netstandard2.0/Microsoft.Extensions.Telemetry.dll",
         "lib/netstandard2.0/Microsoft.Extensions.Telemetry.xml",
-        "microsoft.extensions.telemetry.10.1.0.nupkg.sha512",
+        "microsoft.extensions.telemetry.10.6.0.nupkg.sha512",
         "microsoft.extensions.telemetry.nuspec"
       ]
     },
-    "Microsoft.Extensions.Telemetry.Abstractions/10.1.0": {
-      "sha512": "0jAF2b0YJ1LOtunmo3PzSoJOx/ThhcGH5Y5kaV0jeM0BUlyr9orjg+fH5YabqnPSmwcN/DSTj0iZ7UwDISn5ag==",
+    "Microsoft.Extensions.Telemetry.Abstractions/10.6.0": {
+      "sha512": "aNQEJu5DD2YVQEWWmC/ALEiV1Qt400BaDO+SExtfAaGqYaNu/r2sW9xGLuc71fcjbrmzqX8LzNgK5mzjjMW9RQ==",
       "type": "package",
-      "path": "microsoft.extensions.telemetry.abstractions/10.1.0",
+      "path": "microsoft.extensions.telemetry.abstractions/10.6.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -1185,7 +1185,7 @@
         "lib/net9.0/Microsoft.Extensions.Telemetry.Abstractions.xml",
         "lib/netstandard2.0/Microsoft.Extensions.Telemetry.Abstractions.dll",
         "lib/netstandard2.0/Microsoft.Extensions.Telemetry.Abstractions.xml",
-        "microsoft.extensions.telemetry.abstractions.10.1.0.nupkg.sha512",
+        "microsoft.extensions.telemetry.abstractions.10.6.0.nupkg.sha512",
         "microsoft.extensions.telemetry.abstractions.nuspec"
       ]
     },
@@ -1313,10 +1313,10 @@
         "readme.md"
       ]
     },
-    "Npgsql/10.0.2": {
-      "sha512": "q5RfBI+wywJSFUNDE1L4ZbHEHCFTblo8Uf6A6oe4feOUFYiUQXyAf9GBh5qEZpvJaHiEbpBPkQumjEhXCJxdrg==",
+    "Npgsql/10.0.3": {
+      "sha512": "7nb5YzXuvWWJxB0J8DiyL3we+X4FOctZrt0fIBnucOIaIevFEEwGQVZKtiu9olXdlNAK1eNgqSral6r/jlhI4w==",
       "type": "package",
-      "path": "npgsql/10.0.2",
+      "path": "npgsql/10.0.3",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -1327,22 +1327,22 @@
         "lib/net8.0/Npgsql.xml",
         "lib/net9.0/Npgsql.dll",
         "lib/net9.0/Npgsql.xml",
-        "npgsql.10.0.2.nupkg.sha512",
+        "npgsql.10.0.3.nupkg.sha512",
         "npgsql.nuspec",
         "postgresql.png"
       ]
     },
-    "Npgsql.EntityFrameworkCore.PostgreSQL/10.0.1": {
-      "sha512": "P6EwH0Q4xkaA264iNZDqCPhWt8pscfUGxXazDQg4noBfqjoOlk4hKWfvBjF9ZX3R/9JybRmmJfmxr2iBMj0EpA==",
+    "Npgsql.EntityFrameworkCore.PostgreSQL/10.0.2": {
+      "sha512": "PsNYgPOSW41Xx19gin7y4EdZAPteWr9Cb01XkdObxOsPzi+mgBupBEN7J7+erXFsROPOILM7MlIoO9QzL8+LGQ==",
       "type": "package",
-      "path": "npgsql.entityframeworkcore.postgresql/10.0.1",
+      "path": "npgsql.entityframeworkcore.postgresql/10.0.2",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
         "README.md",
         "lib/net10.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll",
         "lib/net10.0/Npgsql.EntityFrameworkCore.PostgreSQL.xml",
-        "npgsql.entityframeworkcore.postgresql.10.0.1.nupkg.sha512",
+        "npgsql.entityframeworkcore.postgresql.10.0.2.nupkg.sha512",
         "npgsql.entityframeworkcore.postgresql.nuspec",
         "postgresql.png"
       ]
@@ -1472,10 +1472,10 @@
         "rabbitmq.client.nuspec"
       ]
     },
-    "StackExchange.Redis/2.13.1": {
-      "sha512": "jC5wkRe8K6HPoDENUws+fl2d7+GKz+ky8SWEDzYzPx6hHt2EwxWm01gmYPWLzlT49jfYYap0guB5bExtyX9aIQ==",
+    "StackExchange.Redis/2.13.17": {
+      "sha512": "P7o7ZDBAmBrOLQEw8Pt44iIA08ioj48smRxn4Jp6yzCu6P3DOSU6lj7f+IOtN3pPvSgC9YufvM92ycukEEBCYQ==",
       "type": "package",
-      "path": "stackexchange.redis/2.13.1",
+      "path": "stackexchange.redis/2.13.17",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -1492,7 +1492,7 @@
         "lib/net8.0/StackExchange.Redis.xml",
         "lib/netstandard2.0/StackExchange.Redis.dll",
         "lib/netstandard2.0/StackExchange.Redis.xml",
-        "stackexchange.redis.2.13.1.nupkg.sha512",
+        "stackexchange.redis.2.13.17.nupkg.sha512",
         "stackexchange.redis.nuspec"
       ]
     },
@@ -1644,19 +1644,19 @@
   },
   "projectFileDependencyGroups": {
     "net10.0": [
-      "AWSSDK.S3 >= 4.0.23.4",
+      "AWSSDK.S3 >= 4.0.23.5",
       "Azure.Storage.Blobs >= 12.28.0",
       "BCrypt.Net-Next >= 4.2.0",
       "CloudStorage.Application >= 1.0.0",
       "Microsoft.EntityFrameworkCore >= 10.0.8",
       "Microsoft.Extensions.Caching.Abstractions >= 10.0.8",
       "Microsoft.Extensions.Diagnostics.HealthChecks >= 10.0.8",
-      "Microsoft.Extensions.Http.Resilience >= 10.0.8",
-      "Microsoft.Extensions.Resilience >= 10.0.8",
+      "Microsoft.Extensions.Http.Resilience >= 10.6.0",
+      "Microsoft.Extensions.Resilience >= 10.6.0",
       "Minio >= 7.0.0",
-      "Npgsql.EntityFrameworkCore.PostgreSQL >= 10.0.1",
+      "Npgsql.EntityFrameworkCore.PostgreSQL >= 10.0.2",
       "RabbitMQ.Client >= 7.2.1",
-      "StackExchange.Redis >= 2.13.1",
+      "StackExchange.Redis >= 2.13.17",
       "System.IdentityModel.Tokens.Jwt >= 8.18.0"
     ]
   },
@@ -1716,7 +1716,7 @@
         "dependencies": {
           "AWSSDK.S3": {
             "target": "Package",
-            "version": "[4.0.23.4, )"
+            "version": "[4.0.23.5, )"
           },
           "Azure.Storage.Blobs": {
             "target": "Package",
@@ -1740,11 +1740,11 @@
           },
           "Microsoft.Extensions.Http.Resilience": {
             "target": "Package",
-            "version": "[10.0.8, )"
+            "version": "[10.6.0, )"
           },
           "Microsoft.Extensions.Resilience": {
             "target": "Package",
-            "version": "[10.0.8, )"
+            "version": "[10.6.0, )"
           },
           "Minio": {
             "target": "Package",
@@ -1752,7 +1752,7 @@
           },
           "Npgsql.EntityFrameworkCore.PostgreSQL": {
             "target": "Package",
-            "version": "[10.0.1, )"
+            "version": "[10.0.2, )"
           },
           "RabbitMQ.Client": {
             "target": "Package",
@@ -1760,7 +1760,7 @@
           },
           "StackExchange.Redis": {
             "target": "Package",
-            "version": "[2.13.1, )"
+            "version": "[2.13.17, )"
           },
           "System.IdentityModel.Tokens.Jwt": {
             "target": "Package",
@@ -2221,26 +2221,6 @@
       "warningLevel": 1,
       "message": "PackageReference Microsoft.Extensions.Caching.Abstractions will not be pruned. Consider removing this package from your dependencies, as it is likely unnecessary.",
       "libraryId": "Microsoft.Extensions.Caching.Abstractions",
-      "targetGraphs": [
-        "net10.0"
-      ]
-    },
-    {
-      "code": "NU1603",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "CloudStorage.Infrastructure depends on Microsoft.Extensions.Http.Resilience (>= 10.0.8) but Microsoft.Extensions.Http.Resilience 10.0.8 was not found. Microsoft.Extensions.Http.Resilience 10.1.0 was resolved instead.",
-      "libraryId": "Microsoft.Extensions.Http.Resilience",
-      "targetGraphs": [
-        "net10.0"
-      ]
-    },
-    {
-      "code": "NU1603",
-      "level": "Warning",
-      "warningLevel": 1,
-      "message": "CloudStorage.Infrastructure depends on Microsoft.Extensions.Resilience (>= 10.0.8) but Microsoft.Extensions.Resilience 10.0.8 was not found. Microsoft.Extensions.Resilience 10.1.0 was resolved instead.",
-      "libraryId": "Microsoft.Extensions.Resilience",
       "targetGraphs": [
         "net10.0"
       ]

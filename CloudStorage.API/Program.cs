@@ -95,8 +95,11 @@ if (!builder.Environment.IsEnvironment("Testing"))
         {
             npgsqlOptions.EnableRetryOnFailure(maxRetryCount: 3, maxRetryDelay: TimeSpan.FromSeconds(5), errorCodesToAdd: null);
         });
-        // Suppress the warning about collections without setters which can block migrations in EF Core 10
-        options.ConfigureWarnings(w => w.Ignore(new EventId(10103, "Microsoft.EntityFrameworkCore.Model.CollectionWithoutSetter")));
+        // Suppress the warning about collections without setters which can block migrations in EF Core 10,
+        // and ignore pending model changes warnings to allow migration/startup in containerized environments.
+        options.ConfigureWarnings(w => w
+            .Ignore(new EventId(10103, "Microsoft.EntityFrameworkCore.Model.CollectionWithoutSetter"))
+            .Ignore(RelationalEventId.PendingModelChangesWarning));
     });
 }
 else
@@ -215,7 +218,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddHealthChecks()
     .AddNpgSql(dbConnectionString!, name: "PostgreSQL", tags: new[] { "ready" })
     .AddRedis(redisConnectionString, name: "Redis", tags: new[] { "ready" })
-    .AddUrlGroup(new Uri((builder.Configuration["StorageProvider:MinIO:Endpoint"] ?? "localhost:9000").Replace("minio:", "localhost:").Insert(0, "http://")), name: "MinIO", tags: new[] { "ready" })
+    .AddUrlGroup(new Uri($"{(builder.Configuration["StorageProvider:MinIO:Endpoint"] ?? "localhost:9000").Replace("minio:", Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true" ? "minio:" : "localhost:").Insert(0, "http://")}/minio/health/live"), name: "MinIO", tags: new[] { "ready" })
     .AddCheck("RabbitMQ", ct =>
     {
         try

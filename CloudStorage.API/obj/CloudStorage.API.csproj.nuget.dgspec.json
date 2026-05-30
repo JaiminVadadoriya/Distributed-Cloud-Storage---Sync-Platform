@@ -89,7 +89,7 @@
             },
             "Microsoft.OpenApi": {
               "target": "Package",
-              "version": "[2.4.1, )"
+              "version": "[3.5.5, )"
             },
             "OpenTelemetry.Exporter.OpenTelemetryProtocol": {
               "target": "Package",
@@ -1299,7 +1299,7 @@
           "dependencies": {
             "AWSSDK.S3": {
               "target": "Package",
-              "version": "[4.0.23.4, )"
+              "version": "[4.0.23.5, )"
             },
             "Azure.Storage.Blobs": {
               "target": "Package",
@@ -1323,11 +1323,11 @@
             },
             "Microsoft.Extensions.Http.Resilience": {
               "target": "Package",
-              "version": "[10.0.8, )"
+              "version": "[10.6.0, )"
             },
             "Microsoft.Extensions.Resilience": {
               "target": "Package",
-              "version": "[10.0.8, )"
+              "version": "[10.6.0, )"
             },
             "Minio": {
               "target": "Package",
@@ -1335,7 +1335,7 @@
             },
             "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",
-              "version": "[10.0.1, )"
+              "version": "[10.0.2, )"
             },
             "RabbitMQ.Client": {
               "target": "Package",
@@ -1343,7 +1343,7 @@
             },
             "StackExchange.Redis": {
               "target": "Package",
-              "version": "[2.13.1, )"
+              "version": "[2.13.17, )"
             },
             "System.IdentityModel.Tokens.Jwt": {
               "target": "Package",
