@@ -20,5 +20,8 @@ data:
   StorageProvider__MinIO__Endpoint: "minio-svc:9000"
   StorageProvider__MinIO__BucketName: "cloudstorage-chunks"
   StorageProvider__MinIO__UseSSL: "false"
+  ElasticSearch__Endpoint: "http://elasticsearch-svc:9200"
+  ElasticSearch__IndexName: "cloudstorage-metadata"
+  Consensus__NodeId: "node-1"
   OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
   OTEL_SERVICE_NAME: "CloudStorage.API"

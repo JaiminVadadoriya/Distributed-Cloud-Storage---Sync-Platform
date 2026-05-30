@@ -23,6 +23,7 @@ namespace CloudStorage.Infrastructure.Data
         public DbSet<FolderPermission> FolderPermissions { get; set; } = null!;
         public DbSet<Notification> Notifications { get; set; } = null!;
         public DbSet<StorageObjectLifecycle> StorageObjectLifecycles { get; set; } = null!;
+        public DbSet<DbObjectMetadata> ObjectMetadata { get; set; } = null!;
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -241,6 +242,13 @@ namespace CloudStorage.Infrastructure.Data
                 entity.HasIndex(e => e.ObjectKey);
                 entity.Property(e => e.ObjectKey).IsRequired().HasMaxLength(500);
                 entity.Property(e => e.ProviderName).IsRequired().HasMaxLength(100);
+            });
+
+            modelBuilder.Entity<DbObjectMetadata>(entity =>
+            {
+                entity.HasKey(e => new { e.Key, e.TenantId });
+                entity.Property(e => e.Key).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.TenantId).IsRequired().HasMaxLength(100);
             });
 
             base.OnModelCreating(modelBuilder);

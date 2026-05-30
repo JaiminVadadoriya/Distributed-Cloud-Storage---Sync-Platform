@@ -1,0 +1,47 @@
+{{- if .Values.elasticsearch.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-elasticsearch
+  labels:
+    app: {{ .Release.Name }}-elasticsearch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-elasticsearch
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-elasticsearch
+    spec:
+      containers:
+      - name: elasticsearch
+        image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+        env:
+        - name: discovery.type
+          value: single-node
+        - name: xpack.security.enabled
+          value: "false"
+        ports:
+        - containerPort: 9200
+          name: http
+        resources:
+          limits:
+            cpu: "1"
+            memory: 2Gi
+          requests:
+            cpu: "500m"
+            memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-svc
+spec:
+  selector:
+    app: {{ .Release.Name }}-elasticsearch
+  ports:
+  - port: 9200
+    targetPort: 9200
+{{- end }}

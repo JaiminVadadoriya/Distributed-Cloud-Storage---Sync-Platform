@@ -33,3 +33,8 @@ module "monitoring" {
   source      = "./modules/monitoring"
   environment = var.environment
 }
+
+module "search" {
+  source      = "./modules/search"
+  environment = var.environment
+}

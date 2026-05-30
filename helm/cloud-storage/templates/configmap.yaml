@@ -15,3 +15,6 @@ data:
   StorageProvider__MinIO__UseSSL: {{ .Values.storageProvider.minio.useSSL | quote }}
   StorageProvider__Local__BasePath: {{ .Values.storageProvider.local.basePath | quote }}
   StorageProvider__Local__BaseUrl: {{ .Values.storageProvider.local.baseUrl | quote }}
+  ElasticSearch__Endpoint: {{ .Values.elasticsearch.endpoint | quote }}
+  ElasticSearch__IndexName: {{ .Values.elasticsearch.indexName | quote }}
+  Consensus__NodeId: {{ .Values.consensus.nodeId | quote }}

@@ -26,3 +26,11 @@ storageProvider:
   local:
     basePath: "/app/storage/chunks"
     baseUrl: "http://localhost:5000"
+
+elasticsearch:
+  enabled: true
+  endpoint: "http://elasticsearch-svc:9200"
+  indexName: "cloudstorage-metadata"
+
+consensus:
+  nodeId: "node-1"
