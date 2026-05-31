@@ -55,7 +55,7 @@ import { CommonModule } from '@angular/common';
                <p class="font-mono text-xs uppercase tracking-widest text-editorial-text/60 leading-loose">
                  Your unique master recovery sequence has not been exported. Failure to preserve this sequence will result in total data loss upon node desynchronization.
                </p>
-               <button class="px-12 py-5 bg-editorial-text text-editorial-bg font-mono text-[10px] font-bold uppercase tracking-[0.3em] hover:opacity-90 transition-all">
+               <button (click)="downloadRecoveryKey()" class="px-12 py-5 bg-editorial-text text-editorial-bg font-mono text-[10px] font-bold uppercase tracking-[0.3em] hover:opacity-90 transition-all">
                  Download_Identity_Segment
                </button>
             </div>
@@ -71,5 +71,33 @@ import { CommonModule } from '@angular/common';
   `
 })
 export class EncryptionSettingsComponent {
-  // Expansion in Phase 13
+  downloadRecoveryKey() {
+    const array = new Uint8Array(32);
+    window.crypto.getRandomValues(array);
+    const hexKey = Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('').toUpperCase();
+    const uuid = crypto.randomUUID ? crypto.randomUUID() : 'N/A';
+    
+    const fileContent = `==================================================
+CLOUDSTORAGE IDENTITY RECOVERY SEGMENT KEY
+==================================================
+Key ID: ${uuid}
+Export Date: ${new Date().toISOString()}
+Protocol: AES-256-GCM
+
+RECOVERY KEY HASH:
+${hexKey.match(/.{1,4}/g)?.join('-') || hexKey}
+
+IMPORTANT: Store this key in a secure physical location.
+Do not share this key. It is required to restore access 
+to your identity segment.
+==================================================`;
+
+    const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `cloudstorage_recovery_key_${new Date().getTime()}.txt`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
 }

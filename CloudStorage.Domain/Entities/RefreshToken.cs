@@ -9,6 +9,10 @@ namespace CloudStorage.Domain.Entities
     public class RefreshToken : BaseAuditableEntity<Guid>
     {
         public string Token { get; set; } = string.Empty;
+
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public string RawToken { get; set; } = string.Empty;
+
         public int UserId { get; set; }
         public User User { get; set; } = null!;
         public DateTime ExpiresAt { get; set; }

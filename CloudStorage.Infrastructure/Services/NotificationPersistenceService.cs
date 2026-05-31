@@ -34,6 +34,7 @@ namespace CloudStorage.Infrastructure.Services
             };
 
             await _repository.AddAsync(notification);
+            await _repository.SaveChangesAsync();
 
             return MapToDto(notification);
         }

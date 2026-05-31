@@ -79,8 +79,11 @@ namespace CloudStorage.Infrastructure.Upload
 
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            using var combined = CancellationTokenSource.CreateLinkedTokenSource(_ct, cancellationToken);
-            var read = await _inner.ReadAsync(buffer, offset, count, combined.Token);
+            if (_ct.IsCancellationRequested)
+                throw new OperationCanceledException(_ct);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var read = await _inner.ReadAsync(buffer, offset, count, cancellationToken);
             if (read > 0)
             {
                 _bytesRead += read;

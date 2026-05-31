@@ -141,6 +141,7 @@ namespace CloudStorage.Infrastructure.Services
             };
 
             await _fileRepository.AddAsync(fileMetadata);
+            await _fileRepository.SaveChangesAsync();
 
             await _activityService.LogActivityAsync(ownerId, "UPLOAD", "FILE", fileMetadata.Id.ToString(), $"File '{fileMetadata.FileName}' uploaded successfully.");
 
@@ -159,6 +160,7 @@ namespace CloudStorage.Infrastructure.Services
             file.IsDeleted = true;
             file.LastModifiedAt = DateTime.UtcNow;
             await _fileRepository.UpdateAsync(file);
+            await _fileRepository.SaveChangesAsync();
 
             await _activityService.LogActivityAsync(userId, "DELETE", "FILE", fileId.ToString(), $"File '{file.FileName}' was deleted.");
 
@@ -197,6 +199,7 @@ namespace CloudStorage.Infrastructure.Services
             }
 
             await _fileRepository.UpdateAsync(file);
+            await _fileRepository.SaveChangesAsync();
 
             await _activityService.LogActivityAsync(grantedByUserId, "SHARE", "FILE", fileId.ToString(), $"File '{file.FileName}' shared with user ID {userId}.");
 
@@ -386,6 +389,7 @@ namespace CloudStorage.Infrastructure.Services
             currentFile.LastModifiedAt = DateTime.UtcNow;
 
             await _fileRepository.UpdateAsync(currentFile);
+            await _fileRepository.SaveChangesAsync();
             await _activityService.LogActivityAsync(userId, "RESTORE", "FILE", fileId.ToString(),
                 $"File '{currentFile.FileName}' restored to version {versionFile.Version}.");
 
@@ -410,6 +414,7 @@ namespace CloudStorage.Infrastructure.Services
             file.FileName = newName;
             file.LastModifiedAt = DateTime.UtcNow;
             await _fileRepository.UpdateAsync(file);
+            await _fileRepository.SaveChangesAsync();
 
             await _activityService.LogActivityAsync(userId, "RENAME", "FILE", fileId.ToString(),
                 $"File renamed from '{oldName}' to '{newName}'.");
@@ -428,6 +433,7 @@ namespace CloudStorage.Infrastructure.Services
             file.FolderId = targetFolderId;
             file.LastModifiedAt = DateTime.UtcNow;
             await _fileRepository.UpdateAsync(file);
+            await _fileRepository.SaveChangesAsync();
 
             await _activityService.LogActivityAsync(userId, "MOVE", "FILE", fileId.ToString(),
                 $"File '{file.FileName}' moved to folder {targetFolderId?.ToString() ?? "root"}.");
@@ -454,6 +460,7 @@ namespace CloudStorage.Infrastructure.Services
                         throw new UnauthorizedAccessException("Only the owner can delete this folder");
 
                     await _folderRepository.DeleteAsync(folder);
+                    await _folderRepository.SaveChangesAsync();
                     await _activityService.LogActivityAsync(userId, "DELETE", "FOLDER", id.ToString(), $"Folder '{folder.Name}' was deleted via bulk operation.");
                     continue;
                 }
@@ -524,6 +531,7 @@ namespace CloudStorage.Infrastructure.Services
 
             file.Permissions.Remove(permission);
             await _fileRepository.UpdateAsync(file);
+            await _fileRepository.SaveChangesAsync();
             await _cache.RemoveByPrefixAsync($"perm:{fileId}:");
             await _cache.RemoveByPrefixAsync($"file:{fileId}:");
         }
@@ -544,6 +552,7 @@ namespace CloudStorage.Infrastructure.Services
             permission.PermissionType = newPermission;
             permission.GrantedAt = DateTime.UtcNow;
             await _fileRepository.UpdateAsync(file);
+            await _fileRepository.SaveChangesAsync();
             await _cache.RemoveByPrefixAsync($"perm:{fileId}:");
             await _cache.RemoveByPrefixAsync($"file:{fileId}:");
         }

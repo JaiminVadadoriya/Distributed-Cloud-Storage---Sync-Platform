@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { SidebarComponent } from '../sidebar/sidebar.component';
@@ -14,6 +14,7 @@ import { ConfirmModalComponent } from '../../../shared/components/modal/confirm-
 import { PromptModalComponent } from '../../../shared/components/modal/prompt-modal.component';
 import { FileUploadComponent, FileUploadEvent } from '../../../shared/components/file-upload/file-upload.component';
 import { UploadManagerService } from '../../services/upload-manager.service';
+import { SignalRService } from '../../services/signalr.service';
 
 @Component({
   selector: 'app-shell',
@@ -22,9 +23,19 @@ import { UploadManagerService } from '../../services/upload-manager.service';
   templateUrl: './app-shell.html',
   styleUrl: './app-shell.css'
 })
-export class AppShellComponent extends BaseComponent {
+export class AppShellComponent extends BaseComponent implements OnInit {
   public layoutService = inject(LayoutService);
   private uploadManager = inject(UploadManagerService);
+  private signalRService = inject(SignalRService);
+
+  ngOnInit() {
+    this.signalRService.startConnection();
+  }
+
+  override ngOnDestroy() {
+    this.signalRService.stopConnection();
+    super.ngOnDestroy();
+  }
 
   onGlobalFilesSelected(events: FileUploadEvent[]) {
     events.filter(e => e.valid).forEach(e => {

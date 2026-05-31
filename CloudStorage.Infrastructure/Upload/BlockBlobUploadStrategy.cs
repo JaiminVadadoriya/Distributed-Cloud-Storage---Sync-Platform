@@ -46,23 +46,66 @@ namespace CloudStorage.Infrastructure.Upload
                 var containerClient = _blobServiceClient.GetBlobContainerClient(containerName);
                 var blockBlobClient = containerClient.GetBlockBlobClient(objectKey);
 
+                var blockTasks = new System.Collections.Generic.List<Task>();
                 var blockIds = new System.Collections.Generic.List<string>();
+                using var semaphore = new SemaphoreSlim(4);
+                var listLock = new object();
 
                 try
                 {
-                    var buffer = new byte[4 * 1024 * 1024]; // 4MB blocks
-                    int bytesRead;
+                    const int blockSize = 4 * 1024 * 1024;
                     int blockNumber = 0;
 
-                    while ((bytesRead = await data.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
+                    while (true)
                     {
-                        using var ms = new MemoryStream(buffer, 0, bytesRead);
+                        var chunkBuffer = new byte[blockSize];
+                        int bytesRead = 0;
+                        int offset = 0;
+                        int remaining = blockSize;
+
+                        while (remaining > 0)
+                        {
+                            int read = await data.ReadAsync(chunkBuffer, offset, remaining, ct);
+                            if (read <= 0) break;
+                            bytesRead += read;
+                            offset += read;
+                            remaining -= read;
+                        }
+
+                        if (bytesRead == 0) break;
+
+                        var uploadBuffer = chunkBuffer;
+                        if (bytesRead < blockSize)
+                        {
+                            uploadBuffer = new byte[bytesRead];
+                            Buffer.BlockCopy(chunkBuffer, 0, uploadBuffer, 0, bytesRead);
+                        }
+
                         var blockId = Convert.ToBase64String(Encoding.UTF8.GetBytes(blockNumber.ToString("D6")));
-                        
-                        await blockBlobClient.StageBlockAsync(blockId, ms, cancellationToken: ct);
-                        blockIds.Add(blockId);
+                        lock (listLock)
+                        {
+                            blockIds.Add(blockId);
+                        }
+
+                        var currentBlockId = blockId;
+                        blockTasks.Add(Task.Run(async () =>
+                        {
+                            await semaphore.WaitAsync(ct);
+                            try
+                            {
+                                using var ms = new MemoryStream(uploadBuffer);
+                                await blockBlobClient.StageBlockAsync(currentBlockId, ms, cancellationToken: ct);
+                            }
+                            finally
+                            {
+                                semaphore.Release();
+                            }
+                        }, ct));
+
                         blockNumber++;
                     }
+
+                    await Task.WhenAll(blockTasks);
 
                     var headers = new BlobHttpHeaders { ContentType = options?.ContentType };
                     await blockBlobClient.CommitBlockListAsync(blockIds, new CommitBlockListOptions { HttpHeaders = headers }, cancellationToken: ct);

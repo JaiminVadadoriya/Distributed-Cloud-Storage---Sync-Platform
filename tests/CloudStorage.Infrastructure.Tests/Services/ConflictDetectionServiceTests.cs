@@ -24,7 +24,8 @@ namespace CloudStorage.Infrastructure.Tests.Services
                 .Options;
 
             _context = new ApplicationDbContext(options);
-            _service = new ConflictDetectionService(_context);
+            var fileRepository = new CloudStorage.Infrastructure.Repositories.FileMetadataRepository(_context);
+            _service = new ConflictDetectionService(_context, fileRepository);
 
             // Seed a test user
             _testUser = new User

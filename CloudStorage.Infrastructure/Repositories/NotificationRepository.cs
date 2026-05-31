@@ -43,16 +43,9 @@ namespace CloudStorage.Infrastructure.Repositories
 
         public async Task MarkAllAsReadAsync(int userId)
         {
-            var unread = await _dbSet
+            await _dbSet
                 .Where(n => n.UserId == userId && !n.IsRead)
-                .ToListAsync();
-
-            foreach (var n in unread)
-            {
-                n.IsRead = true;
-            }
-
-            await _context.SaveChangesAsync();
+                .ExecuteUpdateAsync(s => s.SetProperty(n => n.IsRead, true));
         }
     }
 }

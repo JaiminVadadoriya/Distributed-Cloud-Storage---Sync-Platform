@@ -103,7 +103,25 @@ async function setupInterceptors(page: Page, testMode: string, apiBase: string) 
     const request = route.request();
     const url = request.url();
     const method = request.method();
-    const headers = { ...request.headers() };
+    
+    const corsHeaders = {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    };
+
+    if (method === 'OPTIONS') {
+      await route.fulfill({
+        status: 204,
+        headers: corsHeaders
+      }).catch(() => {});
+      return;
+    }
+
+    const headers = { 
+      ...request.headers(),
+      ...corsHeaders
+    };
 
     if (url.includes('/api/auth/login')) {
       let postData: any = {};
@@ -208,7 +226,7 @@ async function setupInterceptors(page: Page, testMode: string, apiBase: string) 
 }
 
 export const test = base.extend<TestFixtures>({
-  apiBase: process.env['API_BASE_URL'] || 'http://localhost:5010',
+  apiBase: process.env['API_BASE_URL'] || ((process.env['TEST_MODE'] || 'mock').toLowerCase() === 'real' ? 'http://localhost:5010' : ''),
 
   page: async ({ page, apiBase }, use) => {
     const testMode = (process.env['TEST_MODE'] || 'mock').toLowerCase();

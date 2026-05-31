@@ -235,7 +235,8 @@ namespace CloudStorage.Application.Tests.Services
             await _authService.LogoutAsync(loginResult!.RefreshToken);
 
             // Assert
-            var token = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == loginResult.RefreshToken);
+            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == "test@example.com");
+            var token = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.UserId == dbUser!.Id);
             Assert.True(token!.IsRevoked);
             Assert.NotNull(token.RevokedAt);
         }

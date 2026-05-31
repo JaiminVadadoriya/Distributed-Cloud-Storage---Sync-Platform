@@ -14,10 +14,12 @@ namespace CloudStorage.API.Controllers
     public class ConflictController : BaseApiController
     {
         private readonly IConflictDetectionService _conflictService;
+        private readonly IFileService _fileService;
 
-        public ConflictController(IConflictDetectionService conflictService)
+        public ConflictController(IConflictDetectionService conflictService, IFileService fileService)
         {
             _conflictService = conflictService;
+            _fileService = fileService;
         }
 
         /// <summary>
@@ -26,6 +28,12 @@ namespace CloudStorage.API.Controllers
         [HttpPost("check-conflicts")]
         public Task<IActionResult> CheckConflicts([FromBody] ConflictCheckRequestDto request) => ExecuteAsync(async () =>
         {
+            var userId = GetUserId();
+            if (!await _fileService.HasPermissionAsync(request.FileId, userId, CloudStorage.Domain.Entities.PermissionType.Read))
+            {
+                return StatusCode(403, ApiResponse.Fail("Access denied"));
+            }
+
             var result = await _conflictService.CheckConflictAsync(request.FileId, request.ClientVersionVector);
             return Ok(ApiResponse<ConflictCheckResponseDto>.Ok(result, "Conflict check completed"));
         });

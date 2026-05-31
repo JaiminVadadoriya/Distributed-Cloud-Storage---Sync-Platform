@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CloudStorage.Application.DTOs;
 using CloudStorage.Application.Interfaces;
 using CloudStorage.Infrastructure.Data;
+using CloudStorage.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace CloudStorage.Infrastructure.Services
@@ -13,10 +14,12 @@ namespace CloudStorage.Infrastructure.Services
     public class ConflictDetectionService : IConflictDetectionService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IFileMetadataRepository _fileRepository;
 
-        public ConflictDetectionService(ApplicationDbContext context)
+        public ConflictDetectionService(ApplicationDbContext context, IFileMetadataRepository fileRepository)
         {
             _context = context;
+            _fileRepository = fileRepository;
         }
 
         public async Task<ConflictCheckResponseDto> CheckConflictAsync(Guid fileId, string clientVersionVector)
@@ -57,10 +60,19 @@ namespace CloudStorage.Infrastructure.Services
         public async Task ResolveConflictAsync(Guid fileId, int userId, ConflictResolution resolution, string? clientVersionVector)
         {
             var file = await _context.FileMetadata
-                .FirstOrDefaultAsync(f => f.Id == fileId && f.OwnerId == userId && !f.IsDeleted);
+                .FirstOrDefaultAsync(f => f.Id == fileId && !f.IsDeleted);
 
             if (file == null)
                 throw new InvalidOperationException("File not found or access denied.");
+
+            if (file.OwnerId != userId)
+            {
+                var hasWrite = await _fileRepository.HasPermissionAsync(fileId, userId, Domain.Entities.PermissionType.Write);
+                if (!hasWrite)
+                {
+                    throw new InvalidOperationException("File not found or access denied.");
+                }
+            }
 
             if (resolution == ConflictResolution.KeepServer)
             {

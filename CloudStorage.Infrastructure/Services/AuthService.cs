@@ -73,7 +73,7 @@ namespace CloudStorage.Infrastructure.Services
             return new LoginResponseDto
             {
                 AccessToken = accessToken,
-                RefreshToken = refreshToken.Token,
+                RefreshToken = refreshToken.RawToken,
                 ExpiresIn = GetAccessTokenExpirationSeconds(),
                 TokenType = "Bearer",
                 User = new UserDto
@@ -106,7 +106,7 @@ namespace CloudStorage.Infrastructure.Services
             return new LoginResponseDto
             {
                 AccessToken = accessToken,
-                RefreshToken = newRefreshToken.Token,
+                RefreshToken = newRefreshToken.RawToken,
                 ExpiresIn = GetAccessTokenExpirationSeconds(),
                 TokenType = "Bearer",
                 User = new UserDto

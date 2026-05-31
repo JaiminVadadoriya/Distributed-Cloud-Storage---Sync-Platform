@@ -28,8 +28,28 @@ namespace CloudStorage.Infrastructure.Services
         public async Task<FolderDto?> GetFolderByIdAsync(Guid folderId, int userId)
         {
             var folder = await _folderRepository.GetWithContentsAsync(folderId);
-            if (folder == null || folder.OwnerId != userId)
+            if (folder == null)
                 return null;
+
+            if (folder.OwnerId != userId && !folder.Permissions.Any(p => p.UserId == userId))
+            {
+                var currentFolder = folder;
+                bool hasAccess = false;
+                while (currentFolder.ParentFolderId.HasValue)
+                {
+                    var parent = await _folderRepository.GetWithContentsAsync(currentFolder.ParentFolderId.Value);
+                    if (parent == null) break;
+                    if (parent.OwnerId == userId || parent.Permissions.Any(p => p.UserId == userId))
+                    {
+                        hasAccess = true;
+                        break;
+                    }
+                    currentFolder = parent;
+                }
+
+                if (!hasAccess)
+                    return null;
+            }
 
             return MapToDto(folder);
         }
@@ -53,6 +73,7 @@ namespace CloudStorage.Infrastructure.Services
             };
 
             await _folderRepository.AddAsync(folder);
+            await _folderRepository.SaveChangesAsync();
 
             await _activityService.LogActivityAsync(userId, "CREATE", "FOLDER", folder.Id.ToString(), $"Folder '{folder.Name}' was created.");
 
@@ -70,6 +91,7 @@ namespace CloudStorage.Infrastructure.Services
             folder.Name = newName;
             folder.LastModifiedAt = DateTime.UtcNow;
             await _folderRepository.UpdateAsync(folder);
+            await _folderRepository.SaveChangesAsync();
 
             await _activityService.LogActivityAsync(userId, "RENAME", "FOLDER", folderId.ToString(), $"Folder renamed to '{newName}'.");
 
@@ -89,6 +111,7 @@ namespace CloudStorage.Infrastructure.Services
             folder.ParentFolderId = newParentId;
             folder.LastModifiedAt = DateTime.UtcNow;
             await _folderRepository.UpdateAsync(folder);
+            await _folderRepository.SaveChangesAsync();
 
             await _activityService.LogActivityAsync(userId, "MOVE", "FOLDER", folderId.ToString(), "Folder was moved.");
 
@@ -102,6 +125,7 @@ namespace CloudStorage.Infrastructure.Services
                 throw new Exception("Folder not found or access denied");
 
             await _folderRepository.DeleteAsync(folder);
+            await _folderRepository.SaveChangesAsync();
 
             await _activityService.LogActivityAsync(userId, "DELETE", "FOLDER", folderId.ToString(), $"Folder '{folder.Name}' was deleted.");
 
@@ -123,6 +147,7 @@ namespace CloudStorage.Infrastructure.Services
                 existing.PermissionType = perm;
                 existing.GrantedAt = DateTime.UtcNow;
                 await _folderRepository.UpdateAsync(folder);
+                await _folderRepository.SaveChangesAsync();
             }
             else
             {
@@ -141,6 +166,7 @@ namespace CloudStorage.Infrastructure.Services
                 fullFolder!.Permissions ??= new List<Domain.Entities.FolderPermission>();
                 fullFolder.Permissions.Add(permission);
                 await _folderRepository.UpdateAsync(fullFolder);
+                await _folderRepository.SaveChangesAsync();
             }
 
             await _activityService.LogActivityAsync(ownerId, "SHARE", "FOLDER", folderId.ToString(),

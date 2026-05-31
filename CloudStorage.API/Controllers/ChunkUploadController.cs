@@ -11,6 +11,8 @@ using System.Security.Cryptography;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
+using System.Linq;
 
 namespace CloudStorage.API.Controllers
 {
@@ -35,6 +37,7 @@ namespace CloudStorage.API.Controllers
         private readonly IFileService _fileService;
         private readonly IAuthService _authService;
         private readonly ILogger<ChunkUploadController> _logger;
+        private readonly IConfiguration _configuration;
 
         public ChunkUploadController(
             IFileMetadataRepository fileRepository,
@@ -48,7 +51,8 @@ namespace CloudStorage.API.Controllers
             IUploadOrchestrator uploadOrchestrator,
             IFileService fileService,
             IAuthService authService,
-            ILogger<ChunkUploadController> logger)
+            ILogger<ChunkUploadController> logger,
+            IConfiguration configuration)
         {
             _fileRepository = fileRepository;
             _chunkRepository = chunkRepository;
@@ -62,6 +66,7 @@ namespace CloudStorage.API.Controllers
             _fileService = fileService;
             _authService = authService;
             _logger = logger;
+            _configuration = configuration;
         }
 
         public class UploadChunkRequestDto
@@ -80,6 +85,47 @@ namespace CloudStorage.API.Controllers
             var user = await _authService.GetUserByIdAsync(userId);
             if (user == null)
                 return Unauthorized(ApiResponse.Fail("User not found"));
+
+            // Validate file content type and extension
+            var allowedTypes = _configuration.GetSection("FileUpload:AllowedContentTypes").Get<string[]>()
+                ?? new[] { "image/*", "video/*", "application/pdf", "application/zip", "text/*" };
+
+            var extension = System.IO.Path.GetExtension(dto.FileName).ToLowerInvariant();
+            var contentType = dto.ContentType?.ToLowerInvariant() ?? string.Empty;
+
+            bool isAllowed = false;
+            foreach (var pattern in allowedTypes)
+            {
+                if (pattern.EndsWith("/*"))
+                {
+                    var prefix = pattern.Substring(0, pattern.Length - 1);
+                    if (contentType.StartsWith(prefix))
+                    {
+                        isAllowed = true;
+                        break;
+                    }
+                }
+                else if (string.Equals(pattern, contentType, StringComparison.OrdinalIgnoreCase))
+                {
+                    isAllowed = true;
+                    break;
+                }
+            }
+
+            // Fallback: allow common extensions if generic content-type
+            if (!isAllowed)
+            {
+                var allowedExts = new[] { ".jpg", ".jpeg", ".png", ".gif", ".pdf", ".zip", ".txt", ".mp4", ".mkv", ".mov" };
+                if (allowedExts.Contains(extension))
+                {
+                    isAllowed = true;
+                }
+            }
+
+            if (!isAllowed)
+            {
+                return BadRequest(ApiResponse.Fail("INVALID_FILE_TYPE: File type or extension is not permitted."));
+            }
 
             var stats = await _fileService.GetDashboardStatsAsync(userId);
             if (stats.TotalStorageBytes + dto.FileSize > user.StorageQuota)

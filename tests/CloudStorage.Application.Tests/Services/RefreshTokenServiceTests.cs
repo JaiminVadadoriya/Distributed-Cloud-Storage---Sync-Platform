@@ -17,6 +17,14 @@ namespace CloudStorage.Application.Tests.Services
         private readonly IConfiguration _configuration;
         private readonly RefreshTokenService _refreshTokenService;
 
+        private static string HashToken(string token)
+        {
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(token);
+            var hash = sha256.ComputeHash(bytes);
+            return Convert.ToHexString(hash);
+        }
+
         public RefreshTokenServiceTests()
         {
             var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -89,7 +97,7 @@ namespace CloudStorage.Application.Tests.Services
             var token = await _refreshTokenService.GenerateRefreshTokenAsync(1);
 
             // Act
-            var result = await _refreshTokenService.ValidateRefreshTokenAsync(token.Token);
+            var result = await _refreshTokenService.ValidateRefreshTokenAsync(token.RawToken);
 
             // Assert
             Assert.NotNull(result);
@@ -112,10 +120,10 @@ namespace CloudStorage.Application.Tests.Services
         {
             // Arrange
             var token = await _refreshTokenService.GenerateRefreshTokenAsync(1);
-            await _refreshTokenService.RevokeTokenAsync(token.Token);
+            await _refreshTokenService.RevokeTokenAsync(token.RawToken);
 
             // Act
-            var result = await _refreshTokenService.ValidateRefreshTokenAsync(token.Token);
+            var result = await _refreshTokenService.ValidateRefreshTokenAsync(token.RawToken);
 
             // Assert
             Assert.Null(result);
@@ -129,7 +137,8 @@ namespace CloudStorage.Application.Tests.Services
             {
                 Id = Guid.NewGuid(),
                 UserId = 1,
-                Token = "expired-token",
+                Token = HashToken("expired-token"),
+                RawToken = "expired-token",
                 CreatedAt = DateTime.UtcNow.AddDays(-10),
                 ExpiresAt = DateTime.UtcNow.AddDays(-1),
                 IsRevoked = false
@@ -138,7 +147,7 @@ namespace CloudStorage.Application.Tests.Services
             await _context.SaveChangesAsync();
 
             // Act
-            var result = await _refreshTokenService.ValidateRefreshTokenAsync(expiredToken.Token);
+            var result = await _refreshTokenService.ValidateRefreshTokenAsync(expiredToken.RawToken);
 
             // Assert
             Assert.Null(result);
@@ -155,7 +164,7 @@ namespace CloudStorage.Application.Tests.Services
             var beforeRevoke = DateTime.UtcNow;
 
             // Act
-            await _refreshTokenService.RevokeTokenAsync(token.Token);
+            await _refreshTokenService.RevokeTokenAsync(token.RawToken);
 
             // Assert
             var revokedToken = await _context.RefreshTokens.FindAsync(token.Id);

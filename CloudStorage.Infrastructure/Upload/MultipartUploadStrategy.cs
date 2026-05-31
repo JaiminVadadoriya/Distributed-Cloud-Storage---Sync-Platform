@@ -51,31 +51,75 @@ namespace CloudStorage.Infrastructure.Upload
 
                 var initResponse = await _s3Client.InitiateMultipartUploadAsync(initRequest, ct);
                 var uploadId = initResponse.UploadId;
+                var partTasks = new System.Collections.Generic.List<Task>();
                 var partList = new System.Collections.Generic.List<PartETag>();
+                using var semaphore = new SemaphoreSlim(4);
+                var listLock = new object();
 
                 try
                 {
-                    var buffer = new byte[5 * 1024 * 1024]; // 5MB parts
-                    int bytesRead;
+                    const int partSize = 5 * 1024 * 1024;
                     int partNumber = 1;
 
-                    while ((bytesRead = await data.ReadAsync(buffer, 0, buffer.Length, ct)) > 0)
+                    while (true)
                     {
-                        using var ms = new MemoryStream(buffer, 0, bytesRead);
-                        var partRequest = new UploadPartRequest
-                        {
-                            BucketName = bucketName,
-                            Key = objectKey,
-                            UploadId = uploadId,
-                            PartNumber = partNumber,
-                            PartSize = bytesRead,
-                            InputStream = ms
-                        };
+                        var chunkBuffer = new byte[partSize];
+                        int bytesRead = 0;
+                        int offset = 0;
+                        int remaining = partSize;
 
-                        var partResponse = await _s3Client.UploadPartAsync(partRequest, ct);
-                        partList.Add(new PartETag(partNumber, partResponse.ETag));
+                        while (remaining > 0)
+                        {
+                            int read = await data.ReadAsync(chunkBuffer, offset, remaining, ct);
+                            if (read <= 0) break;
+                            bytesRead += read;
+                            offset += read;
+                            remaining -= read;
+                        }
+
+                        if (bytesRead == 0) break;
+
+                        var uploadBuffer = chunkBuffer;
+                        if (bytesRead < partSize)
+                        {
+                            uploadBuffer = new byte[bytesRead];
+                            Buffer.BlockCopy(chunkBuffer, 0, uploadBuffer, 0, bytesRead);
+                        }
+
+                        var currentPartNumber = partNumber;
+                        partTasks.Add(Task.Run(async () =>
+                        {
+                            await semaphore.WaitAsync(ct);
+                            try
+                            {
+                                using var ms = new MemoryStream(uploadBuffer);
+                                var partRequest = new UploadPartRequest
+                                {
+                                    BucketName = bucketName,
+                                    Key = objectKey,
+                                    UploadId = uploadId,
+                                    PartNumber = currentPartNumber,
+                                    PartSize = uploadBuffer.Length,
+                                    InputStream = ms
+                                };
+
+                                var partResponse = await _s3Client.UploadPartAsync(partRequest, ct);
+                                lock (listLock)
+                                {
+                                    partList.Add(new PartETag(currentPartNumber, partResponse.ETag));
+                                }
+                            }
+                            finally
+                            {
+                                semaphore.Release();
+                            }
+                        }, ct));
+
                         partNumber++;
                     }
+
+                    await Task.WhenAll(partTasks);
+                    partList.Sort((x, y) => x.PartNumber.GetValueOrDefault().CompareTo(y.PartNumber.GetValueOrDefault()));
 
                     var completeRequest = new CompleteMultipartUploadRequest
                     {

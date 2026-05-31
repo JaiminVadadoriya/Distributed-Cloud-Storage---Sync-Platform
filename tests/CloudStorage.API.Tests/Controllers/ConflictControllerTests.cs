@@ -15,12 +15,18 @@ namespace CloudStorage.API.Tests.Controllers
     public class ConflictControllerTests
     {
         private readonly Mock<IConflictDetectionService> _mockConflictService;
+        private readonly Mock<IFileService> _mockFileService;
         private readonly ConflictController _controller;
 
         public ConflictControllerTests()
         {
             _mockConflictService = new Mock<IConflictDetectionService>();
-            _controller = new ConflictController(_mockConflictService.Object);
+            _mockFileService = new Mock<IFileService>();
+            
+            _mockFileService.Setup(s => s.HasPermissionAsync(It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<CloudStorage.Domain.Entities.PermissionType>()))
+                .ReturnsAsync(true);
+
+            _controller = new ConflictController(_mockConflictService.Object, _mockFileService.Object);
 
             var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]
             {

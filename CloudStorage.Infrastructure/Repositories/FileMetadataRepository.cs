@@ -17,7 +17,7 @@ namespace CloudStorage.Infrastructure.Repositories
 
         public async Task<IEnumerable<FileMetadata>> GetUserFilesAsync(int userId, bool includeDeleted = false)
         {
-            var query = _dbSet.Where(f => f.OwnerId == userId);
+            var query = _dbSet.AsNoTracking().Where(f => f.OwnerId == userId);
 
             if (!includeDeleted)
             {
@@ -47,6 +47,7 @@ namespace CloudStorage.Infrastructure.Repositories
         public async Task<IEnumerable<FileMetadata>> GetSharedFilesAsync(int userId)
         {
             return await _dbSet
+                .AsNoTracking()
                 .Include(f => f.Permissions)
                 .Where(f => f.Permissions.Any(p => p.UserId == userId) && !f.IsDeleted)
                 .OrderByDescending(f => f.CreatedAt)
@@ -121,6 +122,7 @@ namespace CloudStorage.Infrastructure.Repositories
         public async Task<IEnumerable<FileMetadata>> SearchAsync(int userId, string query)
         {
             return await _dbSet
+                .AsNoTracking()
                 .Where(f => f.OwnerId == userId && !f.IsDeleted &&
                             EF.Functions.ILike(f.FileName, $"%{query}%"))
                 .OrderByDescending(f => f.CreatedAt)
@@ -154,6 +156,7 @@ namespace CloudStorage.Infrastructure.Repositories
                         INNER JOIN VersionHierarchy vh ON fm.""Id"" = vh.""ParentVersionId""
                     )
                     SELECT * FROM VersionHierarchy")
+                .AsNoTracking()
                 .ToListAsync();
         }
     }

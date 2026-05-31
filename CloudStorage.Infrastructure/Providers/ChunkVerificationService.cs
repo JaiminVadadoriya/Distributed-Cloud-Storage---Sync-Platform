@@ -20,22 +20,39 @@ namespace CloudStorage.Infrastructure.Providers
 
         public async Task<ChunkVerificationResult> VerifyAllChunksAsync(Guid fileId, int chunkCount, CancellationToken ct = default)
         {
-            var missingChunks = new List<int>();
+            var missingChunks = new System.Collections.Concurrent.ConcurrentBag<int>();
             var chunkProvider = _providerFactory.GetChunkProvider();
+            using var semaphore = new SemaphoreSlim(10);
 
+            var tasks = new List<Task>();
             for (int i = 0; i < chunkCount; i++)
             {
-                var objectKey = $"{fileId}/{i}.chunk";
-                var exists = await chunkProvider.ChunkExistsAsync(objectKey, ct);
-
-                if (!exists)
+                var index = i;
+                tasks.Add(Task.Run(async () =>
                 {
-                    _logger.LogWarning("Chunk verification failed: Missing chunk {ObjectKey}", objectKey);
-                    missingChunks.Add(i);
-                }
+                    await semaphore.WaitAsync(ct);
+                    try
+                    {
+                        var objectKey = $"{fileId}/{index}.chunk";
+                        var exists = await chunkProvider.ChunkExistsAsync(objectKey, ct);
+
+                        if (!exists)
+                        {
+                            _logger.LogWarning("Chunk verification failed: Missing chunk {ObjectKey}", objectKey);
+                            missingChunks.Add(index);
+                        }
+                    }
+                    finally
+                    {
+                        semaphore.Release();
+                    }
+                }, ct));
             }
 
-            return new ChunkVerificationResult(missingChunks.Count == 0, missingChunks.ToArray());
+            await Task.WhenAll(tasks);
+
+            var sortedMissing = missingChunks.OrderBy(x => x).ToArray();
+            return new ChunkVerificationResult(sortedMissing.Length == 0, sortedMissing);
         }
     }
 }

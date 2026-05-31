@@ -38,25 +38,29 @@ namespace CloudStorage.Infrastructure.Repositories
         public virtual async Task<T> AddAsync(T entity)
         {
             await _dbSet.AddAsync(entity);
-            await _context.SaveChangesAsync();
             return entity;
         }
 
-        public virtual async Task UpdateAsync(T entity)
+        public virtual Task UpdateAsync(T entity)
         {
             _dbSet.Update(entity);
-            await _context.SaveChangesAsync();
+            return Task.CompletedTask;
         }
 
-        public virtual async Task DeleteAsync(T entity)
+        public virtual Task DeleteAsync(T entity)
         {
             _dbSet.Remove(entity);
-            await _context.SaveChangesAsync();
+            return Task.CompletedTask;
         }
 
-        public virtual async Task DeleteRangeAsync(IEnumerable<T> entities)
+        public virtual Task DeleteRangeAsync(IEnumerable<T> entities)
         {
             _dbSet.RemoveRange(entities);
+            return Task.CompletedTask;
+        }
+
+        public virtual async Task SaveChangesAsync()
+        {
             await _context.SaveChangesAsync();
         }
 

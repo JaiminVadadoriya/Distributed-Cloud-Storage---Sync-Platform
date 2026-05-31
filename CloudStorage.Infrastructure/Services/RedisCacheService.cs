@@ -63,9 +63,7 @@ namespace CloudStorage.Infrastructure.Services
         public async Task RemoveByPrefixAsync(string prefixKey, CancellationToken ct = default)
         {
             var server = _redis.GetServer(_redis.GetEndPoints()[0]);
-            var keys = server.Keys(pattern: $"{prefixKey}*");
-
-            foreach (var key in keys)
+            await foreach (var key in server.KeysAsync(pattern: $"{prefixKey}*").WithCancellation(ct))
             {
                 await _cache.RemoveAsync(key.ToString(), ct);
             }

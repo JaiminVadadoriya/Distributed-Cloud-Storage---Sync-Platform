@@ -15,5 +15,6 @@ namespace CloudStorage.Domain.Interfaces
         Task DeleteAsync(T entity);
         Task DeleteRangeAsync(IEnumerable<T> entities);
         Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate);
+        Task SaveChangesAsync();
     }
 }

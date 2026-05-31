@@ -12,6 +12,7 @@ using CloudStorage.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using Moq;
 using Xunit;
 
@@ -31,6 +32,7 @@ namespace CloudStorage.API.Tests.Controllers
         private readonly Mock<IFileService> _mockFileService;
         private readonly Mock<IAuthService> _mockAuthService;
         private readonly Mock<ILogger<ChunkUploadController>> _mockLogger;
+        private readonly Mock<IConfiguration> _mockConfiguration;
         private readonly ChunkUploadController _controller;
         private readonly int _testUserId = 1;
 
@@ -48,10 +50,15 @@ namespace CloudStorage.API.Tests.Controllers
             _mockFileService = new Mock<IFileService>();
             _mockAuthService = new Mock<IAuthService>();
             _mockLogger = new Mock<ILogger<ChunkUploadController>>();
+            _mockConfiguration = new Mock<IConfiguration>();
 
             var mockObjectProvider = new Mock<IObjectStorageProvider>();
             mockObjectProvider.Setup(p => p.ProviderName).Returns("Azure");
             _mockProviderFactory.Setup(f => f.GetProvider(It.IsAny<string>())).Returns(mockObjectProvider.Object);
+
+            var mockSection = new Mock<IConfigurationSection>();
+            mockSection.Setup(s => s.Value).Returns((string)null);
+            _mockConfiguration.Setup(c => c.GetSection("FileUpload:AllowedContentTypes")).Returns(mockSection.Object);
 
             _mockAuthService.Setup(s => s.GetUserByIdAsync(It.IsAny<int>()))
                 .ReturnsAsync(new User { Id = _testUserId, Username = "testuser", StorageQuota = 10L * 1024 * 1024 * 1024 });
@@ -71,7 +78,8 @@ namespace CloudStorage.API.Tests.Controllers
                 _mockUploadOrchestrator.Object,
                 _mockFileService.Object,
                 _mockAuthService.Object,
-                _mockLogger.Object);
+                _mockLogger.Object,
+                _mockConfiguration.Object);
 
             // Mock User context
             var user = new ClaimsPrincipal(new ClaimsIdentity(new Claim[]

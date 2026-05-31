@@ -16,7 +16,7 @@ import { formatBytes } from '../../core/utils/format.utils';
 import { BaseComponent } from '../../core/models/base-component';
 import { SearchService } from '../../core/services/search.service';
 import { SearchFilter } from '../../core/models/file.model';
-import { takeUntil } from 'rxjs';
+import { BehaviorSubject, switchMap, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -49,9 +49,17 @@ export class DashboardComponent extends BaseComponent implements OnInit, OnDestr
   activityService = inject(ActivityService);
   layoutService = inject(LayoutService);
   
-  stats = toSignal(this.fileService.getDashboardStats());
-  storageBreakdown = toSignal(this.fileService.getStorageBreakdown());
-  recentActivity = toSignal(this.activityService.getRecentActivity());
+  private readonly refreshTrigger$ = new BehaviorSubject<void>(undefined);
+
+  stats = toSignal(this.refreshTrigger$.pipe(
+    switchMap(() => this.fileService.getDashboardStats())
+  ));
+  storageBreakdown = toSignal(this.refreshTrigger$.pipe(
+    switchMap(() => this.fileService.getStorageBreakdown())
+  ));
+  recentActivity = toSignal(this.refreshTrigger$.pipe(
+    switchMap(() => this.activityService.getRecentActivity())
+  ));
 
 
   @ViewChild('fileList') fileList!: FileListComponent;
@@ -91,8 +99,6 @@ export class DashboardComponent extends BaseComponent implements OnInit, OnDestr
     if (this.connectionStatus.isOnline()) {
       this.syncEngine.performSync();
     }
-    
-    this.signalRService.startConnection();
 
     // Listen to real-time events with auto-cleanup
     this.signalRService.fileUploaded$.pipe(takeUntil(this.destroy$)).subscribe(event => {
@@ -114,20 +120,15 @@ export class DashboardComponent extends BaseComponent implements OnInit, OnDestr
     this.syncEngine.refreshPendingOpsCount();
   }
 
-  // override ngOnDestroy to stop connection
   override ngOnDestroy() {
     super.ngOnDestroy();
-    this.signalRService.stopConnection();
   }
 
   private refreshData() {
     if (this.fileList) {
       this.fileList.loadFiles();
     }
-    // With Signals, we don't need to manually re-assign the observable.
-    // However, if getDashboardStats() returns a NEW observable each time, 
-    // we might need a refresh trigger if the service doesn't use a Subject/BehaviorSubject.
-    // Assuming fileService.getDashboardStats() is reactive.
+    this.refreshTrigger$.next();
   }
 
   onFilesDropped(): void {

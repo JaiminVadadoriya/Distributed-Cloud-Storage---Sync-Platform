@@ -113,7 +113,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
             var token = await _service.GenerateRefreshTokenAsync(_testUser.Id);
 
             // Act
-            var result = await _service.ValidateRefreshTokenAsync(token.Token);
+            var result = await _service.ValidateRefreshTokenAsync(token.RawToken);
 
             // Assert
             Assert.NotNull(result);
@@ -137,10 +137,10 @@ namespace CloudStorage.Infrastructure.Tests.Services
         {
             // Arrange
             var token = await _service.GenerateRefreshTokenAsync(_testUser.Id);
-            await _service.RevokeTokenAsync(token.Token);
+            await _service.RevokeTokenAsync(token.RawToken);
 
             // Act
-            var result = await _service.ValidateRefreshTokenAsync(token.Token);
+            var result = await _service.ValidateRefreshTokenAsync(token.RawToken);
 
             // Assert
             Assert.Null(result);
@@ -158,7 +158,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
             await _context.SaveChangesAsync();
 
             // Act
-            var result = await _service.ValidateRefreshTokenAsync(token.Token);
+            var result = await _service.ValidateRefreshTokenAsync(token.RawToken);
 
             // Assert
             Assert.Null(result);
@@ -176,7 +176,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
             var token = await _service.GenerateRefreshTokenAsync(_testUser.Id);
 
             // Act
-            await _service.RevokeTokenAsync(token.Token);
+            await _service.RevokeTokenAsync(token.RawToken);
 
             // Assert
             var revokedToken = await _context.RefreshTokens.FindAsync(token.Id);
@@ -197,7 +197,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
         {
             // Arrange
             var token = await _service.GenerateRefreshTokenAsync(_testUser.Id);
-            await _service.RevokeTokenAsync(token.Token);
+            await _service.RevokeTokenAsync(token.RawToken);
 
             var firstRevokedToken = await _context.RefreshTokens.FindAsync(token.Id);
             var firstRevokedAt = firstRevokedToken!.RevokedAt;
@@ -206,7 +206,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
             await Task.Delay(10);
 
             // Act
-            await _service.RevokeTokenAsync(token.Token);
+            await _service.RevokeTokenAsync(token.RawToken);
 
             // Assert
             var secondRevokedToken = await _context.RefreshTokens.FindAsync(token.Id);
@@ -266,7 +266,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
         {
             // Arrange
             var token1 = await _service.GenerateRefreshTokenAsync(_testUser.Id);
-            await _service.RevokeTokenAsync(token1.Token);
+            await _service.RevokeTokenAsync(token1.RawToken);
 
             var firstRevokedToken = await _context.RefreshTokens.FindAsync(token1.Id);
             var firstRevokedAt = firstRevokedToken!.RevokedAt;
@@ -291,7 +291,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
             var token = await _service.GenerateRefreshTokenAsync(_testUser.Id);
 
             // Act
-            var result = await _service.ValidateRefreshTokenAsync(token.Token);
+            var result = await _service.ValidateRefreshTokenAsync(token.RawToken);
 
             // Assert
             Assert.NotNull(result);
