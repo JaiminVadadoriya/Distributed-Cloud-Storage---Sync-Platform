@@ -1,0 +1,17 @@
+{
+  "name": "CloudStorage — Secure Distributed File Sync",
+  "short_name": "CloudStorage",
+  "description": "A secure, distributed file sync platform with real-time collaboration and cross-device support.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0A0A0A",
+  "theme_color": "#0A0A0A",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}

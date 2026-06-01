@@ -1,0 +1,25 @@
+<div class="upload-analytics">
+  <h4 class="section-title">Upload Analytics</h4>
+  <div class="stats-grid">
+    <div class="stat-card">
+      <span class="stat-value">{{ totalUploads() }}</span>
+      <span class="stat-label">Total Uploads</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value success">{{ completedUploads() }}</span>
+      <span class="stat-label">Completed</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value danger">{{ failedUploads() }}</span>
+      <span class="stat-label">Failed</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value">{{ successRate() }}%</span>
+      <span class="stat-label">Success Rate</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value accent">{{ formatSpeed(avgSpeed()) }}</span>
+      <span class="stat-label">Avg Speed</span>
+    </div>
+  </div>
+</div>

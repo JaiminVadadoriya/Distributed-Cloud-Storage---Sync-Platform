@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudstorage-config
+  namespace: cloud-storage
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  Redis__ConnectionString: "redis-svc:6379"
+  RabbitMQ__HostName: "rabbitmq-svc"
+  Cache__DefaultTTLMinutes: "60"
+  CDN__BaseUrl: "https://cdn.example.com"
+  CDN__CacheTTLSeconds: "86400"
+  Jwt__Issuer: "CloudStorageAPI"
+  Jwt__Audience: "CloudStorageClients"
+  StorageProvider__Active: "MinIO"
+  StorageProvider__MinIO__Endpoint: "minio-svc:9000"
+  StorageProvider__MinIO__BucketName: "cloudstorage-chunks"
+  StorageProvider__MinIO__UseSSL: "false"
+  ElasticSearch__Endpoint: "http://elasticsearch-svc:9200"
+  ElasticSearch__IndexName: "cloudstorage-metadata"
+  Consensus__NodeId: "node-1"
+  OTEL_EXPORTER_OTLP_ENDPOINT: "http://otel-collector:4317"
+  OTEL_SERVICE_NAME: "CloudStorage.API"

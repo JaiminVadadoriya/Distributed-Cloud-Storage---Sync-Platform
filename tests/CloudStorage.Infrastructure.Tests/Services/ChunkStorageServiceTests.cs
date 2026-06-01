@@ -16,7 +16,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
         public ChunkStorageServiceTests()
         {
             _testStoragePath = Path.Combine(Path.GetTempPath(), "CloudStorageTests", Guid.NewGuid().ToString());
-            
+
             var configData = new Dictionary<string, string>
             {
                 {"Storage:ChunkPath", _testStoragePath}
@@ -55,11 +55,11 @@ namespace CloudStorage.Infrastructure.Tests.Services
             var chunkIndex = 1;
             var data = new byte[] { 10, 20, 30 };
             using var stream = new MemoryStream(data);
-            await _service.SaveChunkAsync(fileId, chunkIndex, stream);
+            var path = await _service.SaveChunkAsync(fileId, chunkIndex, stream);
 
             // Act
-            using var resultStream = await _service.GetChunkAsync(fileId, chunkIndex);
-            
+            using var resultStream = await _service.GetChunkAsync(path);
+
             // Assert
             using var memoryStream = new MemoryStream();
             await resultStream.CopyToAsync(memoryStream);
@@ -69,12 +69,8 @@ namespace CloudStorage.Infrastructure.Tests.Services
         [Fact]
         public async Task GetChunkAsync_ShouldThrowExceptionForMissingFile()
         {
-            // Arrange
-            var fileId = Guid.NewGuid();
-            var chunkIndex = 99;
-
             // Act & Assert
-            await Assert.ThrowsAsync<FileNotFoundException>(() => _service.GetChunkAsync(fileId, chunkIndex));
+            await Assert.ThrowsAsync<FileNotFoundException>(() => _service.GetChunkAsync("non_existent_path.chunk"));
         }
 
         [Fact]
@@ -88,7 +84,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
             var path = await _service.SaveChunkAsync(fileId, chunkIndex, stream);
 
             // Act
-            await _service.DeleteChunkAsync(fileId, chunkIndex);
+            await _service.DeleteChunkAsync(path);
 
             // Assert
             Assert.False(File.Exists(path));

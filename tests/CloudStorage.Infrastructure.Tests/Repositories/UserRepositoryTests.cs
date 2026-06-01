@@ -207,6 +207,7 @@ namespace CloudStorage.Infrastructure.Tests.Repositories
 
             // Act
             await _repository.AddAsync(user);
+            await _repository.SaveChangesAsync();
 
             // Assert
             var savedUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == "newuser");
@@ -231,6 +232,7 @@ namespace CloudStorage.Infrastructure.Tests.Repositories
             // Act
             user.Email = "updated@example.com";
             await _repository.UpdateAsync(user);
+            await _repository.SaveChangesAsync();
 
             // Assert
             var updatedUser = await _context.Users.FindAsync(user.Id);
@@ -254,6 +256,7 @@ namespace CloudStorage.Infrastructure.Tests.Repositories
 
             // Act
             await _repository.DeleteAsync(user);
+            await _repository.SaveChangesAsync();
 
             // Assert
             var deletedUser = await _context.Users.FindAsync(user.Id);

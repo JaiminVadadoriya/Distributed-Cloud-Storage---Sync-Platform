@@ -27,7 +27,7 @@ namespace CloudStorage.API.Tests.Controllers
             // Arrange
             var dto = new RegisterDto { Username = "test", Email = "test@example.com", Password = "password" };
             var user = new User { Id = 1, Username = dto.Username, Email = dto.Email };
-            
+
             _mockAuthService.Setup(x => x.RegisterAsync(It.IsAny<User>(), dto.Password))
                 .ReturnsAsync(user);
 
@@ -36,7 +36,9 @@ namespace CloudStorage.API.Tests.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.NotNull(okResult.Value);
+            var response = Assert.IsType<ApiResponse<object>>(okResult.Value);
+            Assert.True(response.Success);
+            Assert.NotNull(response.Data);
         }
 
         [Fact]
@@ -54,7 +56,9 @@ namespace CloudStorage.API.Tests.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(response, okResult.Value);
+            var apiResponse = Assert.IsType<ApiResponse<LoginResponseDto>>(okResult.Value);
+            Assert.True(apiResponse.Success);
+            Assert.Equal(response, apiResponse.Data);
         }
 
         [Fact]
@@ -62,7 +66,7 @@ namespace CloudStorage.API.Tests.Controllers
         {
             // Arrange
             var dto = new LoginDto { Identifier = "test@example.com", Password = "wrong" };
-            
+
             _mockAuthService.Setup(x => x.LoginAsync(dto.Identifier, dto.Password))
                 .ReturnsAsync((LoginResponseDto?)null);
 
@@ -86,9 +90,10 @@ namespace CloudStorage.API.Tests.Controllers
             // Act
             var result = await _controller.Refresh(dto);
 
-            // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal(response, okResult.Value);
+            var apiResponse = Assert.IsType<ApiResponse<LoginResponseDto>>(okResult.Value);
+            Assert.True(apiResponse.Success);
+            Assert.Equal(response, apiResponse.Data);
         }
 
         [Fact]
@@ -96,7 +101,7 @@ namespace CloudStorage.API.Tests.Controllers
         {
             // Arrange
             var dto = new RefreshTokenDto { RefreshToken = "invalid-token" };
-            
+
             _mockAuthService.Setup(x => x.RefreshTokenAsync(dto.RefreshToken))
                 .ReturnsAsync((LoginResponseDto?)null);
 
@@ -118,6 +123,8 @@ namespace CloudStorage.API.Tests.Controllers
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
+            var apiResponse = Assert.IsType<ApiResponse>(okResult.Value);
+            Assert.True(apiResponse.Success);
             _mockAuthService.Verify(x => x.LogoutAsync(dto.RefreshToken), Times.Once);
         }
     }

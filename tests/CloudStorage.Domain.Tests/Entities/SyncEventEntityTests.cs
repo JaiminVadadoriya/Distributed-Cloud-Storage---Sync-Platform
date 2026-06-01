@@ -31,7 +31,7 @@ namespace CloudStorage.Domain.Tests.Entities
             var fileId = Guid.NewGuid();
             var deviceId = Guid.NewGuid();
             var now = DateTime.UtcNow;
-            
+
             // Act
             var evt = new SyncEvent
             {

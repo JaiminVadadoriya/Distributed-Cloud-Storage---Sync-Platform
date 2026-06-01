@@ -1,0 +1,116 @@
+<div class="flex h-full flex-col justify-between py-10 px-6 overflow-y-auto custom-scrollbar" role="navigation" aria-label="Main Navigation">
+  <!-- Logo Area -->
+  <div class="px-2 mb-16 flex items-center gap-5 group cursor-default" aria-label="CloudStorage Brand">
+    <div
+      class="w-12 h-12 rounded-none bg-editorial-text flex items-center justify-center text-editorial-bg font-extrabold text-2xl shadow-brutalist group-hover:scale-105 transition-transform duration-500"
+      aria-hidden="true">
+      C
+    </div>
+    <div class="flex flex-col">
+      <span class="text-xl font-black tracking-tighter font-sans uppercase leading-none italic">CloudStorage</span>
+      <div class="flex items-center gap-2 mt-2">
+         <div class="w-1 h-1 bg-editorial-text/40 animate-pulse"></div>
+         <span class="font-mono text-[9px] uppercase tracking-[0.5em] text-editorial-text/30 font-bold">ARC_V21_CORE</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="flex-1 space-y-4">
+    <a routerLink="/dashboard" routerLinkActive="border-l-4 border-editorial-text font-black translate-x-1 !opacity-100" [ariaCurrentWhenActive]="'page'"
+       (click)="layoutService.isMobile() ? layoutService.closeSidebar() : null"
+       class="flex items-center gap-5 px-6 py-4 rounded-none text-editorial-text/60 hover:bg-editorial-text/5 hover:text-editorial-text transition-all group opacity-80 hover:opacity-100 relative overflow-hidden active:scale-[0.98]">
+      <div class="w-1.5 h-1.5 bg-current opacity-20 group-hover:opacity-100 transition-opacity"></div>
+      <span class="font-sans uppercase tracking-[0.2em] text-[12px] font-extrabold">Dashboard</span>
+    </a>
+
+    <a routerLink="/files" routerLinkActive="border-l-4 border-editorial-text font-black translate-x-1 !opacity-100" [ariaCurrentWhenActive]="'page'"
+       (click)="layoutService.isMobile() ? layoutService.closeSidebar() : null"
+       class="flex items-center gap-5 px-6 py-4 rounded-none text-editorial-text/60 hover:bg-editorial-text/5 hover:text-editorial-text transition-all group opacity-80 hover:opacity-100 relative overflow-hidden active:scale-[0.98]">
+      <div class="w-1.5 h-1.5 bg-current opacity-20 group-hover:opacity-100 transition-opacity"></div>
+      <span class="font-sans uppercase tracking-[0.2em] text-[12px] font-extrabold">My_Archive</span>
+    </a>
+
+    <a routerLink="/shared" routerLinkActive="border-l-4 border-editorial-text font-black translate-x-1 !opacity-100" [ariaCurrentWhenActive]="'page'"
+       (click)="layoutService.isMobile() ? layoutService.closeSidebar() : null"
+       class="flex items-center gap-5 px-6 py-4 rounded-none text-editorial-text/60 hover:bg-editorial-text/5 hover:text-editorial-text transition-all group opacity-80 hover:opacity-100 relative overflow-hidden active:scale-[0.98]">
+      <div class="w-1.5 h-1.5 bg-current opacity-20 group-hover:opacity-100 transition-opacity"></div>
+      <span class="font-sans uppercase tracking-[0.2em] text-[12px] font-extrabold">Network</span>
+    </a>
+
+    <a routerLink="/recent" routerLinkActive="border-l-4 border-editorial-text font-black translate-x-1 !opacity-100" [ariaCurrentWhenActive]="'page'"
+       (click)="layoutService.isMobile() ? layoutService.closeSidebar() : null"
+       class="flex items-center gap-5 px-6 py-4 rounded-none text-editorial-text/60 hover:bg-editorial-text/5 hover:text-editorial-text transition-all group opacity-80 hover:opacity-100 relative overflow-hidden active:scale-[0.98]">
+      <div class="w-1.5 h-1.5 bg-current opacity-20 group-hover:opacity-100 transition-opacity"></div>
+      <span class="font-sans uppercase tracking-[0.2em] text-[12px] font-extrabold">History</span>
+    </a>
+
+    <div class="pt-8 pb-4 px-6 flex items-center gap-4">
+      <div class="h-[2px] bg-editorial-text/10 w-12"></div>
+      <span class="font-mono text-[8px] uppercase tracking-[0.4em] text-editorial-text/20 font-bold">System</span>
+    </div>
+
+    <a routerLink="/trash" routerLinkActive="border-l-4 border-rose-500 font-black translate-x-1 !opacity-100"
+       (click)="layoutService.isMobile() ? layoutService.closeSidebar() : null"
+       class="flex items-center gap-5 px-6 py-4 rounded-none text-rose-500/40 hover:bg-rose-500/5 hover:text-rose-500 transition-all group opacity-80 hover:opacity-100 relative overflow-hidden active:scale-[0.98]">
+      <div class="w-1.5 h-1.5 bg-current opacity-20 group-hover:opacity-100 transition-opacity"></div>
+      <span class="font-sans uppercase tracking-[0.2em] text-[12px] font-extrabold">Purge_Bin</span>
+    </a>
+
+    @if (isAdmin()) {
+      <div class="pt-8 pb-4 px-6 flex items-center gap-4">
+        <div class="h-[2px] bg-editorial-text/10 w-12"></div>
+        <span class="font-mono text-[8px] uppercase tracking-[0.4em] text-editorial-text/20 font-bold">Admin</span>
+      </div>
+
+      <a routerLink="/admin"
+         (click)="layoutService.isMobile() ? layoutService.closeSidebar() : null"
+         class="flex items-center gap-5 px-6 py-4 rounded-none text-editorial-text/40 hover:bg-editorial-text/5 hover:text-editorial-text transition-all group opacity-80 hover:opacity-100 relative overflow-hidden active:scale-[0.98]">
+        <div class="w-1.5 h-1.5 bg-current opacity-20 group-hover:opacity-100 transition-opacity"></div>
+        <span class="font-sans uppercase tracking-[0.2em] text-[12px] font-extrabold">Control_Plane</span>
+      </a>
+    }
+  </nav>
+
+  <!-- Bottom Section: Storage & Settings -->
+  <div class="space-y-8 pt-8 mt-12 border-t-2 border-editorial-text/5">
+    <!-- Storage Usage -->
+    @if (stats(); as currentStats) {
+      <div class="px-2">
+        <div class="p-6 rounded-none border-2 border-editorial-text/20 bg-editorial-text/[0.04] space-y-4 relative overflow-hidden" 
+             role="meter" 
+             [attr.aria-valuenow]="getPercentage(currentStats.totalStorageBytes, currentStats.maxStorageBytes)"
+             aria-valuemin="0" 
+             aria-valuemax="100"
+             [attr.aria-label]="'Storage usage: ' + getPercentage(currentStats.totalStorageBytes, currentStats.maxStorageBytes) + '%'">
+          <div
+            class="flex items-center justify-between font-mono uppercase tracking-[0.3em] text-[10px] text-editorial-text/40 font-bold relative z-10">
+            <span>VOL_CAPACITY</span>
+            <span class="text-editorial-text">{{ getPercentage(currentStats.totalStorageBytes, currentStats.maxStorageBytes) }}%</span>
+          </div>
+          <div class="h-2 w-full bg-editorial-text/5 rounded-none overflow-hidden relative z-10">
+            <div class="h-full bg-editorial-text transition-all duration-1000 ease-in-out"
+              [style.width.%]="getPercentage(currentStats.totalStorageBytes, currentStats.maxStorageBytes)"></div>
+          </div>
+          <div class="font-mono uppercase tracking-widest text-[9px] text-editorial-text/30 text-right font-bold relative z-10">
+            {{ formatBytes(currentStats.totalStorageBytes) }} / {{ formatBytes(currentStats.maxStorageBytes) }}
+          </div>
+          
+          <!-- Scanning line animation on storage -->
+          <div class="absolute inset-0 bg-editorial-text/[0.01] -translate-y-full animate-[loading-bar_4s_infinite_linear] pointer-events-none"></div>
+        </div>
+      </div>
+    }
+
+    <!-- Settings -->
+    <div class="px-0">
+      <a routerLink="/settings" routerLinkActive="border-l-4 border-editorial-text font-black translate-x-1 !opacity-100"
+         (click)="layoutService.isMobile() ? layoutService.closeSidebar() : null"
+         class="flex items-center gap-5 px-5 py-4 rounded-none text-editorial-text/60 hover:bg-editorial-text/5 hover:text-editorial-text transition-all group opacity-90 hover:opacity-100 relative overflow-hidden">
+        <div class="w-2 h-2 border-2 border-current opacity-20 group-hover:opacity-100 transition-opacity"></div>
+        <span class="font-mono uppercase tracking-[0.3em] text-[11px] font-extrabold">System_Prefs</span>
+        <div class="absolute left-0 top-0 w-1 h-full bg-editorial-accent -translate-x-full group-hover:translate-x-0 transition-transform"></div>
+      </a>
+    </div>
+  </div>
+</div>

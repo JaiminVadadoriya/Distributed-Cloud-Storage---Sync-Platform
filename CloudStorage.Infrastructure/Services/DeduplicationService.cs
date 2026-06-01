@@ -6,15 +6,19 @@ using CloudStorage.Domain.Entities;
 using CloudStorage.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
+using CloudStorage.Application.Interfaces.Storage;
+
 namespace CloudStorage.Infrastructure.Services
 {
     public class DeduplicationService : IDeduplicationService
     {
         private readonly ApplicationDbContext _context;
+        private readonly IChunkStorageProvider _chunkStorage;
 
-        public DeduplicationService(ApplicationDbContext context)
+        public DeduplicationService(ApplicationDbContext context, IChunkStorageProvider chunkStorage)
         {
             _context = context;
+            _chunkStorage = chunkStorage;
         }
 
         public async Task<ChunkRegistry> RegisterChunkAsync(string hash, string storagePath, long size)
@@ -66,9 +70,7 @@ namespace CloudStorage.Infrastructure.Services
             {
                 // No more references, delete the chunk
                 _context.ChunkRegistry.Remove(entry);
-                
-                // TODO: Also delete the physical file from storage
-                // This would require injecting IChunkStorageService
+                await _chunkStorage.DeleteChunkAsync(entry.StoragePath);
             }
 
             await _context.SaveChangesAsync();

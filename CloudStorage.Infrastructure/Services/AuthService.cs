@@ -20,21 +20,27 @@ namespace CloudStorage.Infrastructure.Services
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly IRefreshTokenService _refreshTokenService;
+        private readonly IEmailService _emailService;
 
-        public AuthService(ApplicationDbContext context, IConfiguration configuration, IRefreshTokenService refreshTokenService)
+        public AuthService(
+            ApplicationDbContext context,
+            IConfiguration configuration,
+            IRefreshTokenService refreshTokenService,
+            IEmailService emailService)
         {
             _context = context;
             _configuration = configuration;
             _refreshTokenService = refreshTokenService;
+            _emailService = emailService;
         }
 
         public async Task<User> RegisterAsync(User user, string password)
         {
             if (await _context.Users.AnyAsync(u => u.Username == user.Username))
-                throw new Exception("Username already exists");
+                throw new Exception("Username already registered");
 
             if (await _context.Users.AnyAsync(u => u.Email == user.Email))
-                throw new Exception("Email already exists");
+                throw new Exception("Email already registered");
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
             user.CreatedAt = DateTime.UtcNow;
@@ -49,7 +55,7 @@ namespace CloudStorage.Infrastructure.Services
 
         public async Task<LoginResponseDto?> LoginAsync(string identifier, string password)
         {
-            var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == identifier || u.Username == identifier);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == identifier || u.Username == identifier);
 
             if (user == null || !BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
                 return null;
@@ -67,14 +73,15 @@ namespace CloudStorage.Infrastructure.Services
             return new LoginResponseDto
             {
                 AccessToken = accessToken,
-                RefreshToken = refreshToken.Token,
+                RefreshToken = refreshToken.RawToken,
                 ExpiresIn = GetAccessTokenExpirationSeconds(),
                 TokenType = "Bearer",
                 User = new UserDto
                 {
                     Id = user.Id.ToString(),
                     Username = user.Username,
-                    Email = user.Email
+                    Email = user.Email,
+                    Role = user.Role
                 }
             };
         }
@@ -99,14 +106,15 @@ namespace CloudStorage.Infrastructure.Services
             return new LoginResponseDto
             {
                 AccessToken = accessToken,
-                RefreshToken = newRefreshToken.Token,
+                RefreshToken = newRefreshToken.RawToken,
                 ExpiresIn = GetAccessTokenExpirationSeconds(),
                 TokenType = "Bearer",
                 User = new UserDto
                 {
                     Id = user.Id.ToString(),
                     Username = user.Username,
-                    Email = user.Email
+                    Email = user.Email,
+                    Role = user.Role
                 }
             };
         }
@@ -118,33 +126,67 @@ namespace CloudStorage.Infrastructure.Services
 
         public async Task<string> RequestPasswordResetAsync(string email)
         {
-            var user = await _context.Users.SingleOrDefaultAsync(u => u.Email == email);
+            const string genericMessage = "If the email exists, a password reset link has been sent";
+
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
             if (user == null)
             {
-                // Don't reveal that the email doesn't exist
-                return "If the email exists, a password reset link has been sent";
+                // Never reveal whether the email exists
+                return genericMessage;
             }
 
-            // Generate password reset token
-            var resetToken = GeneratePasswordResetToken();
-            
-            // In a real application, you would:
-            // 1. Store this token in the database with expiration
-            // 2. Send an email with the reset link
-            // For now, we'll just return a placeholder message
+            // Generate a cryptographically random token
+            var rawToken = GenerateSecureToken();
+            var tokenHash = HashToken(rawToken);
 
-            return resetToken; // In production, don't return the token directly
+            var resetToken = new PasswordResetToken
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                TokenHash = tokenHash,
+                CreatedAt = DateTime.UtcNow,
+                ExpiresAt = DateTime.UtcNow.AddMinutes(GetPasswordResetTokenExpirationMinutes()),
+                IsUsed = false
+            };
+
+            _context.PasswordResetTokens.Add(resetToken);
+            await _context.SaveChangesAsync();
+
+            // Send the email with the raw (unhashed) token
+            await _emailService.SendPasswordResetEmailAsync(email, rawToken);
+
+            return genericMessage;
         }
 
         public async Task ResetPasswordAsync(string token, string newPassword)
         {
-            // In a real application, you would:
-            // 1. Validate the reset token from the database
-            // 2. Check if it's expired
-            // 3. Update the password
-            // For now, this is a placeholder
+            var tokenHash = HashToken(token);
 
-            throw new NotImplementedException("Password reset functionality requires email integration");
+            var resetToken = await _context.PasswordResetTokens
+                .Include(prt => prt.User)
+                .FirstOrDefaultAsync(prt => prt.TokenHash == tokenHash);
+
+            if (resetToken == null)
+                throw new Exception("Invalid password reset token");
+
+            if (resetToken.ExpiresAt < DateTime.UtcNow)
+                throw new Exception("Password reset token has expired");
+
+            if (resetToken.IsUsed)
+                throw new Exception("Password reset token has already been used");
+
+            // Update user's password
+            var user = resetToken.User;
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+
+            // Mark token as used
+            resetToken.IsUsed = true;
+            resetToken.UsedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            // Revoke all active sessions for security
+            await _refreshTokenService.RevokeAllUserTokensAsync(user.Id);
         }
 
         public async Task<User?> GetUserByIdAsync(int userId)
@@ -152,11 +194,79 @@ namespace CloudStorage.Infrastructure.Services
             return await _context.Users.FindAsync(userId);
         }
 
+        public async Task<UserDto> UpdateProfileAsync(int userId, UpdateProfileDto dto)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+                throw new Exception("User not found");
+
+            if (!string.IsNullOrEmpty(dto.Username) && dto.Username != user.Username)
+            {
+                if (await _context.Users.AnyAsync(u => u.Username == dto.Username && u.Id != userId))
+                    throw new Exception("Username already taken");
+                user.Username = dto.Username;
+            }
+
+            if (!string.IsNullOrEmpty(dto.Email) && dto.Email != user.Email)
+            {
+                if (await _context.Users.AnyAsync(u => u.Email == dto.Email && u.Id != userId))
+                    throw new Exception("Email already in use");
+                user.Email = dto.Email;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return new UserDto
+            {
+                Id = user.Id.ToString(),
+                Username = user.Username,
+                Email = user.Email,
+                Role = user.Role
+            };
+        }
+
+        public async Task ChangePasswordAsync(int userId, ChangePasswordDto dto)
+        {
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+                throw new Exception("User not found");
+
+            if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, user.PasswordHash))
+                throw new Exception("Current password is incorrect");
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            await _context.SaveChangesAsync();
+
+            // Revoke all refresh tokens for security
+            await _refreshTokenService.RevokeAllUserTokensAsync(user.Id);
+        }
+
+        public async Task<IEnumerable<UserSearchResultDto>> SearchUsersAsync(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query) || query.Length < 2)
+                return Enumerable.Empty<UserSearchResultDto>();
+
+            var users = await _context.Users
+                .Where(u => u.IsActive && (
+                    EF.Functions.ILike(u.Email, $"%{query}%") ||
+                    EF.Functions.ILike(u.Username, $"%{query}%")))
+                .Take(10)
+                .Select(u => new UserSearchResultDto
+                {
+                    Id = u.Id,
+                    Username = u.Username,
+                    Email = u.Email
+                })
+                .ToListAsync();
+
+            return users;
+        }
+
         private string GenerateJwtToken(User user)
         {
             var jwtKey = _configuration["Jwt:Key"];
             if (string.IsNullOrEmpty(jwtKey)) throw new Exception("JWT Key is missing from configuration");
-             
+
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
@@ -165,28 +275,37 @@ namespace CloudStorage.Infrastructure.Services
                 new Claim(JwtRegisteredClaimNames.Sub, user.Username),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim("id", user.Id.ToString())
+                new Claim("id", user.Id.ToString()),
+                new Claim(ClaimTypes.Role, user.Role)
             };
 
             var token = new JwtSecurityToken(
                 issuer: _configuration["Jwt:Issuer"],
                 audience: _configuration["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(GetAccessTokenExpirationMinutes()),
+                expires: DateTime.UtcNow.AddMinutes(GetAccessTokenExpirationMinutes()),
                 signingCredentials: creds
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        private string GeneratePasswordResetToken()
+        private static string GenerateSecureToken()
         {
             var randomBytes = new byte[32];
             using (var rng = RandomNumberGenerator.Create())
             {
                 rng.GetBytes(randomBytes);
             }
-            return Convert.ToBase64String(randomBytes);
+            return Convert.ToHexString(randomBytes);
+        }
+
+        private static string HashToken(string token)
+        {
+            using var sha256 = SHA256.Create();
+            var bytes = Encoding.UTF8.GetBytes(token);
+            var hash = sha256.ComputeHash(bytes);
+            return Convert.ToHexString(hash);
         }
 
         private int GetAccessTokenExpirationMinutes()
@@ -198,6 +317,12 @@ namespace CloudStorage.Infrastructure.Services
         private int GetAccessTokenExpirationSeconds()
         {
             return GetAccessTokenExpirationMinutes() * 60;
+        }
+
+        private int GetPasswordResetTokenExpirationMinutes()
+        {
+            var configValue = _configuration["PasswordReset:TokenExpirationMinutes"];
+            return int.TryParse(configValue, out var minutes) ? minutes : 60;
         }
     }
 }

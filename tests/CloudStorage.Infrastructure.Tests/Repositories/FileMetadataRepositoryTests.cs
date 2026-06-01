@@ -43,7 +43,7 @@ namespace CloudStorage.Infrastructure.Tests.Repositories
             // Arrange
             var file1 = CreateTestFile("file1.txt", _testUser.Id);
             var file2 = CreateTestFile("file2.txt", _testUser.Id);
-            
+
             var otherUser = new User
             {
                 Username = "otheruser",
@@ -53,7 +53,7 @@ namespace CloudStorage.Infrastructure.Tests.Repositories
             };
             await _context.Users.AddAsync(otherUser);
             await _context.SaveChangesAsync();
-            
+
             var file3 = CreateTestFile("file3.txt", otherUser.Id);
 
             await _context.FileMetadata.AddRangeAsync(file1, file2, file3);
@@ -94,10 +94,10 @@ namespace CloudStorage.Infrastructure.Tests.Repositories
             // Arrange
             var file1 = CreateTestFile("file1.txt", _testUser.Id);
             file1.CreatedAt = DateTime.UtcNow.AddDays(-2);
-            
+
             var file2 = CreateTestFile("file2.txt", _testUser.Id);
             file2.CreatedAt = DateTime.UtcNow.AddDays(-1);
-            
+
             var file3 = CreateTestFile("file3.txt", _testUser.Id);
             file3.CreatedAt = DateTime.UtcNow;
 

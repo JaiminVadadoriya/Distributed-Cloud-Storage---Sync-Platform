@@ -1,0 +1,8 @@
+:host { display: block; }
+.download-progress-bar { background: var(--color-surface, #1a1a2e); border: 1px solid var(--color-border, rgba(255,255,255,0.08)); border-radius: 8px; padding: 0.75rem 1rem; }
+.dp-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; }
+.dp-filename { font-size: 0.8rem; color: var(--color-text, #e0e0e0); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 60%; }
+.dp-speed { font-size: 0.75rem; color: var(--color-accent, #6366f1); }
+.dp-track { height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
+.dp-fill { height: 100%; background: var(--color-accent, #6366f1); border-radius: 2px; transition: width 0.3s ease; }
+.dp-percent { font-size: 0.7rem; color: var(--color-text-muted, #888); display: block; margin-top: 0.25rem; text-align: right; }

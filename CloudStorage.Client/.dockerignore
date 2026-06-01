@@ -1,0 +1,6 @@
+# node_modules and builds are handled in Dockerfile
+node_modules/
+.angular/
+dist/
+npm-debug.log
+yarn-error.log

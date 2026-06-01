@@ -58,7 +58,7 @@ namespace CloudStorage.Domain.Tests.Entities
 
             // Assert
             Assert.Equal(2, registry.ReferenceCount);
-            
+
             // Act
             registry.ReferenceCount--;
 

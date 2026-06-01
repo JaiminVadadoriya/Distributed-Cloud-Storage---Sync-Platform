@@ -1,0 +1,84 @@
+<div class="h-full flex flex-col pt-4 max-w-6xl mx-auto w-full px-8">
+  
+  <!-- Header / Search Context -->
+  <div class="mb-12 border-b border-editorial-text/10 pb-8">
+    <div class="flex items-center gap-4 text-[9px] font-mono text-editorial-text/40 mb-4 uppercase tracking-[0.2em]">
+      <a routerLink="/dashboard" class="hover:text-editorial-text transition-none underline underline-offset-4">ROOT_NODE</a>
+      <span class="opacity-30">/</span>
+      <span class="text-editorial-text font-bold">QUERY_RESULTS</span>
+    </div>
+    <h1 class="text-3xl font-bold font-sans tracking-tighter text-editorial-text uppercase">
+      RESULTS_FOR: "<span class="italic underline underline-offset-8 decoration-editorial-text/20">PROJECT_STRATEGY</span>"
+    </h1>
+    <p class="text-[10px] font-mono text-editorial-text/40 mt-4 uppercase tracking-widest">BUFFER_SCAN: 12_MATCHES_IDENTIFIED</p>
+  </div>
+
+  <!-- Filters -->
+  <div class="flex flex-wrap items-center gap-4 mb-8">
+    <select class="rounded-none border border-editorial-text/10 bg-editorial-bg px-6 py-2.5 text-[9px] font-mono font-bold text-editorial-text/60 uppercase tracking-widest focus:outline-none focus:border-editorial-text hover:bg-editorial-text/[0.02] cursor-pointer transition-none appearance-none">
+      <option value="all">TYPE: ANY</option>
+      <option value="document">TYPE: DOCS</option>
+      <option value="image">TYPE: IMGS</option>
+      <option value="folder">TYPE: FLDRS</option>
+    </select>
+    
+    <select class="rounded-none border border-editorial-text/10 bg-editorial-bg px-6 py-2.5 text-[9px] font-mono font-bold text-editorial-text/60 uppercase tracking-widest focus:outline-none focus:border-editorial-text hover:bg-editorial-text/[0.02] cursor-pointer transition-none appearance-none">
+      <option value="any">TIME: ANY</option>
+      <option value="today">TIME: 24H</option>
+      <option value="week">TIME: 7D</option>
+      <option value="month">TIME: 30D</option>
+    </select>
+
+    <select class="rounded-none border border-editorial-text/20 bg-editorial-bg px-6 py-2.5 text-[9px] font-mono font-bold text-editorial-text uppercase tracking-widest focus:outline-none focus:border-editorial-text hover:bg-editorial-text/[0.02] cursor-pointer transition-none appearance-none">
+      <option value="any">OWNER: ALL_USERS</option>
+      <option value="me">OWNER: SELF</option>
+      <option value="others">OWNER: PEERS</option>
+    </select>
+  </div>
+
+  <!-- Results List -->
+  <div class="bg-editorial-bg rounded-none border border-editorial-text/10 overflow-hidden flex-1">
+    
+    <!-- Table Header -->
+    <div class="grid grid-cols-12 gap-6 px-10 py-5 border-b border-editorial-text/10 bg-editorial-text/[0.02] text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-editorial-text/40">
+      <div class="col-span-6 md:col-span-5">OBJECT_ID</div>
+      <div class="hidden md:block col-span-3">NODE_PATH</div>
+      <div class="col-span-3 md:col-span-2 text-right">SIZE</div>
+      <div class="col-span-3 md:col-span-2 text-right">LAST_MOD</div>
+    </div>
+
+    <div class="divide-y divide-editorial-text/5">
+      
+      <!-- Result Item: Document -->
+      <div class="grid grid-cols-12 gap-6 px-10 py-6 items-center hover:bg-editorial-text/[0.03] transition-none cursor-pointer group">
+        <div class="col-span-6 md:col-span-5 flex items-center gap-5 truncate">
+          <div class="w-8 h-8 border border-editorial-text/10 bg-editorial-text/[0.05] text-editorial-text/60 flex items-center justify-center flex-shrink-0 rounded-none">
+             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+          </div>
+          <span class="text-[10px] font-mono font-bold text-editorial-text/80 group-hover:text-editorial-text transition-none truncate uppercase tracking-widest underline decoration-editorial-text/10 group-hover:decoration-editorial-text transition-none underline-offset-4">PROJECT_STRATEGY_DRAFT_V2.DOCX</span>
+        </div>
+        <div class="hidden md:block col-span-3 text-[9px] font-mono text-editorial-text/40 truncate uppercase tracking-tighter">
+          <span class="hover:text-editorial-text transition-none">ROOT/Q3_PLANNING</span>
+        </div>
+        <div class="col-span-3 md:col-span-2 text-[9px] font-mono text-editorial-text/40 text-right uppercase tracking-widest">245_KB</div>
+        <div class="col-span-3 md:col-span-2 text-[9px] font-mono text-editorial-text/40 text-right uppercase tracking-widest whitespace-nowrap">OCT_24_2026</div>
+      </div>
+
+      <!-- Result Item: Folder -->
+      <div class="grid grid-cols-12 gap-6 px-10 py-6 items-center hover:bg-editorial-text/[0.03] transition-none cursor-pointer group">
+        <div class="col-span-6 md:col-span-5 flex items-center gap-5 truncate">
+          <div class="w-8 h-8 border border-editorial-text/10 bg-editorial-text/[0.05] text-editorial-text/30 flex items-center justify-center flex-shrink-0 rounded-none">
+             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
+          </div>
+          <span class="text-[10px] font-mono font-bold text-editorial-text/80 group-hover:text-editorial-text transition-none truncate uppercase tracking-widest italic">STRATEGY_ASSETS</span>
+        </div>
+        <div class="hidden md:block col-span-3 text-[9px] font-mono text-editorial-text/40 truncate uppercase tracking-tighter">
+          <span class="hover:text-editorial-text transition-none">SHARED/MARKETING</span>
+        </div>
+        <div class="col-span-3 md:col-span-2 text-[9px] font-mono text-editorial-text/40 text-right uppercase tracking-widest">BUFFER_EMPTY</div>
+        <div class="col-span-3 md:col-span-2 text-[9px] font-mono text-editorial-text/40 text-right uppercase tracking-widest whitespace-nowrap">OCT_20_2026</div>
+      </div>
+
+    </div>
+  </div>
+</div>

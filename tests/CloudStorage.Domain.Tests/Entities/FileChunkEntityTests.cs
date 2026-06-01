@@ -33,7 +33,7 @@ namespace CloudStorage.Domain.Tests.Entities
             var id = Guid.NewGuid();
             var fileId = Guid.NewGuid();
             var now = DateTime.UtcNow;
-            
+
             // Act
             var chunk = new FileChunk
             {
@@ -43,6 +43,7 @@ namespace CloudStorage.Domain.Tests.Entities
                 Size = 1024,
                 Hash = "hash123",
                 StoragePath = "/path/to/chunk",
+                BlobUrl = "http://blob/url",
                 IsDuplicate = true,
                 DuplicateSourceId = "source-hash",
                 CreatedAt = now,
@@ -56,6 +57,7 @@ namespace CloudStorage.Domain.Tests.Entities
             Assert.Equal(1024, chunk.Size);
             Assert.Equal("hash123", chunk.Hash);
             Assert.Equal("/path/to/chunk", chunk.StoragePath);
+            Assert.Equal("http://blob/url", chunk.BlobUrl);
             Assert.True(chunk.IsDuplicate);
             Assert.Equal("source-hash", chunk.DuplicateSourceId);
             Assert.Equal(now, chunk.CreatedAt);
@@ -67,7 +69,7 @@ namespace CloudStorage.Domain.Tests.Entities
         {
             // Arrange
             var file = new FileMetadata { Id = Guid.NewGuid(), FileName = "test.txt" };
-            
+
             // Act
             var chunk = new FileChunk
             {

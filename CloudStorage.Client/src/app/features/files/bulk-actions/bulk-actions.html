@@ -1,0 +1,12 @@
+@if (selectionCount > 0) {
+  <div class="bulk-toolbar" [class.processing]="isProcessing()">
+    <span class="selection-count">{{ selectionCount }} selected</span>
+    <div class="bulk-actions-group">
+      <button class="bulk-btn" (click)="bulkMove(null)" [disabled]="isProcessing()">📂 Move to Root</button>
+      <button class="bulk-btn danger" (click)="bulkDelete()" [disabled]="isProcessing()">🗑 Delete All</button>
+    </div>
+    @if (isProcessing()) {
+      <div class="processing-indicator"><div class="spinner"></div></div>
+    }
+  </div>
+}

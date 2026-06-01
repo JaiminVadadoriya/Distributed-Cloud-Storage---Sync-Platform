@@ -1,0 +1,132 @@
+@if (file()) {
+  <div class="h-full flex flex-col bg-editorial-bg text-editorial-text selection:bg-editorial-text selection:text-editorial-bg border-l border-editorial-text/20">
+    <!-- Header -->
+    <header class="p-8 border-b border-editorial-text/20 flex items-center justify-between">
+      <div class="space-y-1">
+        <h2 class="font-mono text-[10px] uppercase tracking-[0.5em] text-editorial-text/40">Entity_Details</h2>
+        <p class="font-sans text-xl font-bold uppercase tracking-tight truncate max-w-[250px]">
+          @if (isRenaming()) {
+            <input [(ngModel)]="newName" (keyup.enter)="confirmRename()" (keyup.esc)="cancelRename()"
+                   class="bg-transparent border-b border-editorial-text outline-none w-full py-1 text-lg">
+          } @else {
+            {{ file()?.name }}
+          }
+        </p>
+      </div>
+      <button (click)="close()" class="p-2 hover:bg-editorial-text/5 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </header>
+
+    <!-- Tabs Navigation -->
+    <nav class="flex border-b border-editorial-text/20">
+      @for (tab of ['info', 'versions', 'permissions']; track tab) {
+        <button (click)="activeTab.set(tab === 'info' ? 'info' : tab === 'versions' ? 'versions' : 'permissions')"
+                [class.border-b-2]="activeTab() === tab"
+                [class.border-editorial-text]="activeTab() === tab"
+                [class.text-editorial-text]="activeTab() === tab"
+                [class.text-editorial-text/40]="activeTab() !== tab"
+                class="flex-1 py-4 font-mono text-[9px] uppercase tracking-[0.3em] font-bold hover:text-editorial-text transition-colors">
+          {{ tab }}
+        </button>
+      }
+    </nav>
+
+    <!-- Content -->
+    <main class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+      @if (isBusy()) {
+        <div class="py-12 text-center">
+          <div class="w-6 h-6 border border-editorial-text/20 border-t-editorial-text rounded-full animate-spin mx-auto mb-4"></div>
+          <p class="font-mono text-[9px] uppercase tracking-widest opacity-40">Accessing_Data...</p>
+        </div>
+      } @else {
+        <!-- Info Tab -->
+        @if (activeTab() === 'info') {
+          <div class="space-y-10 animate-in fade-in duration-300">
+            <div class="space-y-6">
+              <div class="flex flex-col gap-1">
+                <span class="font-mono text-[9px] uppercase tracking-widest text-editorial-text/40">Identity_UUID</span>
+                <code class="text-[10px] break-all font-mono opacity-80">{{ file()?.id }}</code>
+              </div>
+              <div class="grid grid-cols-2 gap-8">
+                <div class="flex flex-col gap-1">
+                  <span class="font-mono text-[9px] uppercase tracking-widest text-editorial-text/40">Magnitude</span>
+                  <span class="font-sans text-xs font-bold">{{ formatSize(file()?.size || 0) }}</span>
+                </div>
+                <div class="flex flex-col gap-1">
+                  <span class="font-mono text-[9px] uppercase tracking-widest text-editorial-text/40">Sequence_Origin</span>
+                  <span class="font-sans text-xs font-bold">{{ file()?.modified | date:'dd.MM.yyyy HH:mm' }}</span>
+                </div>
+              </div>
+              <div class="flex flex-col gap-1">
+                <span class="font-mono text-[9px] uppercase tracking-widest text-editorial-text/40">Structural_Type</span>
+                <span class="font-sans text-xs font-bold uppercase">{{ file()?.type }} Entity</span>
+              </div>
+            </div>
+
+            <div class="pt-10 border-t border-editorial-text/10 space-y-4">
+               <h3 class="font-mono text-[9px] uppercase tracking-[0.5em] text-editorial-text/40 mb-6">Execution_Block</h3>
+               <div class="grid grid-cols-2 gap-3">
+                  <button (click)="downloadFile()" class="p-3 border border-editorial-text/10 text-[9px] font-mono uppercase tracking-widest hover:bg-editorial-text hover:text-editorial-bg transition-all">Download</button>
+                  <button (click)="isRenaming() ? confirmRename() : startRename()" class="p-3 border border-editorial-text/10 text-[9px] font-mono uppercase tracking-widest hover:bg-editorial-text hover:text-editorial-bg transition-all">
+                    {{ isRenaming() ? 'Submit' : 'Rename' }}
+                  </button>
+                  <button (click)="deleteFile()" class="p-3 border border-rose-500/20 text-rose-500 text-[9px] font-mono uppercase tracking-widest hover:bg-rose-500 hover:text-white transition-all col-span-2">Purge_Entity</button>
+               </div>
+            </div>
+          </div>
+        }
+
+        <!-- Versions Tab -->
+        @if (activeTab() === 'versions') {
+          <div class="space-y-6 animate-in slide-in-from-right-4 duration-300">
+            <div class="space-y-4">
+              @for (v of versions(); track v.id) {
+                <div class="group p-4 border border-editorial-text/5 hover:border-editorial-text/20 transition-all flex items-center justify-between bg-editorial-text/[0.02]">
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                      <span class="font-mono text-[10px] font-bold">V.{{ v.versionNumber }}</span>
+                      <span class="text-[9px] font-mono opacity-40 uppercase tracking-widest">{{ v.createdAt | date:'short' }}</span>
+                    </div>
+                    <p class="text-[9px] font-mono italic opacity-40">{{ formatSize(v.size) }} • {{ v.createdBy }}</p>
+                  </div>
+                  <button (click)="restoreVersion(v.id)" 
+                          class="opacity-0 group-hover:opacity-100 p-2 text-[9px] font-mono uppercase tracking-widest border border-editorial-text/10 hover:bg-editorial-text hover:text-editorial-bg transition-all">
+                    Restore
+                  </button>
+                </div>
+              }
+              @if (versions().length === 0) {
+                <p class="text-center py-12 font-mono text-[9px] uppercase tracking-widest opacity-20 italic">No historical variants found</p>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Permissions Tab -->
+        @if (activeTab() === 'permissions') {
+          <div class="space-y-8 animate-in slide-in-from-right-4 duration-300">
+            <div class="space-y-4">
+              @for (p of permissions(); track p.userId) {
+                <div class="p-5 border border-editorial-text/5 bg-editorial-text/[0.02] flex items-center justify-between">
+                  <div class="space-y-1">
+                    <h4 class="font-sans text-[11px] font-bold uppercase tracking-tight">{{ p.userName }}</h4>
+                    <p class="font-mono text-[9px] opacity-40">{{ p.email }}</p>
+                    <span class="inline-block px-2 py-0.5 border border-editorial-text/10 font-mono text-[8px] uppercase tracking-widest mt-2">{{ p.permissionType }}</span>
+                  </div>
+                  @if (p.permissionType !== 'Owner') {
+                    <button (click)="removePermission(p.userId)" 
+                            class="p-2 text-rose-500 hover:bg-rose-500 hover:text-white transition-all">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+            <button class="w-full py-4 border border-dashed border-editorial-text/20 font-mono text-[9px] uppercase tracking-[0.3em] hover:border-editorial-text hover:bg-editorial-text/5 transition-all">Add_Collaborator</button>
+          </div>
+        }
+      }
+    </main>
+  </div>
+}

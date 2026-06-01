@@ -1,0 +1,400 @@
+{
+  "version": 1,
+  "skills": {
+    "analyzing-dotnet-performance": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "f8626732348d66f4ffeab6935fb1c1f2f9921cbc2a3901cfc87e4dfe34a3b912"
+    },
+    "code-testing-agent": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "b665fff55ea2dba3bfa500f034a00cfd58a65964334475c519a4799d3aa5de59"
+    },
+    "configuring-opentelemetry-dotnet": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "a5dcb1d3e78dd20c3f537273e6861954e57e9ec33633c568917141e18b0e43eb"
+    },
+    "dotnet-trace-collect": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "e14f63744981468011f1759e99624df1f8163fa3363f7e09077ee71add791b0c"
+    },
+    "mcp-csharp-debug": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "000a5082e1d07b6bd6f43ec2ed2104dab115d81f0ed9dd0eb7fd264cbb6a6fc2"
+    },
+    "mcp-csharp-test": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "35b89bcdba42939b650bd363ac3286d02588de80ebda01f0b85683f5a1e1f5a4"
+    },
+    "migrate-dotnet10-to-dotnet11": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "e3007156547b7c001adace88989e917985b301912c69dccfa1c2a6d1b871d736"
+    },
+    "migrate-dotnet8-to-dotnet9": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "8af4037a6c7129b05a84fc79e0c3f8f504905a1886b5a1478330a1e70993706a"
+    },
+    "msbuild-modernization": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "0b34f7ce4367f03d7490c19a396102ea2d25b9376d4ddd32a82e452566b7fa61"
+    },
+    "msbuild-server": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "f62a651aea293196d833b9b0bd9b66aa4a95000e976f7aa16c2f16620cfd4b30"
+    },
+    "optimizing-ef-core-queries": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "0a0d0bb8844bb88e3067c4a47780c844960d09eeaa7f9dcdba6400e1b2e6f288"
+    },
+    "playwright-skill": {
+      "source": "testdino-hq/playwright-skill",
+      "sourceType": "github",
+      "computedHash": "631fed9e85f58772fff22e0f0e760c083c1cdf29809d05735584d51f6cc5b174"
+    },
+    "run-tests": {
+      "source": "dotnet/skills",
+      "sourceType": "github",
+      "computedHash": "7aba77cfd69dcc881c59fd09494a80e05745c2db08b88fc8b9edb18312abad31"
+    },
+    "accessibility-testing": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/accessibility-testing/SKILL.md",
+      "computedHash": "ada4222b1a5a7683ee416099adf319f9b71f1d8a30c0dc2b8d326ed04cfc07cd"
+    },
+    "ai-bug-triage": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/ai-bug-triage/SKILL.md",
+      "computedHash": "c44a0fa5a5847c8db69893ab263d76803682f842f5e211342f59d3b953ebc6a2"
+    },
+    "ai-qa-review": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/ai-qa-review/SKILL.md",
+      "computedHash": "f81102cb0308d135b4a57563c2ddd8602bd02add7331633e85f685d7f58e6f50"
+    },
+    "ai-system-testing": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/ai-system-testing/SKILL.md",
+      "computedHash": "144c91bccb3a1adc2993cf991f07c8f1f9e34d869ab5c4017b63af09e733df8c"
+    },
+    "ai-test-generation": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/ai-test-generation/SKILL.md",
+      "computedHash": "8a6764fab46c43819d55588ce36f309dd6a3b49cdb4ea7aea216e73123bec219"
+    },
+    "api-testing": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/api-testing/SKILL.md",
+      "computedHash": "edb15ba999a9da682bedcd52b1dea02045e2342f9e175bee691b4edad324bc92"
+    },
+    "chaos-engineering": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/chaos-engineering/SKILL.md",
+      "computedHash": "24dd3ec8b2dfc03fb0b93ef477705707f686accfe261a7c2f92ac57dcf5a2477"
+    },
+    "ci-cd-integration": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/ci-cd-integration/SKILL.md",
+      "computedHash": "638641d02352da6978f158625216a9c25445e50f0a026e7d18914417a536faa9"
+    },
+    "compliance-testing": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/compliance-testing/SKILL.md",
+      "computedHash": "00a3bb683c20b82c5d7d7eec1bca2d270f4d59b90d4c5db57d2f010c2b811f8a"
+    },
+    "contract-testing": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/contract-testing/SKILL.md",
+      "computedHash": "25474bf6c4c24ec069cda7e36262e34f664d9f8c6c5db5fa2d4de2b35f237d95"
+    },
+    "coverage-analysis": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/coverage-analysis/SKILL.md",
+      "computedHash": "40e20c099508beadc093baea2767a6335362a302da9cd9bfdc683ec1780b6f85"
+    },
+    "cross-browser-testing": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/cross-browser-testing/SKILL.md",
+      "computedHash": "d19328ab057ee24d65adc140b11bce14b7d03ffe17814b6c7752a96dcd9b35ee"
+    },
+    "cypress-automation": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/cypress-automation/SKILL.md",
+      "computedHash": "f3983604af826ec93292098845c50f45fe7b9b3a7be415002828bfa6d4352c77"
+    },
+    "database-testing": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/database-testing/SKILL.md",
+      "computedHash": "a665365ccccb1808ead54a35aacac3921154f3a808580cc06ef7b0e5e681bf55"
+    },
+    "exploratory-testing": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/exploratory-testing/SKILL.md",
+      "computedHash": "d23cf69cf9a1038a75d7fe1bee27bf432dd569127b94013413abcf99aab19358"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-design/SKILL.md",
+      "computedHash": "516bd2154eb843a8240e43d5b285229129853114ad7075a5e141e1c08e408c84"
+    },
+    "frontend-testing-best-practices": {
+      "source": "sergiodxa/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/frontend-testing-best-practices/SKILL.md",
+      "computedHash": "d1f4a6e05d1ad541e08f394c5853727c6e61a30e2d91ee26ad3d5d0b974cf5e1"
+    },
+    "internal-comms": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/internal-comms/SKILL.md",
+      "computedHash": "cf3dba93fd569d7380505db211f89a467869c1a2ef301941148d06f33ed17332"
+    },
+    "mobile-testing": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/mobile-testing/SKILL.md",
+      "computedHash": "654bea24e210665386f1502c70f7149e94c160a4a7afb81f81b059f16cf18b53"
+    },
+    "nestjs-best-practices": {
+      "source": "kadajett/agent-nestjs-skills",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "68658903272e1015f3ec5084c7d0988216a47f42f675ed819a675250fc6a23cd"
+    },
+    "observability-driven-testing": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/observability-driven-testing/SKILL.md",
+      "computedHash": "0eb634eada17f70d781543c9787088833506aa8f9b047ff71ff09ad18727d57e"
+    },
+    "performance-testing": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/performance-testing/SKILL.md",
+      "computedHash": "4cc971c36498d8b6496094ea03eb6445cafc6f537532f4deae014a1e6839f83b"
+    },
+    "playwright-automation": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/playwright-automation/SKILL.md",
+      "computedHash": "17da03440975f2985a0051fd085572b2cb25b9efbda33f76bf66226ffb7d5be1"
+    },
+    "playwright-best-practices": {
+      "source": "currents-dev/playwright-best-practices-skill",
+      "sourceType": "github",
+      "skillPath": "SKILL.md",
+      "computedHash": "6db654e753257e642d6507d59b4fc633a2382e93429748ba0fb6817c23ef5216"
+    },
+    "qa-dashboard": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/qa-dashboard/SKILL.md",
+      "computedHash": "811ac27e027a1da47d627aa97deefe03631b7a418b0c089e22385bca497f6edf"
+    },
+    "qa-do": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/qa-do/SKILL.md",
+      "computedHash": "c012fe5703ffff397bdc2dbf05c79300550370dc41c2d1381f2ba6a242dba2c2"
+    },
+    "qa-metrics": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/qa-metrics/SKILL.md",
+      "computedHash": "42ea144494341f3ac8be7b7d092334a3e4e3bac45129ea5143e863181ffff14c"
+    },
+    "qa-project-bootstrap": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/qa-project-bootstrap/SKILL.md",
+      "computedHash": "a8174f88199d6199fc4722336d08928260c3ee1dcba100291070698e3c16caba"
+    },
+    "qa-project-context": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/qa-project-context/SKILL.md",
+      "computedHash": "9b39cae1eac82339afdbba3fec2f242865f8a283180aa894a148158044e42036"
+    },
+    "qa-report-humanizer": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/qa-report-humanizer/SKILL.md",
+      "computedHash": "e8bee15bd2bdd765842572322e014ef44383d8e3e0b1a548e0ce2db770579c4c"
+    },
+    "qa-start": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/qa-start/SKILL.md",
+      "computedHash": "c334883f2390dfa2619cc2d4e538ab58d9e21707c0c1a316addfc945dbf50e07"
+    },
+    "quality-postmortem": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/quality-postmortem/SKILL.md",
+      "computedHash": "d986b02fa5cfecee526c191192ce12f9b23a31a33f97bc3f9c73771c4fb027e2"
+    },
+    "release-readiness": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/release-readiness/SKILL.md",
+      "computedHash": "165a99ffaa182a3d97e0df18600a50ce5c9f7555199546b80332f0a0d40a5681"
+    },
+    "risk-based-testing": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/risk-based-testing/SKILL.md",
+      "computedHash": "86814ebe12425eea3b6d67c010b4f8f078aa30144ad9d1dfce2633338b8fd9b7"
+    },
+    "security-testing": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/security-testing/SKILL.md",
+      "computedHash": "f3ebd68111a06b76621fe504a43d4096be060797e6ee146236b62f626f2ef986"
+    },
+    "service-virtualization": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/service-virtualization/SKILL.md",
+      "computedHash": "0a98e0a86b00bfca3874c066bd0e816f480bfbe9a8fc9fc4fffb07be1506a7e0"
+    },
+    "shift-left-testing": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/shift-left-testing/SKILL.md",
+      "computedHash": "1da404d79ab49b5af3e11f2be7ea49718e0132f8f9ea6262e1fd6e35edec1fd1"
+    },
+    "skill-creator": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/skill-creator/SKILL.md",
+      "computedHash": "7e3c9cd74e9e2b4828527a857170e86310f2dab5ea8030a9043df2c7e6c88857"
+    },
+    "synthetic-monitoring": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/synthetic-monitoring/SKILL.md",
+      "computedHash": "6f667bc5beb73fdee1ff9778245c32f3976be55a71c15a000e8138948f01c1ab"
+    },
+    "test-data-management": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/test-data-management/SKILL.md",
+      "computedHash": "cdf1b2cafa3233a4e18caba822291024100ba675c62e0f39d9cc7e1a56dfb54c"
+    },
+    "test-environments": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/test-environments/SKILL.md",
+      "computedHash": "3a2d19eb63f638a69b5e030af82cf3100c290c10c428f1554d4469fb82109562"
+    },
+    "test-migration": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/test-migration/SKILL.md",
+      "computedHash": "3cba566403a7cca5c11de218c6384d0ca31819d0149700d38ffa5d06d9a8129e"
+    },
+    "test-planning": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/test-planning/SKILL.md",
+      "computedHash": "28536ae7e9f5df53095c74b1a8ee780073d77d9a70b546dcbf9051d65f130d7f"
+    },
+    "test-reliability": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/test-reliability/SKILL.md",
+      "computedHash": "dde832c8f8d1549b80cd758d5a99239ea93fbf473d7513c13c7b029f67cd8b31"
+    },
+    "test-strategy": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/test-strategy/SKILL.md",
+      "computedHash": "f33375e502144312a5b050e3c217f76737b76bf58e40e2b06ec3534df4cc9e56"
+    },
+    "testing-in-production": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/testing-in-production/SKILL.md",
+      "computedHash": "2420fe82cc12cb4c6d40ee2fa7d1f357095e5e073313c1e736e5a5efb59f3454"
+    },
+    "theme-factory": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/theme-factory/SKILL.md",
+      "computedHash": "e9ec1fe85faa729e9f3d1731cd7e4e485f98c099ccc7c1c0d198f473aa4b654a"
+    },
+    "ui-ux-design": {
+      "source": "arvindand/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/ui-ux-design/SKILL.md",
+      "computedHash": "b49a039b65f0d59a85cf128087af6d2e0f7189b9e01a9037f3caf54ef8bcf0fb"
+    },
+    "ui-ux-pro-max": {
+      "source": "ninehills/skills",
+      "sourceType": "github",
+      "skillPath": "ui-ux-pro-max/SKILL.md",
+      "computedHash": "1d70f4e82bae766934977ea6fb32623358e2ecb562926f7d2cd8ca6c31024cc5"
+    },
+    "unit-testing": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/unit-testing/SKILL.md",
+      "computedHash": "14881a4bfafd64dfefc53b47d3de575ba85726cdf9fd41b38df3f83d0908b75d"
+    },
+    "vibe-security": {
+      "source": "0x8506/vibe-security",
+      "sourceType": "github",
+      "skillPath": "cli/assets/.claude/skills/vibe-security/SKILL.md",
+      "computedHash": "641fc895aed9741d3fafd93f0da78cb97719cc43f33e91cdf9786294119fd743"
+    },
+    "visual-testing": {
+      "source": "petrkindlmann/qa-skills",
+      "sourceType": "github",
+      "skillPath": "skills/visual-testing/SKILL.md",
+      "computedHash": "6426d35b2c563412b53464f340b8ce68e1a02bd08dd16ef2f5fb9b3f9542512d"
+    },
+    "web-artifacts-builder": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-artifacts-builder/SKILL.md",
+      "computedHash": "fdddbe9bb720ea1aea9292ee513ec10b2a8f4912e2c343bdc246ab3febd7c9b3"
+    },
+    "web-design-guidelines": {
+      "source": "vercel-labs/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/web-design-guidelines/SKILL.md",
+      "computedHash": "f3bc47f890f42a44db1007ab390709ec368e4b8c089baee6b0007182236ac474"
+    },
+    "webapp-testing": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/webapp-testing/SKILL.md",
+      "computedHash": "3f14af7f5690695209c22fbf8c8d133769a86d64892602c09bb13f135e14e857"
+    }
+  }
+}

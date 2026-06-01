@@ -36,10 +36,12 @@ namespace CloudStorage.Domain.Tests.Entities
         [Fact]
         public void FileMetadata_ShouldSetPropertiesCorrectly()
         {
-            // Arrange
             var id = Guid.NewGuid();
             var parentId = Guid.NewGuid();
+            var folderId = Guid.NewGuid();
             var now = DateTime.UtcNow;
+            var owner = new User { Id = 1, Username = "owner" };
+            var folder = new Folder { Id = folderId, Name = "Folder" };
 
             // Act
             var file = new FileMetadata
@@ -56,8 +58,14 @@ namespace CloudStorage.Domain.Tests.Entities
                 LastModifiedAt = now,
                 LastSyncedAt = now,
                 OwnerId = 1,
+                Owner = owner,
                 IsDeleted = false,
-                StoragePath = "/storage/test.txt"
+                StoragePath = "/storage/test.txt",
+                FolderId = folderId,
+                Folder = folder,
+                VersionVector = "vector1",
+                Status = UploadStatus.Complete,
+                UploadedChunks = 5
             };
 
             // Assert
@@ -73,8 +81,14 @@ namespace CloudStorage.Domain.Tests.Entities
             Assert.Equal(now, file.LastModifiedAt);
             Assert.Equal(now, file.LastSyncedAt);
             Assert.Equal(1, file.OwnerId);
+            Assert.Same(owner, file.Owner);
             Assert.False(file.IsDeleted);
             Assert.Equal("/storage/test.txt", file.StoragePath);
+            Assert.Equal(folderId, file.FolderId);
+            Assert.Same(folder, file.Folder);
+            Assert.Equal("vector1", file.VersionVector);
+            Assert.Equal(UploadStatus.Complete, file.Status);
+            Assert.Equal(5, file.UploadedChunks);
         }
 
         [Fact]

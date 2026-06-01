@@ -1,0 +1,10 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: cloudstorage-api-pdb
+  namespace: cloud-storage
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: cloudstorage-api

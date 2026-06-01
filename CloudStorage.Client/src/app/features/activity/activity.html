@@ -1,0 +1,93 @@
+<div class="h-full flex flex-col pt-2 max-w-5xl mx-auto w-full bg-editorial-bg selection:bg-editorial-text selection:text-editorial-bg animate-in fade-in duration-700">
+  <!-- Header -->
+  <header class="flex flex-col sm:flex-row sm:items-end justify-between gap-8 mb-16 pb-8 border-b border-editorial-text/20">
+    <div class="space-y-2">
+      <h3 class="font-mono text-[10px] uppercase tracking-[0.5em] text-editorial-text/40 italic">System_Activity_Log</h3>
+      <h1 class="font-sans text-4xl font-bold uppercase tracking-tight text-editorial-text leading-none italic">Entropy_Observatory</h1>
+    </div>
+    
+    <div class="flex items-center gap-6">
+      <div class="relative group">
+        <select (change)="onFilterChange($any($event.target).value)"
+                class="appearance-none rounded-none border border-editorial-text/20 bg-transparent px-8 py-3 font-mono text-[10px] uppercase tracking-widest text-editorial-text focus:outline-none focus:border-editorial-text cursor-pointer hover:bg-editorial-text/[0.02] transition-colors">
+          <option value="all">Protocol_All_Events</option>
+          <option value="upload">Process_Injections</option>
+          <option value="share">Process_Distributions</option>
+          <option value="delete">Process_Purges</option>
+        </select>
+        <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-editorial-text/40 group-hover:text-editorial-text transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 12 0l-6 6z"/></svg>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  @if (isBusy() && activities().length === 0) {
+    <div class="flex-1 flex items-center justify-center py-32">
+       <div class="w-8 h-8 border border-editorial-text/20 border-t-editorial-text rounded-full animate-spin"></div>
+    </div>
+  } @else if (activities().length === 0) {
+    <div class="py-48 text-center border-2 border-dashed border-editorial-text/5 space-y-4">
+      <p class="font-mono text-[10px] uppercase tracking-[0.6em] text-editorial-text/10">No_Temporal_Activity_Detected</p>
+    </div>
+  } @else {
+    <div class="space-y-20 relative">
+      <!-- Vertical line -->
+      <div class="absolute left-6 top-0 bottom-0 w-[1px] bg-editorial-text/5"></div>
+
+      @for (group of groupedActivities(); track group.date) {
+        <div class="relative">
+          <!-- Date indicator -->
+          <div class="absolute left-6 -translate-x-1/2 top-4 w-3 h-3 border-2 border-editorial-text bg-editorial-bg z-10"></div>
+          <h3 class="pl-16 font-mono text-[11px] font-bold uppercase tracking-[0.4em] text-editorial-text/30 mb-12 italic">Period_{{ group.date }}</h3>
+
+          <div class="pl-16 space-y-10">
+            @for (entry of group.entries; track entry.id) {
+              <div class="grid grid-cols-1 md:grid-cols-12 gap-8 items-start group relative pb-10 border-b border-editorial-text/[0.03]">
+                <!-- Time -->
+                <div class="md:col-span-2">
+                  <span class="font-mono text-[10px] font-bold text-editorial-text/40 group-hover:text-editorial-text transition-colors">{{ formatTime(entry.performedAt) }}</span>
+                </div>
+
+                <!-- Content -->
+                <div class="md:col-span-10 flex gap-8 items-start">
+                  <div class="w-12 h-12 border border-editorial-text/10 flex items-center justify-center text-editorial-text/20 group-hover:border-editorial-text group-hover:text-editorial-text transition-all duration-500 flex-shrink-0">
+                    @if (entry.action === 'delete') {
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    } @else if (entry.action === 'share') {
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
+                    } @else {
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
+                    }
+                  </div>
+
+                  <div class="space-y-3">
+                    <p class="font-sans text-xl font-bold uppercase tracking-tight text-editorial-text leading-tight">
+                      <span class="opacity-40">{{ getActionLabel(entry.action) }}:</span> {{ entry.targetName }}
+                    </p>
+                    <div class="flex items-center gap-4 font-mono text-[9px] uppercase tracking-widest text-editorial-text/40">
+                      <span>Node_Agent: {{ entry.performedBy }}</span>
+                      <div class="w-1 h-1 rounded-full bg-editorial-text/10"></div>
+                      <span>IP_{{ entry.ipAddress || '0.0.0.0' }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Subtle accent -->
+                <div class="absolute bottom-0 right-0 h-[1px] w-0 group-hover:w-24 bg-editorial-text transition-all duration-700"></div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <footer class="mt-auto py-12 border-t border-editorial-text/10">
+    <div class="flex justify-between items-center opacity-20 hover:opacity-100 transition-opacity duration-1000">
+      <span class="font-mono text-[10px] uppercase tracking-[0.5em]">Observatory_Active</span>
+      <div class="w-24 h-[1px] bg-editorial-text/20"></div>
+      <span class="font-mono text-[10px] uppercase tracking-[0.5em]">Auth_Binding: Secure</span>
+    </div>
+  </footer>
+</div>

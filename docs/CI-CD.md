@@ -76,40 +76,50 @@ services:
 
 **Steps:**
 
-| Step | Command | Purpose |
-| ---- | ------- | ------- |
-| 1 | `actions/setup-dotnet@v4` | Install .NET 9 SDK |
-| 2 | `actions/cache@v4` | Cache NuGet packages (`~/.nuget/packages`) |
+| Step | Action/Command | Purpose |
+| ---- | -------------- | ------- |
+| 1 | `actions/setup-dotnet` | Install .NET 10 SDK (Pinned to SHA) |
+| 2 | `actions/cache` | Cache NuGet packages (`~/.nuget/packages`) |
 | 3 | `dotnet restore` | Restore solution dependencies |
-| 4 | `dotnet build --configuration Release` | Compile all projects |
-| 5 | `dotnet test` Domain.Tests | Entity & relationship unit tests |
-| 6 | `dotnet test` Application.Tests | Service logic tests |
-| 7 | `dotnet test` Infrastructure.Tests | Repository & service tests (uses PostgreSQL) |
-| 8 | `dotnet test` API.Tests | Controller tests |
-| 9 | Upload `.trx` results | Artifact for test reporting |
+| 4 | `dotnet build` | Compile all projects |
+| 5 | `dotnet test` Domain.Tests | Unit tests with coverage collection |
+| 6 | `dotnet test` Application.Tests | Application service tests with coverage |
+| 7 | `dotnet test` Infrastructure.Tests | Integration tests (uses PostgreSQL container) |
+| 8 | `dotnet test` API.Tests | Controller/API integration tests |
+| 9 | `irongut/CodeCoverageSummary` | Enforce minimum 80% test coverage gate |
+| 10 | `anchore/sbom-action` | Generate CycloneDX/SPDX SBOM metadata |
+| 11 | Upload SBOM & Test results | Upload build artifact deliverables |
 
 ### Job 2: Frontend Build & Test
 
 Runs in parallel with the backend job.
 
-| Step | Command | Purpose |
-| ---- | ------- | ------- |
-| 1 | `actions/setup-node@v4` | Install Node.js 22 |
+| Step | Action/Command | Purpose |
+| ---- | -------------- | ------- |
+| 1 | `actions/setup-node` | Install Node.js 22 |
 | 2 | `npm ci` | Clean install of dependencies |
-| 3 | `npm test -- --run` | Run Vitest in single-run mode |
-| 4 | `npm run build -- --configuration production` | Production Angular build |
-| 5 | Upload `dist/` | Artifact for deployment |
+| 3 | `npm run lint` | Execute ESLint/Angular static analysis |
+| 4 | `npm audit` | Audit npm dependencies (audit-level=high) |
+| 5 | `npm run test:ci` | Run Vitest with coverage collection |
+| 6 | `npm run build` | Production Angular build |
+| 7 | Upload `dist/` | Artifact for deployment |
 
-### Job 3: Docker Build & Push
+### Job 3: Security & CodeQL Analysis
 
-Only runs on `push` to `main` branch, after both build jobs succeed.
+Runs static analysis and config scans:
+- **CodeQL Scan**: Compiles and scans C# and JavaScript/TypeScript codebases.
+- **Trivy Config Scan**: Uses `aquasecurity/trivy-action` to search for Dockerfile, Kubernetes, and Compose file misconfigurations.
+
+### Job 4: Docker Build & Push
+
+Only runs on `push` to `main` branch, after all preceding build and test jobs succeed.
 
 | Step | Action | Purpose |
 | ---- | ------ | ------- |
-| 1 | `docker/login-action@v3` | Authenticate to GitHub Container Registry |
-| 2 | `docker/setup-buildx-action@v3` | Enable multi-platform builds and caching |
-| 3 | `docker/build-push-action@v6` (API) | Build & push `.NET API` image |
-| 4 | `docker/build-push-action@v6` (Client) | Build & push `Angular + Nginx` image |
+| 1 | `docker/login-action` | Authenticate to GitHub Container Registry |
+| 2 | `docker/setup-buildx-action` | Enable multi-platform builds and caching |
+| 3 | `docker/build-push-action` (API) | Build & push `.NET API` image |
+| 4 | `docker/build-push-action` (Client) | Build & push `Angular + Nginx` image |
 
 **Image Tags:** `latest` + git SHA (e.g., `sha-a1b2c3d`)
 
@@ -200,6 +210,13 @@ Configure two environments in **GitHub → Settings → Environments**:
 ### Production
 
 - **URL:** Your production server URL
+- **Container Registry:** Azure Container Registry (ACR) or Docker Hub
+- **Database:** PostgreSQL (Azure Database for PostgreSQL)
+- **Cache & SignalR:** Redis (Azure Cache for Redis)
+- **Message Broker:** RabbitMQ
+- **Observability:** Prometheus + Grafana
+- **CDN:** Azure CDN or CloudFlare
+- **Infrastructure:** Kubernetes (AKS/EKS/GKE) with Ingress-NGINX
 - **Required reviewers:** Add team members who can approve
 - **Wait timer:** Optional cooldown (e.g., 5 minutes)
 - **Deployment branches:** `main` only
@@ -249,50 +266,29 @@ curl http://localhost:5000/health/ready
 
 ---
 
-## 8. Extending the Pipeline
+## 8. Hardening and Audits in the Pipeline
 
-### Adding Code Coverage
+### Code Coverage Gates
+The backend testing workflows use `XPlat Code Coverage` to output Cobertura XML files. These files are aggregated and validated using the `irongut/CodeCoverageSummary` action. If total coverage (or branch coverage) falls below **80%**, the CI build will fail automatically.
 
+### Trivy Configuration Scanning
+Infrastructure-as-Code (IaC) security is enforced during the `security-scan` job. Trivy analyzes all Kubernetes manifests under `k8s/` and Docker Compose setups for security issues (such as privilege escalation, root context usage, or deprecated API endpoints).
+
+### CycloneDX/SPDX SBOM Generation
+A release bill-of-materials is compiled during the backend build phase using the `anchore/sbom-action` tool, producing an SPDX format JSON log (`sbom.spdx.json`) mapping all package references, transitives, and internal module linkages.
+
+### Database Migrations Verification
+To verify database schemas are properly up to date:
 ```yaml
-# Add to backend test steps:
-- name: Run tests with coverage
-  run: dotnet test --collect:"XPlat Code Coverage" --results-directory ./coverage
-
-- name: Upload coverage to Codecov
-  uses: codecov/codecov-action@v4
-  with:
-    directory: ./coverage
-    token: ${{ secrets.CODECOV_TOKEN }}
-```
-
-### Adding Security Scanning
-
-```yaml
-# Add as a new job:
-security-scan:
-  name: Security Scan
-  runs-on: ubuntu-latest
-  steps:
-    - uses: actions/checkout@v4
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: fs
-        format: table
-        exit-code: 1
-        severity: CRITICAL,HIGH
-```
-
-### Adding Database Migrations Check
-
-```yaml
-# Add to backend job:
 - name: Verify EF migrations
   run: |
     dotnet tool install --global dotnet-ef
     dotnet ef migrations script --project CloudStorage.Infrastructure \
       --startup-project CloudStorage.API --idempotent --output migration.sql
 ```
+
+### GitHub App Token Format Compatibility
+Our CI/CD pipelines use the standard `secrets.GITHUB_TOKEN` to login to the GitHub Container Registry via `docker/login-action`. The Docker daemon and login actions accept these tokens as opaque credentials. Therefore, our workflows are fully compatible with GitHub's stateless JWT-based token format (~520 characters and dots, starting with `ghs_`).
 
 ---
 

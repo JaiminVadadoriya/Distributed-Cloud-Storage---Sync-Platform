@@ -1,6 +1,6 @@
 # Architecture Document — Distributed Cloud Storage Platform
 
-> **Version:** 1.0 &nbsp;|&nbsp; **Last Updated:** February 2026
+> **Version:** 2.0 &nbsp;|&nbsp; **Last Updated:** March 2026
 
 ---
 
@@ -10,22 +10,28 @@ The Distributed Cloud Storage Platform is a full-stack application built using *
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        Docker Compose Host                         │
+│                        Docker Compose Stack                         │
 │                                                                    │
-│  ┌───────────────┐   ┌──────────────────┐   ┌──────────────────┐  │
-│  │  Angular 21   │   │   .NET 9 API     │   │  PostgreSQL 16   │  │
-│  │  Client       │──>│   (REST)         │──>│  (Metadata DB)   │  │
-│  │  :4200        │   │   :5000 / :5001  │   │  :5432           │  │
-│  └───────────────┘   └──────────────────┘   └──────────────────┘  │
-│                              │                                     │
-│                              v                                     │
-│                      ┌──────────────────┐   ┌──────────────────┐  │
-│                      │  Local File      │   │  Redis 7         │  │
-│                      │  Storage         │   │  (Cache/Future)  │  │
-│                      │  /app/storage/   │   │  :6379           │  │
-│                      └──────────────────┘   └──────────────────┘  │
+│  ┌───────────────┐      ┌───────────────┐      ┌────────────────┐  │
+│  │  NGINX LB     │─────▶│ API Cluster   │◀────▶│  Redis (Cache)  │  │
+│  │  :5000        │      │ (3x Replicas) │      │  :6379         │  │
+│  └───────▲───────┘      └───────┬───────┘      └────────────────┘  │
+│          │                      │                       │          │
+│  ┌───────┴───────┐      ┌───────▼───────┐      ┌────────▼───────┐  │
+│  │  Angular 21   │      │  RabbitMQ     │      │  PostgreSQL 16 │  │
+│  │  Client       │      │  (Workers)    │◀─────▶  (Metadata DB) │  │
+│  │  :4200        │      │  :5672        │      │  :5433         │  │
+│  └───────────────┘      └───────────────┘      └────────────────┘  │
 └─────────────────────────────────────────────────────────────────────┘
 ```
+
+### 1.1 Distributed Scale-Out Components
+
+- **NGINX Load Balancer:** Entry point for all API/SignalR traffic. Performs round-robin distribution to API instances.
+- **API Cluster:** Horizontal scaling via Docker replicas. All instances share the same database and storage.
+- **Redis Service:** Used for **SignalR backplane** (real-time sync across nodes), distributed caching, and upload session locks.
+- **RabbitMQ Service:** Asynchronous message broker for offloading non-blocking heavy tasks (chunk validation, cleanup).
+- **Observability Stack:** Prometheus scrapes metrics from API instances; Grafana visualizes the system health.
 
 ---
 
@@ -82,19 +88,36 @@ Defines business contracts and data transfer objects.
 
 **Service Interfaces:**
 
-| Interface                | Responsibility                                        |
-| ------------------------ | ----------------------------------------------------- |
-| `IAuthService`           | Registration, login, JWT tokens, password reset       |
-| `IFileService`           | File CRUD, permission grants, user file listing       |
-| `IChunkStorageService`   | Physical chunk I/O (save, get, delete, existence)     |
-| `IDeduplicationService`  | Chunk registry with reference counting                |
-| `IRefreshTokenService`   | Refresh token lifecycle (generate, validate, revoke)  |
+| Interface                     | Responsibility                                              |
+| ----------------------------- | ----------------------------------------------------------- |
+| `IAuthService`                | Registration, login, JWT tokens, password reset             |
+| `IFileService`                | File CRUD, permission grants, search, user file listing     |
+| `IChunkStorageService`        | Physical chunk I/O (save, get, delete, existence)           |
+| `IDeduplicationService`       | Chunk registry with reference counting                      |
+| `IRefreshTokenService`        | Refresh token lifecycle (generate, validate, revoke)        |
+| `IFolderService`              | Folder CRUD, rename, move, share (nested file propagation)  |
+| `IDeviceService`              | Device registration, last-sync timestamp, removal           |
+| `IActivityService`            | Activity log retrieval per user                             |
+| `IConflictDetectionService`   | Version-vector conflict check and resolution                |
+| `IDeltaSyncService`           | Pull file changes since a given UTC timestamp               |
+| `IBlobSasService`             | Generate Azure SAS tokens for parallel chunk downloads      |
+| `INotificationPersistenceService` | Database storage and retrieval for user notifications    |
+| `INotificationService`        | SignalR real-time push (file uploaded/deleted)              |
+| `ICacheService`               | Distributed cache abstraction (Redis)                       |
+| `IEmailService`               | Password-reset email dispatch                               |
+| `IMessageQueue`               | RabbitMQ publish (chunk verification, cleanup tasks)        |
+| `IAzureChunkVerificationService` | Background async chunk integrity verification            |
 
-**DTOs (12 total):**
+**DTOs (22 total):**
 
 - **Auth:** `RegisterDto`, `LoginDto`, `LoginResponseDto`, `RefreshTokenDto`, `PasswordResetRequestDto`, `PasswordResetDto`
-- **Files:** `FileResponseDto`, `FileUploadDto`, `FilePermissionDto`, `FileListDto`
+- **Files:** `FileResponseDto`, `FileUploadDto`, `FilePermissionDto`, `FileListDto`, `DashboardStatsDto`, `FileEventDto`
 - **Chunks:** `InitiateUploadDto`, `UploadSessionResponseDto`, `ChunkUploadResponseDto`, `CompleteUploadDto`, `UploadStatusResponseDto`
+- **Folders:** `FolderDto`, `CreateFolderDto`, `RenameFolderDto`, `MoveFolderDto`, `FolderShareDto`
+- **Devices:** `DeviceDto`, `RegisterDeviceDto`
+- **Sync:** `ConflictCheckRequestDto`, `ConflictCheckResponseDto`, `ConflictResolutionDto`, `DeltaSyncResponseDto`
+- **Notifications:** `NotificationDto`, `ActivityLogDto`
+- **Shared:** `ApiResponse<T>` (generic envelope: `success`, `message`, `data`)
 
 ### 2.3 Infrastructure Layer (`CloudStorage.Infrastructure`)
 
@@ -121,14 +144,20 @@ Implements all interfaces defined in Domain and Application.
 
 RESTful API entry point with Swagger documentation.
 
-| Controller              | Route Prefix       | Auth Required | Endpoints                                          |
-| ----------------------- | ------------------ | ------------- | -------------------------------------------------- |
-| `AuthController`        | `api/auth`         | Partial       | register, login, refresh, logout, password-reset   |
-| `FilesController`       | `api/files`        | Yes           | GET list, GET by ID, POST create, DELETE, POST permissions |
-| `ChunkUploadController` | `api/files`        | Yes           | POST initiate, POST chunks, POST complete, GET session status |
-| `HealthController`      | `health`           | No            | GET health, GET ready (with DB connectivity check) |
+| Controller              | Route Prefix         | Auth Required | Endpoints                                                    |
+| ----------------------- | -------------------- | ------------- | ------------------------------------------------------------ |
+| `AuthController`        | `api/auth`           | Partial       | register, login, refresh, logout, password-reset-request, password-reset |
+| `FilesController`       | `api/files`          | Yes           | GET list/shared/search/stats, GET by ID, GET download, GET download-link, POST create, DELETE, DELETE all, POST permissions/share |
+| `ChunkUploadController` | `api/files`          | Yes           | POST initiate, POST chunks (throttled), POST complete, GET session status |
+| `FoldersController`     | `api/folders`        | Yes           | GET root, GET by ID, POST create, PATCH rename, PATCH move, DELETE, POST share |
+| `DevicesController`     | `api/devices`        | Yes           | GET list, POST register, PATCH sync timestamp, DELETE remove |
+| `ActivityController`    | `api/activity`       | Yes           | GET recent activity (with `?limit`) |
+| `NotificationsController` | `api/notifications` | Yes           | GET list, PATCH mark read, POST read-all |
+| `DeltaSyncController`   | `api/sync/delta`     | Yes           | GET changes since UTC timestamp |
+| `ConflictController`    | `api/sync`           | Yes           | POST check-conflicts, POST resolve |
+| `HealthController`      | `health`             | No            | GET health (liveness), GET ready (DB readiness) |
 
-**Middleware Pipeline:** HTTPS Redirect → CORS → Authentication → Authorization → Controllers
+**Middleware Pipeline:** HTTPS Redirect → CORS → Authentication → `UploadThrottlingMiddleware` → Authorization → Rate Limiting → Controllers
 
 ---
 
@@ -229,18 +258,23 @@ Client                      API                      Infrastructure
 
 ### 5.1 Docker Compose Services
 
-| Service                | Image                  | Port Mapping   | Purpose                    |
-| ---------------------- | ---------------------- | -------------- | -------------------------- |
-| `cloudstorage.api`     | Custom (.NET 9 SDK)    | 5000:8080, 5001:8081 | REST API server      |
-| `cloudstorage.client`  | Custom (Node 22 → Nginx) | 4200:80     | Angular SPA                |
-| `postgres`             | postgres:16-alpine     | 5432:5432      | Metadata database          |
-| `redis`                | redis:7-alpine         | 6379:6379      | Cache (provisioned, not yet wired) |
+| Service                | Image                  | Port Mapping   | Purpose                        |
+| ---------------------- | ---------------------- | -------------- | ------------------------------ |
+| `nginx`                | nginx:alpine           | 5000:80        | **Load Balancer & Entry Point**|
+| `cloudstorage.api`     | Custom (.NET 10 SDK)   | Replicas (x3)  | REST API cluster (scaled)      |
+| `cloudstorage.client`  | Custom (Angular 21)    | 4200:80        | Frontend SPA                   |
+| `postgres`             | postgres:16-alpine     | 5433:5432      | Metadata database & Pools      |
+| `redis`                | redis:7-alpine         | 6379:6379      | Cache / SignalR Backplane      |
+| `rabbitmq`             | rabbitmq:3-management  | 5672, 15672    | Background Message Broker      |
+| `prometheus`           | prom/prometheus        | 9090:9090      | Scrapes telemetry from API     |
+| `grafana`              | grafana/grafana        | 3000:3000      | Visualization dashboard        |
+| `azurite`              | mcr.microsoft.com/...  | 10000-10002    | Local Azure Cloud Simulation   |
 
 ### 5.2 API Dockerfile (Multi-stage)
 
 ```
-Stage 1 (base):    mcr.microsoft.com/dotnet/aspnet:9.0 → Exposes 8080, 8081
-Stage 2 (build):   mcr.microsoft.com/dotnet/sdk:9.0   → Restore, build
+Stage 1 (base):    mcr.microsoft.com/dotnet/aspnet:10.0 → Exposes 8080, 8081
+Stage 2 (build):   mcr.microsoft.com/dotnet/sdk:10.0   → Restore, build
 Stage 3 (publish): Publish with UseAppHost=false
 Stage 4 (final):   Copy publish output, ENTRYPOINT dotnet CloudStorage.API.dll
 ```
@@ -265,24 +299,38 @@ Stage 2: nginx:alpine   → Serve SPA with custom nginx.conf
 ```
 CloudStorage.Client/src/
 ├── app/
-│   ├── app.ts                         # Root component with RouterOutlet
-│   ├── app.config.ts                  # Application providers
-│   ├── app.routes.ts                  # Route definitions (empty — MVP)
-│   ├── services/
-│   │   ├── chunking.service.ts        # File → chunks splitter (SHA-256)
-│   │   ├── upload.service.ts          # HTTP client for chunk upload API
-│   │   └── upload-manager.service.ts  # Upload queue with concurrency control
-│   └── components/
-│       ├── file-upload/               # Drag-and-drop file picker
-│       └── upload-progress/           # Real-time progress tracker
-├── main.ts                            # Bootstrap
-└── test-setup.ts                      # Vitest configuration
+│   ├── core/                            # Singleton Services & State management
+│   │   ├── services/                    # Api, Auth, File, Folder, Sync, Notification, Layout
+│   │   ├── guards/                      # AuthGuard
+│   │   ├── interceptors/                # AuthInterceptor, ErrorInterceptor
+│   │   ├── layout/                      # Sidebar, Topbar, AppShell, AuthLayout
+│   │   └── models/                      # BaseComponent, BaseService, interfaces
+│   ├── shared/                          # Reusable components and directives
+│   │   ├── components/                  # ContextMenu, Modal, SkeletonLoader, SyncStatus, etc.
+│   │   └── directives/                  # DragDropDirective, IntersectionObserver
+│   ├── features/                        # Lazy-loaded feature modules (16+ features)
+│   │   ├── admin/                       # SystemMetrics, UsageAnalytics
+│   │   ├── auth/                        # Login, Register, SessionExpired
+│   │   ├── dashboard/                   # Dashboard, FileList
+│   │   ├── files/                       # FilePreview, FolderView, Trash, Recent, VersionCompare
+│   │   ├── search/                      # SearchResults
+│   │   ├── sync/                        # ConflictCenter, SyncHistory
+│   │   ├── settings/                    # Profile, Security, Storage, Encryption, Danger Zone
+│   │   ├── activity/                    # ActivityLog, AuditLog
+│   │   └── devices/                     # Device management
+│   ├── app.config.ts                    # Application providers
+│   ├── app.routes.ts                    # Route definitions
+│   └── app.component.ts                 # Root component
+├── main.ts                              # Bootstrap
+└── test-setup.ts                        # Vitest configuration
 ```
 
 **Key Features:**
 - **Chunking:** SHA-256 hashing via Web Crypto API, 5 MB chunk size
 - **Upload Manager:** Queue-based with configurable concurrency (default: 3), pause/resume/cancel
 - **Retry Logic:** Exponential backoff (1s, 2s, 4s) with 3 max retries
+- **Offline-First:** `OfflineCacheService` (IndexedDB) + `ConnectionStatusService` + `SyncEngineService` for delta sync and conflict resolution on reconnect
+- **Real-Time Events:** `SignalRService` subscribes to `fileUploaded`, `fileDeleted`, `allFilesDeleted` events
 - **Standalone Components:** All components are standalone (Angular 21 pattern)
 - **Testing:** Vitest 4.x with jsdom environment
 
@@ -319,7 +367,8 @@ tests/
 | Token Security | Cryptographic random refresh tokens, revocation on rotate  |
 | Access Control | Owner-based permissions with Read/Write/Owner granularity  |
 | CORS           | Configurable allowed origins (default: `localhost:4200`)   |
-| Secrets        | Environment variables in Docker Compose                    |
+| Secrets        | Environment variables in Compose / Kubernetes Secrets      |
+| CSP & Headers  | Content-Security-Policy (no unsafe-inline), secure headers |
 
 ---
 
@@ -335,3 +384,13 @@ tests/
 | Chunk Storage Path            | `appsettings.json`        | `/app/storage/chunks`      |
 | Allowed Origins               | `appsettings.json`        | `localhost:4200`, `localhost:3000` |
 | Docker Environment Overrides  | `docker-compose.yml`      | Overrides for containerized deployment |
+
+---
+
+## 10. Observability & Monitoring
+
+The platform includes comprehensive telemetry collection:
+- **Metrics**: Scraped by Prometheus from the API's `/metrics` and `/health` endpoints and exported via OpenTelemetry.
+- **Logs**: Structured logs generated by `ILogger` are exported via OTLP to Loki and also output to the console in detailed format.
+- **Traces**: Distributed tracing maps API requests, Entity Framework Core queries, Redis caching requests, and incoming HTTP requests, exporting traces via OTLP to Jaeger.
+- **Grafana**: Pre-configured dashboards display live system metrics, log feeds, and trace timelines in a unified observability interface.

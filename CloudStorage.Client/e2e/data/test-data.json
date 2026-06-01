@@ -1,0 +1,110 @@
+{
+  "testUsers": {
+    "admin": {
+      "username": "admin_test",
+      "email": "admin@test.local",
+      "password": "AdminTest123!@#"
+    },
+    "regularUser1": {
+      "username": "user_test_1",
+      "email": "user1@test.local",
+      "password": "UserTest123!@#"
+    },
+    "regularUser2": {
+      "username": "user_test_2",
+      "email": "user2@test.local",
+      "password": "UserTest123!@#"
+    },
+    "guestUser": {
+      "username": "guest_test",
+      "email": "guest@test.local",
+      "password": "GuestTest123!@#"
+    }
+  },
+  "devices": {
+    "desktop": {
+      "deviceName": "Test Desktop",
+      "deviceType": "Desktop"
+    },
+    "laptop": {
+      "deviceName": "Test Laptop",
+      "deviceType": "Laptop"
+    },
+    "mobile": {
+      "deviceName": "Test Mobile",
+      "deviceType": "Mobile"
+    }
+  },
+  "testData": {
+    "smallFile": {
+      "name": "test-small.txt",
+      "size": 1024,
+      "contentType": "text/plain",
+      "content": "This is a small test file"
+    },
+    "mediumFile": {
+      "name": "test-medium.pdf",
+      "size": 5242880,
+      "contentType": "application/pdf",
+      "content": "Medium file for testing"
+    },
+    "largeFile": {
+      "name": "test-large.zip",
+      "size": 1073741824,
+      "contentType": "application/zip",
+      "content": "Large file for testing"
+    },
+    "imageFile": {
+      "name": "test-image.png",
+      "size": 102400,
+      "contentType": "image/png",
+      "content": "Image file content"
+    }
+  },
+  "folderStructure": {
+    "root": {
+      "name": "Root",
+      "children": [
+        {
+          "name": "Documents",
+          "children": [
+            {
+              "name": "Work"
+            },
+            {
+              "name": "Personal"
+            }
+          ]
+        },
+        {
+          "name": "Media",
+          "children": [
+            {
+              "name": "Photos"
+            },
+            {
+              "name": "Videos"
+            }
+          ]
+        },
+        {
+          "name": "Archive"
+        }
+      ]
+    }
+  },
+  "sharedScenarios": {
+    "readOnlyShare": {
+      "permission": "Read",
+      "description": "User can view but not modify"
+    },
+    "readWriteShare": {
+      "permission": "Write",
+      "description": "User can view and modify"
+    },
+    "ownerShare": {
+      "permission": "Owner",
+      "description": "User has full control"
+    }
+  }
+}

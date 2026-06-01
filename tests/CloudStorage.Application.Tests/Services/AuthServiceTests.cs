@@ -11,11 +11,30 @@ using Xunit;
 
 namespace CloudStorage.Application.Tests.Services
 {
+    /// <summary>
+    /// A fake email service for testing that records calls.
+    /// </summary>
+    public class FakeEmailService : IEmailService
+    {
+        public int SendCount { get; private set; }
+        public string? LastEmail { get; private set; }
+        public string? LastToken { get; private set; }
+
+        public Task SendPasswordResetEmailAsync(string toEmail, string resetToken)
+        {
+            SendCount++;
+            LastEmail = toEmail;
+            LastToken = resetToken;
+            return Task.CompletedTask;
+        }
+    }
+
     public class AuthServiceTests : IDisposable
     {
         private readonly ApplicationDbContext _context;
         private readonly IConfiguration _configuration;
         private readonly IRefreshTokenService _refreshTokenService;
+        private readonly FakeEmailService _emailService;
         private readonly AuthService _authService;
 
         public AuthServiceTests()
@@ -34,7 +53,9 @@ namespace CloudStorage.Application.Tests.Services
                 {"Jwt:Issuer", "TestIssuer"},
                 {"Jwt:Audience", "TestAudience"},
                 {"Jwt:ExpirationMinutes", "15"},
-                {"RefreshToken:ExpirationDays", "7"}
+                {"RefreshToken:ExpirationDays", "7"},
+                {"PasswordReset:TokenExpirationMinutes", "60"},
+                {"PasswordReset:ResetUrl", "http://localhost:4200/auth/reset-password"}
             };
 
             _configuration = new ConfigurationBuilder()
@@ -42,8 +63,13 @@ namespace CloudStorage.Application.Tests.Services
                 .Build();
 
             _refreshTokenService = new RefreshTokenService(_context, _configuration);
-            _authService = new AuthService(_context, _configuration, _refreshTokenService);
+            _emailService = new FakeEmailService();
+            _authService = new AuthService(_context, _configuration, _refreshTokenService, _emailService);
         }
+
+        // ========================
+        // Register Tests
+        // ========================
 
         [Fact]
         public async Task RegisterAsync_WithValidData_ShouldCreateUser()
@@ -92,6 +118,10 @@ namespace CloudStorage.Application.Tests.Services
             // Act & Assert
             await Assert.ThrowsAsync<Exception>(() => _authService.RegisterAsync(user2, "password123"));
         }
+
+        // ========================
+        // Login Tests
+        // ========================
 
         [Fact]
         public async Task LoginAsync_WithValidCredentials_ShouldReturnTokens()
@@ -156,6 +186,10 @@ namespace CloudStorage.Application.Tests.Services
             Assert.True(updatedUser.LastLoginAt >= beforeLogin);
         }
 
+        // ========================
+        // Refresh Token Tests
+        // ========================
+
         [Fact]
         public async Task RefreshTokenAsync_WithValidToken_ShouldReturnNewTokens()
         {
@@ -185,6 +219,10 @@ namespace CloudStorage.Application.Tests.Services
             Assert.Null(result);
         }
 
+        // ========================
+        // Logout Tests
+        // ========================
+
         [Fact]
         public async Task LogoutAsync_ShouldRevokeRefreshToken()
         {
@@ -197,13 +235,18 @@ namespace CloudStorage.Application.Tests.Services
             await _authService.LogoutAsync(loginResult!.RefreshToken);
 
             // Assert
-            var token = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == loginResult.RefreshToken);
+            var dbUser = await _context.Users.FirstOrDefaultAsync(u => u.Email == "test@example.com");
+            var token = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.UserId == dbUser!.Id);
             Assert.True(token!.IsRevoked);
             Assert.NotNull(token.RevokedAt);
         }
 
+        // ========================
+        // Password Reset Request Tests
+        // ========================
+
         [Fact]
-        public async Task RequestPasswordResetAsync_WithValidEmail_ShouldReturnToken()
+        public async Task RequestPasswordResetAsync_WithValidEmail_ShouldSaveTokenAndSendEmail()
         {
             // Arrange
             var user = new User { Username = "testuser", Email = "test@example.com" };
@@ -213,19 +256,113 @@ namespace CloudStorage.Application.Tests.Services
             var result = await _authService.RequestPasswordResetAsync("test@example.com");
 
             // Assert
-            Assert.NotEmpty(result);
+            Assert.Contains("If the email exists", result);
+            Assert.Equal(1, _emailService.SendCount);
+            Assert.Equal("test@example.com", _emailService.LastEmail);
+            Assert.NotNull(_emailService.LastToken);
+
+            // Verify token was saved in DB
+            var savedTokens = await _context.PasswordResetTokens.Where(t => t.UserId == user.Id).ToListAsync();
+            Assert.Single(savedTokens);
+            Assert.False(savedTokens[0].IsUsed);
         }
 
         [Fact]
-        public async Task RequestPasswordResetAsync_WithNonExistentEmail_ShouldReturnGenericMessage()
+        public async Task RequestPasswordResetAsync_WithNonExistentEmail_ShouldReturnGenericMessageWithoutSendingEmail()
         {
             // Act
             var result = await _authService.RequestPasswordResetAsync("nonexistent@example.com");
 
-            // Assert
-            Assert.NotEmpty(result);
-            // Should not reveal that the email doesn't exist
+            // Assert — same message, but no email sent and no token saved
             Assert.Contains("If the email exists", result);
+            Assert.Equal(0, _emailService.SendCount);
+            Assert.Empty(await _context.PasswordResetTokens.ToListAsync());
+        }
+
+        // ========================
+        // Password Reset Tests
+        // ========================
+
+        [Fact]
+        public async Task ResetPasswordAsync_WithValidToken_ShouldUpdatePasswordAndRevokeSessionsAndMarkTokenUsed()
+        {
+            // Arrange
+            var user = new User { Username = "testuser", Email = "test@example.com" };
+            await _authService.RegisterAsync(user, "password123");
+
+            // Create an active session
+            await _authService.LoginAsync("test@example.com", "password123");
+
+            // Request a password reset (sends email with raw token)
+            await _authService.RequestPasswordResetAsync("test@example.com");
+            var rawToken = _emailService.LastToken!;
+
+            // Act — reset the password
+            await _authService.ResetPasswordAsync(rawToken, "newpassword456");
+
+            // Assert — password was changed (can login with new, cannot with old)
+            var loginWithNew = await _authService.LoginAsync("test@example.com", "newpassword456");
+            Assert.NotNull(loginWithNew);
+
+            var loginWithOld = await _authService.LoginAsync("test@example.com", "password123");
+            Assert.Null(loginWithOld);
+
+            // Assert — token is marked as used
+            var savedToken = await _context.PasswordResetTokens.FirstAsync();
+            Assert.True(savedToken.IsUsed);
+            Assert.NotNull(savedToken.UsedAt);
+
+            // Assert — all old refresh tokens are revoked
+            var oldTokens = await _context.RefreshTokens
+                .Where(rt => rt.UserId == user.Id && rt.CreatedAt < savedToken.UsedAt)
+                .ToListAsync();
+            Assert.All(oldTokens, t => Assert.True(t.IsRevoked));
+        }
+
+        [Fact]
+        public async Task ResetPasswordAsync_WithInvalidToken_ShouldThrow()
+        {
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<Exception>(() =>
+                _authService.ResetPasswordAsync("totally-invalid-token", "newpassword"));
+            Assert.Contains("Invalid password reset token", ex.Message);
+        }
+
+        [Fact]
+        public async Task ResetPasswordAsync_WithExpiredToken_ShouldThrow()
+        {
+            // Arrange
+            var user = new User { Username = "testuser", Email = "test@example.com" };
+            await _authService.RegisterAsync(user, "password123");
+            await _authService.RequestPasswordResetAsync("test@example.com");
+
+            // Expire the token manually
+            var savedToken = await _context.PasswordResetTokens.FirstAsync();
+            savedToken.ExpiresAt = DateTime.UtcNow.AddMinutes(-1);
+            await _context.SaveChangesAsync();
+
+            // Act & Assert
+            var ex = await Assert.ThrowsAsync<Exception>(() =>
+                _authService.ResetPasswordAsync(_emailService.LastToken!, "newpassword"));
+            Assert.Contains("expired", ex.Message);
+        }
+
+        [Fact]
+        public async Task ResetPasswordAsync_WithAlreadyUsedToken_ShouldThrow()
+        {
+            // Arrange
+            var user = new User { Username = "testuser", Email = "test@example.com" };
+            await _authService.RegisterAsync(user, "password123");
+            await _authService.RequestPasswordResetAsync("test@example.com");
+            var rawToken = _emailService.LastToken!;
+
+            // Use the token once
+            await _authService.ResetPasswordAsync(rawToken, "newpassword456");
+
+            // Act & Assert — second use should fail
+            var ex = await Assert.ThrowsAsync<Exception>(() =>
+                _authService.ResetPasswordAsync(rawToken, "anotherpassword789"));
+            Assert.Contains("already been used", ex.Message);
         }
 
         public void Dispose()

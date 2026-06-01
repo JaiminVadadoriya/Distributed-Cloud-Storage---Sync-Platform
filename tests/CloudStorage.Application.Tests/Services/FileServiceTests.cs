@@ -15,14 +15,31 @@ namespace CloudStorage.Application.Tests.Services
     public class FileServiceTests
     {
         private readonly Mock<IFileMetadataRepository> _fileRepositoryMock;
+        private readonly Mock<IFolderRepository> _folderRepositoryMock;
         private readonly Mock<IUserRepository> _userRepositoryMock;
+        private readonly Mock<ICacheService> _cacheServiceMock;
+        private readonly Mock<IActivityService> _activityServiceMock;
         private readonly FileService _fileService;
 
         public FileServiceTests()
         {
             _fileRepositoryMock = new Mock<IFileMetadataRepository>();
+            _folderRepositoryMock = new Mock<IFolderRepository>();
             _userRepositoryMock = new Mock<IUserRepository>();
-            _fileService = new FileService(_fileRepositoryMock.Object, _userRepositoryMock.Object);
+            _cacheServiceMock = new Mock<ICacheService>();
+            _activityServiceMock = new Mock<IActivityService>();
+
+            // Set up default mock behavior for cache to return null so normal DB logic flows
+            _cacheServiceMock.Setup(c => c.GetAsync<FileResponseDto?>(It.IsAny<string>())).ReturnsAsync((FileResponseDto?)null);
+            _cacheServiceMock.Setup(c => c.GetAsync<bool?>(It.IsAny<string>())).ReturnsAsync((bool?)null);
+            _cacheServiceMock.Setup(c => c.GetAsync<DashboardStatsDto?>(It.IsAny<string>())).ReturnsAsync((DashboardStatsDto?)null);
+
+            _fileService = new FileService(
+                _fileRepositoryMock.Object,
+                _folderRepositoryMock.Object,
+                _userRepositoryMock.Object,
+                _cacheServiceMock.Object,
+                _activityServiceMock.Object);
         }
 
         [Fact]
@@ -32,8 +49,8 @@ namespace CloudStorage.Application.Tests.Services
             var userId = 1;
             var files = new List<FileMetadata>
             {
-                new FileMetadata { Id = Guid.NewGuid(), FileName = "file1.txt", OwnerId = userId, Size = 100, CreatedAt = DateTime.UtcNow },
-                new FileMetadata { Id = Guid.NewGuid(), FileName = "file2.txt", OwnerId = userId, Size = 200, CreatedAt = DateTime.UtcNow }
+                new FileMetadata { Id = Guid.NewGuid(), FileName = "file1.txt", OwnerId = userId, Size = 100, CreatedAt = DateTime.UtcNow, Status = UploadStatus.Complete },
+                new FileMetadata { Id = Guid.NewGuid(), FileName = "file2.txt", OwnerId = userId, Size = 200, CreatedAt = DateTime.UtcNow, Status = UploadStatus.Complete }
             };
 
             _fileRepositoryMock.Setup(r => r.GetUserFilesAsync(userId, false))
@@ -63,7 +80,8 @@ namespace CloudStorage.Application.Tests.Services
                 Size = 100,
                 OwnerId = userId,
                 CreatedAt = DateTime.UtcNow,
-                LastModifiedAt = DateTime.UtcNow
+                LastModifiedAt = DateTime.UtcNow,
+                Status = UploadStatus.Complete
             };
             var owner = new User { Id = userId, Username = "owner" };
 
@@ -246,6 +264,45 @@ namespace CloudStorage.Application.Tests.Services
             // Assert
             Assert.True(result);
             _fileRepositoryMock.Verify(r => r.HasPermissionAsync(fileId, userId, PermissionType.Read), Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteAllUserFilesAsync_ShouldCallRepositoryDeleteAllUserFiles()
+        {
+            // Arrange
+            var userId = 1;
+
+            // Act
+            await _fileService.DeleteAllUserFilesAsync(userId);
+
+            // Assert
+            _fileRepositoryMock.Verify(r => r.DeleteAllUserFilesAsync(userId), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetStorageBreakdownAsync_ShouldCategorizeFilesCorrectly()
+        {
+            // Arrange
+            var userId = 1;
+            var files = new List<FileMetadata>
+            {
+                new FileMetadata { Id = Guid.NewGuid(), FileName = "image.png", ContentType = "image/png", Size = 100, OwnerId = userId, Status = UploadStatus.Complete },
+                new FileMetadata { Id = Guid.NewGuid(), FileName = "video.mp4", ContentType = "video/mp4", Size = 200, OwnerId = userId, Status = UploadStatus.Complete },
+                new FileMetadata { Id = Guid.NewGuid(), FileName = "doc.pdf", ContentType = "application/pdf", Size = 300, OwnerId = userId, Status = UploadStatus.Complete },
+                new FileMetadata { Id = Guid.NewGuid(), FileName = "other.zip", ContentType = "application/zip", Size = 400, OwnerId = userId, Status = UploadStatus.Complete }
+            };
+
+            _fileRepositoryMock.Setup(r => r.GetUserFilesAsync(userId, false))
+                .ReturnsAsync(files);
+
+            // Act
+            var result = await _fileService.GetStorageBreakdownAsync(userId);
+
+            // Assert
+            Assert.Equal(100, result.Images);
+            Assert.Equal(200, result.Videos);
+            Assert.Equal(300, result.Documents);
+            Assert.Equal(400, result.Others);
         }
     }
 }

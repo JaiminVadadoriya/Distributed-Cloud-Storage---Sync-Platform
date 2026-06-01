@@ -1,9 +1,11 @@
 using System;
 using System.Threading.Tasks;
+using CloudStorage.Application.Interfaces.Storage;
 using CloudStorage.Domain.Entities;
 using CloudStorage.Infrastructure.Data;
 using CloudStorage.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using Xunit;
 
 namespace CloudStorage.Infrastructure.Tests.Services
@@ -11,6 +13,7 @@ namespace CloudStorage.Infrastructure.Tests.Services
     public class DeduplicationServiceTests : IDisposable
     {
         private readonly ApplicationDbContext _context;
+        private readonly Mock<IChunkStorageProvider> _mockChunkStorage;
         private readonly DeduplicationService _service;
 
         public DeduplicationServiceTests()
@@ -20,7 +23,8 @@ namespace CloudStorage.Infrastructure.Tests.Services
                 .Options;
 
             _context = new ApplicationDbContext(options);
-            _service = new DeduplicationService(_context);
+            _mockChunkStorage = new Mock<IChunkStorageProvider>();
+            _service = new DeduplicationService(_context, _mockChunkStorage.Object);
         }
 
         [Fact]

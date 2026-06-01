@@ -1,0 +1,383 @@
+
+@import "tailwindcss";
+@config "./tailwind.config.cjs";
+
+:root {
+  /* Typography Scale */
+  --font-mono: 'Roboto Mono', monospace;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-size-xs: 0.75rem;     /* 12px */
+  --font-size-sm: 0.875rem;    /* 14px */
+  --font-size-base: 1rem;      /* 16px */
+  --font-size-lg: 1.125rem;    /* 18px */
+  --font-size-xl: 1.25rem;     /* 20px */
+  --font-size-2xl: 1.5rem;     /* 24px */
+  --font-size-3xl: 1.875rem;   /* 30px */
+  --font-size-4xl: 2.25rem;    /* 36px */
+  --font-size-5xl: 3rem;       /* 48px */
+  --font-size-6xl: 3.75rem;    /* 60px */
+
+  /* Spacing Scale (8pt grid) */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+
+  /* Global Transition & Motion Tokens */
+  --t-duration: 400ms;
+  --t-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-duration-fast: 150ms;
+  --motion-duration-normal: 250ms;
+  --motion-duration-slow: 400ms;
+  --motion-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Elevation Tokens */
+  --elevation-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --elevation-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --elevation-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+  /* Semantic Colors */
+  --color-critical: #e11d48;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+}
+
+/* Atmosphere: CLINICAL_WHITE */
+.theme-clinical {
+  --editorial-bg: #F9F7F4;
+  --editorial-text: #121212;
+  --editorial-accent: #4f46e5;
+  --editorial-border: rgba(18, 18, 18, 0.3);
+  --glass-bg: rgba(249, 247, 244, 0.95);
+  --glass-blur: 0px;
+}
+
+/* Atmosphere: DEEP_MONO */
+.theme-mono {
+  --editorial-bg: #0A0A0A;
+  --editorial-text: #F1EEE9;
+  --editorial-border: rgba(241, 238, 233, 0.15);
+  --editorial-accent: #818cf8;
+  --glass-bg: rgba(10, 10, 10, 0.95);
+  --glass-blur: 0px;
+}
+
+/* Atmosphere: TRANSLUCENT_BLUR */
+.theme-blur {
+  --editorial-bg: #0C0C0C;
+  --editorial-text: #FFFFFF;
+  --editorial-border: rgba(255, 255, 255, 0.1);
+  --editorial-accent: #6366f1;
+  --glass-bg: rgba(20, 20, 20, 0.6);
+  --glass-blur: 24px;
+}
+
+/* High Contrast Mode forced color adjustments */
+@media (forced-colors: active) {
+  :root {
+    --editorial-bg: Canvas;
+    --editorial-text: CanvasText;
+    --editorial-accent: Highlight;
+    --editorial-border: ButtonBorder;
+  }
+}
+
+/* Interface Density: MAXIMAL_WHITESPACE */
+.density-maximal {
+  --spacing-base: 1.5rem;
+  --font-size-base: 16px;
+  --padding-shell: 2.5rem;
+  --gap-grid: 2rem;
+}
+
+/* Interface Density: BALANCED_ENTROPY */
+.density-balanced {
+  --spacing-base: 1rem;
+  --font-size-base: 14px;
+  --padding-shell: 1.5rem;
+  --gap-grid: 1rem;
+}
+
+/* Interface Density: TECHNICAL_DENSITY */
+.density-technical {
+  --spacing-base: 0.5rem;
+  --font-size-base: 12px;
+  --padding-shell: 0.75rem;
+  --gap-grid: 0.5rem;
+}
+
+
+@layer base {
+  body {
+    @apply bg-editorial-bg text-editorial-text selection:bg-editorial-text selection:text-editorial-bg;
+    transition: background-color var(--t-duration) var(--t-ease), 
+                color var(--t-duration) var(--t-ease),
+                border-color var(--t-duration) var(--t-ease),
+                padding var(--t-duration) var(--t-ease);
+    font-size: var(--font-size-base);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+html,
+body {
+  min-height: 100vh;
+  min-height: 100svh;
+  margin: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--editorial-text) var(--editorial-bg);
+}
+
+:focus-visible {
+  outline: 3px solid var(--editorial-accent); /* Thicker outline */
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.2); /* Soft outer glow for focus */
+}
+
+@layer components {
+
+  /* Brutalist Shadow Utility */
+  .shadow-brutalist {
+    box-shadow: 4px 4px 0px 0px var(--editorial-text);
+    transition: box-shadow var(--t-duration) var(--t-ease);
+  }
+
+  .theme-mono .shadow-brutalist,
+  .theme-blur .shadow-brutalist {
+    box-shadow: 4px 4px 0px 0px rgba(241, 238, 233, 0.15); /* Light shadow in dark modes */
+  }
+
+  /* Glassmorphism Utility */
+  .glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--editorial-border);
+    transition: background var(--t-duration) var(--t-ease),
+                backdrop-filter var(--t-duration) var(--t-ease);
+  }
+
+  /* Grain Overlay */
+  .grain-wrapper {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: 50;
+  }
+
+  .grain-overlay {
+    position: absolute;
+    inset: -100%;
+    width: 1000vh;
+    height: 1000vw;
+    pointer-events: none;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    animation: grain 8s steps(10) infinite;
+    will-change: transform;
+  }
+
+  .grain-light {
+    opacity: 0.02;
+  }
+
+  .grain-medium {
+    opacity: 0.04;
+  }
+
+  .grain-heavy {
+    opacity: 0.08;
+  }
+
+  @keyframes grain {
+
+    0%,
+    100% {
+      transform: translate(0, 0);
+    }
+
+    10% {
+      transform: translate(-5%, -10%);
+    }
+
+    20% {
+      transform: translate(-15%, 5%);
+    }
+
+    30% {
+      transform: translate(7%, -25%);
+    }
+
+    40% {
+      transform: translate(-5%, 25%);
+    }
+
+    50% {
+      transform: translate(-15%, 10%);
+    }
+
+    60% {
+      transform: translate(15%, 0%);
+    }
+
+    70% {
+      transform: translate(0%, 15%);
+    }
+
+    80% {
+      transform: translate(3%, 35%);
+    }
+
+    90% {
+      transform: translate(-10%, 10%);
+    }
+  }
+
+  /* Modern Transitions */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-out {
+    from {
+      opacity: 1;
+    }
+
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      transform: translateY(8px);
+    }
+
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      transform: scale(0.98);
+      opacity: 0;
+    }
+
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes loading-bar {
+    0% {
+      transform: translateX(-100%);
+    }
+
+    50% {
+      transform: translateX(100%);
+    }
+
+    100% {
+      transform: translateX(-100%);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .animate-in-fade {
+    animation: fade-in 300ms ease-out forwards;
+  }
+
+  .animate-in-up {
+    animation: slide-up 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .animate-in-scale {
+    animation: scale-in 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Technical Grid Utility */
+  .tech-grid {
+    background-image:
+      linear-gradient(to right, currentColor 1px, transparent 1px),
+      linear-gradient(to bottom, currentColor 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.1;
+  }
+}
+
+/* Custom Scrollbar - High-Contrast Brutalist */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--editorial-bg);
+  border-left: 1px solid var(--editorial-text);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--editorial-text);
+  border: 2px solid var(--editorial-bg);
+  transition: background 300ms ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #000;
+}
+
+/* Motion Preferences */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* CDK Virtual Scroll Fix for E2E and Layout Stability */
+.cdk-virtual-scroll-viewport,
+.e2e-file-viewport {
+  display: block !important;
+  position: relative;
+  overflow: auto;
+  contain: strict;
+  /* Responsive height: fill available space on desktop, bounded on mobile */
+  height: calc(100vh - 200px);
+  height: calc(100svh - 200px);
+  min-height: 300px;
+  max-height: 700px;
+}
+
+.h-full.cdk-virtual-scroll-viewport {
+  height: 100% !important;
+}

@@ -14,5 +14,12 @@ namespace CloudStorage.Application.Interfaces
         Task<string> RequestPasswordResetAsync(string email);
         Task ResetPasswordAsync(string token, string newPassword);
         Task<User?> GetUserByIdAsync(int userId);
+
+        // Profile management
+        Task<UserDto> UpdateProfileAsync(int userId, UpdateProfileDto dto);
+        Task ChangePasswordAsync(int userId, ChangePasswordDto dto);
+
+        // User search (for sharing)
+        Task<IEnumerable<UserSearchResultDto>> SearchUsersAsync(string query);
     }
 }

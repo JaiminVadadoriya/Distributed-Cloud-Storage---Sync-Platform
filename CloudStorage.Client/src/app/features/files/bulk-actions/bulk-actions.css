@@ -1,0 +1,13 @@
+:host { display: block; }
+.bulk-toolbar { display: flex; align-items: center; gap: 1rem; padding: 0.75rem 1rem; background: var(--color-surface, #1a1a2e); border: 1px solid var(--color-accent, #6366f1); border-radius: 8px; }
+.bulk-toolbar.processing { opacity: 0.7; pointer-events: none; }
+.selection-count { font-size: 0.85rem; font-weight: 600; color: var(--color-accent, #6366f1); }
+.bulk-actions-group { display: flex; gap: 0.5rem; margin-left: auto; }
+.bulk-btn { padding: 0.4rem 0.75rem; border: 1px solid var(--color-border, rgba(255,255,255,0.1)); background: transparent; color: var(--color-text, #e0e0e0); border-radius: 4px; font-size: 0.8rem; cursor: pointer; transition: all 0.15s; }
+.bulk-btn:hover { background: rgba(255,255,255,0.05); }
+.bulk-btn.danger { color: #ef4444; border-color: rgba(239,68,68,0.3); }
+.bulk-btn.danger:hover { background: rgba(239,68,68,0.1); }
+.bulk-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.processing-indicator { display: flex; align-items: center; }
+.spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.1); border-top-color: var(--color-accent, #6366f1); border-radius: 50%; animation: spin 0.6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Release.Name }}-config
+data:
+  StorageProvider__Active: {{ .Values.storageProvider.active | quote }}
+  StorageProvider__PresignedUrlExpiryMinutes: {{ .Values.storageProvider.presignedUrlExpiryMinutes | quote }}
+  StorageProvider__Azure__ConnectionString: {{ .Values.storageProvider.azure.connectionString | quote }}
+  StorageProvider__Azure__ContainerName: {{ .Values.storageProvider.azure.containerName | quote }}
+  StorageProvider__S3__BucketName: {{ .Values.storageProvider.s3.bucketName | quote }}
+  StorageProvider__S3__Region: {{ .Values.storageProvider.s3.region | quote }}
+  StorageProvider__S3__ServiceURL: {{ .Values.storageProvider.s3.serviceUrl | quote }}
+  StorageProvider__MinIO__Endpoint: {{ .Values.storageProvider.minio.endpoint | quote }}
+  StorageProvider__MinIO__BucketName: {{ .Values.storageProvider.minio.bucketName | quote }}
+  StorageProvider__MinIO__UseSSL: {{ .Values.storageProvider.minio.useSSL | quote }}
+  StorageProvider__Local__BasePath: {{ .Values.storageProvider.local.basePath | quote }}
+  StorageProvider__Local__BaseUrl: {{ .Values.storageProvider.local.baseUrl | quote }}
+  ElasticSearch__Endpoint: {{ .Values.elasticsearch.endpoint | quote }}
+  ElasticSearch__IndexName: {{ .Values.elasticsearch.indexName | quote }}
+  Consensus__NodeId: {{ .Values.consensus.nodeId | quote }}

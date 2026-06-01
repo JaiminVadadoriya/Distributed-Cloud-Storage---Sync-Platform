@@ -231,3 +231,9 @@ D:\college\cloud-storage\CloudStorage.API\obj\Debug\net9.0\CloudStorage.API.pdb
 D:\college\cloud-storage\CloudStorage.API\obj\Debug\net9.0\CloudStorage.API.genruntimeconfig.cache
 D:\college\cloud-storage\CloudStorage.API\obj\Debug\net9.0\ref\CloudStorage.API.dll
 d:\college\cloud-storage\CloudStorage.API\obj\Debug\net9.0\CloudStorage.API.sourcelink.json
+D:\college\cloud-storage\CloudStorage.API\bin\Debug\net9.0\Azure.Core.dll
+D:\college\cloud-storage\CloudStorage.API\bin\Debug\net9.0\Azure.Storage.Blobs.dll
+D:\college\cloud-storage\CloudStorage.API\bin\Debug\net9.0\Azure.Storage.Common.dll
+D:\college\cloud-storage\CloudStorage.API\bin\Debug\net9.0\System.ClientModel.dll
+D:\college\cloud-storage\CloudStorage.API\bin\Debug\net9.0\System.IO.Hashing.dll
+D:\college\cloud-storage\CloudStorage.API\bin\Debug\net9.0\System.Memory.Data.dll

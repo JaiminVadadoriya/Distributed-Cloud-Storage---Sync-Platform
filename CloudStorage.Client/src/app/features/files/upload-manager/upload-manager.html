@@ -1,0 +1,89 @@
+@if (hasItems()) {
+  <div class="fixed bottom-12 right-12 w-full max-w-[450px] bg-editorial-bg border border-editorial-text shadow-2xl z-[80] overflow-hidden animate-in slide-in-from-bottom-12 duration-700 selection:bg-editorial-text selection:text-editorial-bg">
+    <!-- Top Accents -->
+    <div class="h-1 bg-editorial-text w-full"></div>
+    <div class="flex items-center justify-between p-6 border-b border-editorial-text/10 bg-editorial-text/[0.02]">
+      <div class="space-y-1">
+        <h4 class="font-mono text-[9px] uppercase tracking-[0.4em] text-editorial-text/40">Transmission_Log</h4>
+        <div class="flex items-center gap-3">
+          <h2 class="font-sans text-lg font-bold uppercase tracking-tight">Active_Uploads</h2>
+          @if (globalSpeed() > 0) {
+            <span class="font-mono text-[9px] px-2 py-0.5 border border-editorial-text text-editorial-text animate-pulse">{{ formatSpeed(globalSpeed()) }}</span>
+          }
+        </div>
+      </div>
+      @if (completedUploads().length > 0 || failedUploads().length > 0) {
+        <button (click)="clearCompleted()" class="font-mono text-[9px] uppercase tracking-widest text-editorial-text/40 hover:text-editorial-text border-b border-transparent hover:border-editorial-text transition-all">Clear_Log</button>
+      }
+    </div>
+
+    <div class="max-h-[400px] overflow-y-auto custom-scrollbar divide-y divide-editorial-text/5">
+      @if (errorMessage()) {
+        <div class="p-6">
+          <app-error-boundary [message]="errorMessage()!" (retryClicked)="errorMessage.set(null)"></app-error-boundary>
+        </div>
+      }
+
+      @for (task of queue(); track task.id) {
+        <div class="p-6 space-y-4 hover:bg-editorial-text/[0.01] transition-colors relative group">
+          <div class="flex justify-between items-start gap-4">
+            <div class="space-y-1 min-width-0">
+              <h5 class="font-sans text-[11px] font-bold uppercase tracking-tight truncate">{{ task.fileName }}</h5>
+              <p class="font-mono text-[9px] text-editorial-text/40 uppercase tracking-widest">{{ formatSize(task.fileSize) }} · {{ task.status }}</p>
+            </div>
+            <div class="text-right">
+               @if (task.status === 'uploading') {
+                 <span class="font-mono text-[10px] font-bold text-editorial-text">{{ getProgress(task) }}%</span>
+               } @else if (task.status === 'complete') {
+                 <span class="text-emerald-500">
+                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+                 </span>
+               } @else if (task.status === 'error') {
+                 <span class="text-rose-500 font-mono text-[8px] uppercase font-bold tracking-tighter">FAULT</span>
+               }
+            </div>
+          </div>
+
+          @if (task.status === 'uploading' || task.status === 'pending') {
+            <div class="space-y-2">
+              <div class="h-[1px] w-full bg-editorial-text/10 overflow-hidden">
+                <div class="h-full bg-editorial-text transition-all duration-500 ease-out" 
+                     [style.width.%]="getProgress(task)"></div>
+              </div>
+              @if (task.status === 'uploading') {
+                <div class="flex justify-between items-center font-mono text-[8px] uppercase tracking-widest text-editorial-text/40">
+                  <span>{{ formatSpeed(task.uploadSpeed) }}</span>
+                  <span>ETA_{{ getEta(task) }}</span>
+                </div>
+              }
+            </div>
+          }
+
+          @if (task.error) {
+            <div class="mt-2 p-3 bg-rose-500/5 border border-rose-500/20">
+              <p class="font-mono text-[8px] text-rose-500 uppercase tracking-tight leading-relaxed">{{ task.error }}</p>
+            </div>
+          }
+
+          <!-- Decorative corner -->
+          <div class="absolute top-0 right-0 w-2 h-2 border-t border-r border-editorial-text opacity-0 group-hover:opacity-10 transition-opacity"></div>
+        </div>
+      }
+    </div>
+
+    <!-- Summary Footer -->
+    <div class="p-4 bg-editorial-text text-editorial-bg flex justify-between items-center">
+       <span class="font-mono text-[10px] font-bold uppercase tracking-[0.3em]">System_Synchronized</span>
+       <div class="flex gap-4">
+         <div class="flex items-center gap-2">
+            <div class="w-1.5 h-1.5 rounded-full bg-editorial-bg/40"></div>
+            <span class="font-mono text-[8px] uppercase tracking-widest opacity-60">{{ pendingUploads().length }} Pending</span>
+         </div>
+         <div class="flex items-center gap-2">
+            <div class="w-1.5 h-1.5 rounded-full bg-editorial-bg animate-pulse"></div>
+            <span class="font-mono text-[8px] uppercase tracking-widest">{{ activeUploads().length }} Streaming</span>
+         </div>
+       </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,8 @@
+:host { display: block; }
+.toast-container { position: fixed; bottom: 1.5rem; right: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; z-index: 9999; }
+.toast-item { padding: 0.75rem 1.25rem; border-radius: 8px; font-size: 0.85rem; color: #fff; animation: slideIn 0.3s ease-out; box-shadow: 0 4px 16px rgba(0,0,0,0.3); max-width: 360px; }
+.toast-success { background: #22c55e; }
+.toast-error { background: #ef4444; }
+.toast-info { background: var(--color-accent, #6366f1); }
+.toast-warning { background: #f59e0b; }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }

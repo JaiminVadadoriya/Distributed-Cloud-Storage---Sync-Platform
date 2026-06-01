@@ -1,0 +1,36 @@
+replicaCount: 3
+
+image:
+  repository: cloudstorageapi
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+service:
+  type: ClusterIP
+  port: 80
+
+storageProvider:
+  active: "MinIO"
+  presignedUrlExpiryMinutes: 15
+  azure:
+    connectionString: "UseDevelopmentStorage=true"
+    containerName: "cloudstorage-chunks"
+  s3:
+    bucketName: "cloudstorage-chunks"
+    region: "us-east-1"
+    serviceUrl: ""
+  minio:
+    endpoint: "minio-svc:9000"
+    bucketName: "cloudstorage-chunks"
+    useSSL: false
+  local:
+    basePath: "/app/storage/chunks"
+    baseUrl: "http://localhost:5000"
+
+elasticsearch:
+  enabled: true
+  endpoint: "http://elasticsearch-svc:9200"
+  indexName: "cloudstorage-metadata"
+
+consensus:
+  nodeId: "node-1"

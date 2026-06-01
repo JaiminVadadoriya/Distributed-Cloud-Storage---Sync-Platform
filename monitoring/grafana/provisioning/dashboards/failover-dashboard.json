@@ -1,0 +1,60 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 3,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "title": "Provider Failovers",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "sum(rate(cloudstorage_storage_failover_count_total[5m])) by (provider)",
+          "legendFormat": "Failovers to {{provider}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 2,
+      "title": "Provider Health Score",
+      "type": "timeseries",
+      "targets": [
+        {
+          "expr": "cloudstorage_storage_provider_health_score",
+          "legendFormat": "{{provider}} Health Score",
+          "refId": "A"
+        }
+      ]
+    }
+  ],
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": ["storage", "failover"],
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "title": "Failover Routing",
+  "version": 1
+}

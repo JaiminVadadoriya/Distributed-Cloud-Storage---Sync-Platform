@@ -21,13 +21,25 @@ namespace CloudStorage.Infrastructure.Services
             _configuration = configuration;
         }
 
+        private static string HashToken(string token)
+        {
+            using var sha256 = SHA256.Create();
+            var bytes = System.Text.Encoding.UTF8.GetBytes(token);
+            var hash = sha256.ComputeHash(bytes);
+            return Convert.ToHexString(hash);
+        }
+
         public async Task<RefreshToken> GenerateRefreshTokenAsync(int userId)
         {
+            var rawToken = GenerateSecureToken();
+            var tokenHash = HashToken(rawToken);
+
             var token = new RefreshToken
             {
                 Id = Guid.NewGuid(),
                 UserId = userId,
-                Token = GenerateSecureToken(),
+                Token = tokenHash,
+                RawToken = rawToken,
                 CreatedAt = DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddDays(GetRefreshTokenExpirationDays()),
                 IsRevoked = false
@@ -41,9 +53,10 @@ namespace CloudStorage.Infrastructure.Services
 
         public async Task<RefreshToken?> ValidateRefreshTokenAsync(string token)
         {
+            var tokenHash = HashToken(token);
             var refreshToken = await _context.RefreshTokens
                 .Include(rt => rt.User)
-                .FirstOrDefaultAsync(rt => rt.Token == token);
+                .FirstOrDefaultAsync(rt => rt.Token == tokenHash);
 
             if (refreshToken == null)
                 return null;
@@ -64,8 +77,9 @@ namespace CloudStorage.Infrastructure.Services
 
         public async Task RevokeTokenAsync(string token)
         {
+            var tokenHash = HashToken(token);
             var refreshToken = await _context.RefreshTokens
-                .FirstOrDefaultAsync(rt => rt.Token == token);
+                .FirstOrDefaultAsync(rt => rt.Token == tokenHash);
 
             if (refreshToken != null && !refreshToken.IsRevoked)
             {
