@@ -36,7 +36,7 @@ export async function setupTestUser(params: {
       const resp = await fetch(`${apiBase}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ identifier: username, password }),
       });
       return resp.json();
     },
@@ -68,7 +68,7 @@ export async function loginTestUser(params: {
       const resp = await fetch(`${apiBase}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ identifier: username, password }),
       });
       return resp.json();
     },

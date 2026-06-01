@@ -37,10 +37,10 @@ namespace CloudStorage.Infrastructure.Services
         public async Task<User> RegisterAsync(User user, string password)
         {
             if (await _context.Users.AnyAsync(u => u.Username == user.Username))
-                throw new Exception("Username already exists");
+                throw new Exception("Username already registered");
 
             if (await _context.Users.AnyAsync(u => u.Email == user.Email))
-                throw new Exception("Email already exists");
+                throw new Exception("Email already registered");
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
             user.CreatedAt = DateTime.UtcNow;

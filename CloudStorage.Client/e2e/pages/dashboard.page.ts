@@ -87,7 +87,7 @@ export class DashboardPage {
     await target.waitFor({ state: 'visible' });
     await target.click({ button: 'right' });
 
-    const isVisible = await this.contextMenu.isVisible().catch(() => false);
+    const isVisible = await this.contextMenu.locator('button').first().isVisible().catch(() => false);
     if (!isVisible) {
       const box = await target.boundingBox();
       await target.dispatchEvent('contextmenu', {
@@ -96,7 +96,7 @@ export class DashboardPage {
         bubbles: true,
         button: 2,
       });
-      await expect(this.contextMenu).toBeVisible({ timeout: 10_000 });
+      await expect(this.contextMenu.locator('button').first()).toBeVisible({ timeout: 10_000 });
     }
   }
 

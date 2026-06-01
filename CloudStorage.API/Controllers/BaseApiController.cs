@@ -51,9 +51,9 @@ namespace CloudStorage.API.Controllers
             {
                 return NotFound(ApiResponse.Fail(ex.Message));
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return BadRequest(ApiResponse.Fail("An unexpected error occurred."));
+                return BadRequest(ApiResponse.Fail(ex.Message));
             }
         }
     }

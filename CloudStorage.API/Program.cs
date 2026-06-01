@@ -281,6 +281,7 @@ builder.Services.AddOpenTelemetry()
     });
 
 // Rate limiting
+var isTestEnv = isTesting || builder.Environment.IsEnvironment("Test");
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -288,7 +289,7 @@ builder.Services.AddRateLimiter(options =>
     // Global policy: 100 requests per 60 seconds per IP
     options.AddFixedWindowLimiter("global", opt =>
     {
-        opt.PermitLimit = 100;
+        opt.PermitLimit = isTestEnv ? 10000 : 100;
         opt.Window = TimeSpan.FromSeconds(60);
         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         opt.QueueLimit = 0;
@@ -297,7 +298,7 @@ builder.Services.AddRateLimiter(options =>
     // Auth policy: 30 requests per 60 seconds per IP (brute-force protection)
     options.AddFixedWindowLimiter("auth", opt =>
     {
-        opt.PermitLimit = 30;
+        opt.PermitLimit = isTestEnv ? 10000 : 30;
         opt.Window = TimeSpan.FromSeconds(60);
         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         opt.QueueLimit = 0;
@@ -306,7 +307,7 @@ builder.Services.AddRateLimiter(options =>
     // Upload policy: 200 requests per 60 seconds per IP
     options.AddFixedWindowLimiter("upload", opt =>
     {
-        opt.PermitLimit = 200;
+        opt.PermitLimit = isTestEnv ? 10000 : 200;
         opt.Window = TimeSpan.FromSeconds(60);
         opt.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
         opt.QueueLimit = 2;

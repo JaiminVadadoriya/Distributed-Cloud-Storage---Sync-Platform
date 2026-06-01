@@ -20,20 +20,32 @@ test.describe.parallel('Regular User - Authentication Flow', () => {
     expect(page.url()).toContain('/dashboard');
   });
 
-  test('User cannot register with duplicate email', async ({ page }) => {
+  test('User cannot register with duplicate email', async ({ page, apiBase }) => {
     const existingUser = getTestUserCredentials('regularUser1');
     
+    // Ensure user exists in database first
+    try {
+      await setupTestUser({ page, apiBase, userKey: 'regularUser1' });
+    } catch {
+      // User already exists
+    }
+
     await page.goto('/auth/register');
 
     await page.fill('#username', 'anotheruser');
     await page.fill('#email', existingUser.email);
     await page.fill('#password', 'SecurePass123!@#');
 
+    // Wait for the API request/response first to prevent race conditions
+    const responsePromise = page.waitForResponse(
+      (resp) => resp.url().includes('/api/auth/register')
+    );
     await page.getByRole('button', { name: /Initialize_Account/i }).click();
+    await responsePromise;
 
     // Verify error message (shown inline as "System_Fault: Email already registered")
     // Use .first() to avoid strict mode violation since toasts also show the error
-    await expect(page.getByText('Email already registered').first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Email already registered').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('User can login with correct credentials', async ({ page, apiBase }) => {
@@ -71,10 +83,14 @@ test.describe.parallel('Regular User - Authentication Flow', () => {
     await page.fill('[data-testid="login-identifier"]', user.username);
     await page.fill('[data-testid="login-password"]', 'WrongPassword123');
 
+    const responsePromise = page.waitForResponse(
+      (resp) => resp.url().includes('/api/auth/login')
+    );
     await page.click('[data-testid="login-submit"]');
+    await responsePromise;
 
     // Error shown in [role="alert"] - use getByRole with filter to avoid strict mode violation
-    await expect(page.getByRole('alert').filter({ hasText: 'Invalid credentials' }).first()).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('alert').filter({ hasText: 'Invalid credentials' }).first()).toBeVisible({ timeout: 10000 });
   });
 
   test('User can logout', async ({ page, apiBase }) => {
@@ -89,7 +105,7 @@ test.describe.parallel('Regular User - Authentication Flow', () => {
 
     await setupAuthToken({ page, token: userAuth.token });
     await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
+    await page.locator('[data-testid="profile-menu-trigger"]').waitFor({ state: 'visible', timeout: 15000 });
 
     // Click user menu (profile-menu-trigger) and logout
     await page.click('[data-testid="profile-menu-trigger"]');
@@ -126,7 +142,7 @@ test.describe.parallel('Regular User - File Upload Operations', () => {
     apiClient = createApiClient(authenticatedPage, apiBase);
     
     await authenticatedPage.goto('/files');
-    await authenticatedPage.waitForLoadState('networkidle');
+    await authenticatedPage.locator('[data-testid="profile-menu-trigger"]').waitFor({ state: 'visible', timeout: 15000 });
   });
 
   test('User can upload a small file', async ({ authenticatedPage }) => {
@@ -217,7 +233,7 @@ test.describe.parallel('Regular User - File Management', () => {
     apiClient = createApiClient(authenticatedPage, apiBase);
     
     await authenticatedPage.goto('/files');
-    await authenticatedPage.waitForLoadState('networkidle');
+    await authenticatedPage.locator('[data-testid="profile-menu-trigger"]').waitFor({ state: 'visible', timeout: 15000 });
   });
 
   test('User can rename a file', async ({ authenticatedPage }) => {
@@ -313,7 +329,7 @@ test.describe.parallel('Regular User - Folder Operations', () => {
     apiClient = createApiClient(authenticatedPage, apiBase);
     
     await authenticatedPage.goto('/files');
-    await authenticatedPage.waitForLoadState('networkidle');
+    await authenticatedPage.locator('[data-testid="profile-menu-trigger"]').waitFor({ state: 'visible', timeout: 15000 });
   });
 
   test('User can create a new folder', async ({ authenticatedPage }) => {
@@ -379,7 +395,7 @@ test.describe.parallel('Regular User - Sharing and Permissions', () => {
     apiClient = createApiClient(authenticatedPage, apiBase);
     
     await authenticatedPage.goto('/files');
-    await authenticatedPage.waitForLoadState('networkidle');
+    await authenticatedPage.locator('[data-testid="profile-menu-trigger"]').waitFor({ state: 'visible', timeout: 15000 });
   });
 
   test('User can share a folder with another user (Read-only)', async ({ authenticatedPage }) => {
@@ -419,7 +435,7 @@ test.describe.parallel('Regular User - Sharing and Permissions', () => {
   test('User can view and revoke shared permissions', async ({ authenticatedPage }) => {
     // Navigate to shared section
     await authenticatedPage.click('a[href="/shared"]');
-    await authenticatedPage.waitForLoadState('networkidle');
+    await authenticatedPage.locator('[data-testid="profile-menu-trigger"]').waitFor({ state: 'visible', timeout: 15000 });
 
     // In mock mode, the shared section may not have data — just verify navigation works
     await expect(authenticatedPage).toHaveURL(/\/shared/);

@@ -27,9 +27,19 @@ async function authenticatePersona(persona: string, page: Page, apiBase: string)
 
   if (testMode === 'real') {
     const apiRequest = page.context().request;
+
+    // Register user first in case database is clean
+    await apiRequest.post(`${apiBase}/api/auth/register`, {
+      data: {
+        username: userCreds.username,
+        email: userCreds.email,
+        password: userCreds.password
+      }
+    });
+
     const loginResponse = await apiRequest.post(`${apiBase}/api/auth/login`, {
       data: { 
-        email: userCreds.email, 
+        identifier: userCreds.email, 
         password: userCreds.password 
       }
     });
@@ -39,7 +49,8 @@ async function authenticatePersona(persona: string, page: Page, apiBase: string)
       throw new Error(`Real login failed for ${persona}: ${loginResponse.status()} - ${error}`);
     }
 
-    const { accessToken, refreshToken, user } = await loginResponse.json();
+    const responseBody = await loginResponse.json();
+    const { accessToken, refreshToken, user } = responseBody.data;
 
     await page.addInitScript(({ token, refresh, userData }) => {
       window.localStorage.setItem('auth_token', token);

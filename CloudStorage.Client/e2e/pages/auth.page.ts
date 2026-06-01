@@ -38,7 +38,12 @@ export class AuthPage {
   async login(identifier: string, password: string): Promise<void> {
     await this.identifierInput.fill(identifier);
     await this.passwordInput.fill(password);
+
+    const responsePromise = this.page.waitForResponse(
+      (resp) => resp.url().includes('/api/auth/login')
+    );
     await this.submitBtn.click();
+    await responsePromise;
   }
 
   /**

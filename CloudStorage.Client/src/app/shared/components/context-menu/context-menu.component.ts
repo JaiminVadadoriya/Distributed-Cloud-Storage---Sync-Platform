@@ -23,6 +23,7 @@ import { LayoutService } from '../../../core/services/layout.service';
           class="fixed bg-editorial-bg border-2 border-editorial-text shadow-brutalist min-w-[240px] overflow-hidden animate-in-scale"
           [style.left.px]="layout.contextMenuPosition().x"
           [style.top.px]="layout.contextMenuPosition().y"
+          (mousedown)="$event.stopPropagation()"
           (click)="$event.stopPropagation()"
           (keydown)="$event.stopPropagation()"
           tabindex="-1">
