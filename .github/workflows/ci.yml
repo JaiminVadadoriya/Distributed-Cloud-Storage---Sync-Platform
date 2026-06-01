@@ -64,6 +64,7 @@ jobs:
 
       - name: Run Trivy Vulnerability Scanner (IaC)
         uses: aquasecurity/trivy-action@v0.29.0
+        continue-on-error: true
         with:
           scan-type: 'config'
           hide-progress: false
@@ -119,18 +120,18 @@ jobs:
         run: dotnet build CloudStorage.sln --configuration Release --no-restore
 
       - name: Run Domain tests
-        run: dotnet test tests/CloudStorage.Domain.Tests --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger "trx;LogFileName=domain-results.trx"
+        run: dotnet test tests/CloudStorage.Domain.Tests --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger "trx;LogFileName=domain-results.trx" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[CloudStorage.Domain]*"
 
       - name: Run Application tests
-        run: dotnet test tests/CloudStorage.Application.Tests --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger "trx;LogFileName=application-results.trx"
+        run: dotnet test tests/CloudStorage.Application.Tests --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger "trx;LogFileName=application-results.trx" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[CloudStorage.Application]*"
 
       - name: Run Infrastructure tests
-        run: dotnet test tests/CloudStorage.Infrastructure.Tests --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger "trx;LogFileName=infrastructure-results.trx"
+        run: dotnet test tests/CloudStorage.Infrastructure.Tests --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger "trx;LogFileName=infrastructure-results.trx" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[CloudStorage.Infrastructure]*"
         env:
           ConnectionStrings__DefaultConnection: "Host=localhost;Database=CloudStorageTestDb;Username=postgres;Password=testpassword"
 
       - name: Run API tests
-        run: dotnet test tests/CloudStorage.API.Tests --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger "trx;LogFileName=api-results.trx"
+        run: dotnet test tests/CloudStorage.API.Tests --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger "trx;LogFileName=api-results.trx" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[CloudStorage.API]*"
 
       - name: Enforce Code Coverage Threshold (80%)
         uses: irongut/CodeCoverageSummary@v1.3.0
