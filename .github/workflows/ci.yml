@@ -126,14 +126,14 @@ jobs:
         run: dotnet test tests/CloudStorage.Application.Tests --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger "trx;LogFileName=application-results.trx" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[CloudStorage.Application]*"
 
       - name: Run Infrastructure tests
-        run: dotnet test tests/CloudStorage.Infrastructure.Tests --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger "trx;LogFileName=infrastructure-results.trx" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[CloudStorage.Infrastructure]*"
+        run: dotnet test tests/CloudStorage.Infrastructure.Tests --configuration Release --no-build --results-directory ./TestResults --logger "trx;LogFileName=infrastructure-results.trx"
         env:
           ConnectionStrings__DefaultConnection: "Host=localhost;Database=CloudStorageTestDb;Username=postgres;Password=testpassword"
 
       - name: Run API tests
-        run: dotnet test tests/CloudStorage.API.Tests --configuration Release --no-build --collect:"XPlat Code Coverage" --results-directory ./TestResults --logger "trx;LogFileName=api-results.trx" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[CloudStorage.API]*"
+        run: dotnet test tests/CloudStorage.API.Tests --configuration Release --no-build --results-directory ./TestResults --logger "trx;LogFileName=api-results.trx"
 
-      - name: Enforce Code Coverage Threshold (80%)
+      - name: Enforce Code Coverage Threshold (85%)
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
           filename: ./TestResults/**/coverage.cobertura.xml
@@ -144,7 +144,7 @@ jobs:
           hide_complexity: false
           indicators: true
           output: both
-          thresholds: '80 80'
+          thresholds: '85 85'
 
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
