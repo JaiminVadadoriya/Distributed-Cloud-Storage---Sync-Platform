@@ -3,12 +3,43 @@
 @config "./tailwind.config.cjs";
 
 :root {
+  /* Typography Scale */
   --font-mono: 'Roboto Mono', monospace;
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-size-xs: 0.75rem;     /* 12px */
+  --font-size-sm: 0.875rem;    /* 14px */
+  --font-size-base: 1rem;      /* 16px */
+  --font-size-lg: 1.125rem;    /* 18px */
+  --font-size-xl: 1.25rem;     /* 20px */
+  --font-size-2xl: 1.5rem;     /* 24px */
+  --font-size-3xl: 1.875rem;   /* 30px */
+  --font-size-4xl: 2.25rem;    /* 36px */
+  --font-size-5xl: 3rem;       /* 48px */
+  --font-size-6xl: 3.75rem;    /* 60px */
 
-  /* Global Transition Tokens */
+  /* Spacing Scale (8pt grid) */
+  --space-1: 0.25rem;  /* 4px */
+  --space-2: 0.5rem;   /* 8px */
+  --space-3: 0.75rem;  /* 12px */
+  --space-4: 1rem;     /* 16px */
+  --space-6: 1.5rem;   /* 24px */
+  --space-8: 2rem;     /* 32px */
+  --space-12: 3rem;    /* 48px */
+  --space-16: 4rem;    /* 64px */
+
+  /* Global Transition & Motion Tokens */
   --t-duration: 400ms;
   --t-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-duration-fast: 150ms;
+  --motion-duration-normal: 250ms;
+  --motion-duration-slow: 400ms;
+  --motion-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --motion-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* Elevation Tokens */
+  --elevation-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --elevation-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --elevation-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 
   /* Semantic Colors */
   --color-critical: #e11d48;
@@ -44,6 +75,16 @@
   --editorial-accent: #6366f1;
   --glass-bg: rgba(20, 20, 20, 0.6);
   --glass-blur: 24px;
+}
+
+/* High Contrast Mode forced color adjustments */
+@media (forced-colors: active) {
+  :root {
+    --editorial-bg: Canvas;
+    --editorial-text: CanvasText;
+    --editorial-accent: Highlight;
+    --editorial-border: ButtonBorder;
+  }
 }
 
 /* Interface Density: MAXIMAL_WHITESPACE */

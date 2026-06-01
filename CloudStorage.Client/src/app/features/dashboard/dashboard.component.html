@@ -45,7 +45,12 @@
             <span class="text-3xl font-extrabold tracking-tighter">{{ formatBytes(stats()?.totalStorageBytes || 0).split(' ')[0] }}</span>
             <span class="text-[10px] text-editorial-text/40 uppercase tracking-widest">{{ formatBytes(stats()?.totalStorageBytes || 0).split(' ')[1] }}</span>
           </div>
-          <div class="h-1 w-full bg-editorial-text/5 overflow-hidden">
+          <div class="h-1 w-full bg-editorial-text/5 overflow-hidden"
+               role="progressbar"
+               [attr.aria-valuenow]="stats()?.totalStorageBytes || 0"
+               [attr.aria-valuemin]="0"
+               [attr.aria-valuemax]="stats()?.maxStorageBytes || 10737418240"
+               [attr.aria-label]="'Storage usage: ' + formatBytes(stats()?.totalStorageBytes || 0) + ' of ' + formatBytes(stats()?.maxStorageBytes || 10737418240)">
             <div class="h-full bg-editorial-text transition-all duration-1000 ease-in-out"
                  [style.width.%]="(stats()?.totalStorageBytes || 0) / (stats()?.maxStorageBytes || 10737418240) * 100">
             </div>
@@ -78,6 +83,8 @@
         <span class="font-mono text-[9px] uppercase tracking-[0.2em] text-editorial-text/40 font-bold block">04_Status_Node</span>
         <div class="flex items-center gap-3 py-1">
           <div class="w-3 h-3 rounded-none ring-2 ring-offset-2 ring-offset-editorial-bg" 
+               [attr.aria-label]="connectionStatus.isOnline() ? 'System status: Online' : 'System status: Offline'"
+               role="img"
                [class]="connectionStatus.isOnline() ? 'bg-emerald-500 ring-emerald-500/20' : 'bg-rose-500 ring-rose-500/20'">
           </div>
           <span class="font-mono text-[11px] uppercase tracking-[0.15em] font-bold">

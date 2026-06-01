@@ -48,6 +48,7 @@ import { AuthService } from '../../../core/services/auth.service';
                    data-testid="login-identifier"
                    aria-label="User Identifier (Email or Username)"
                    required
+                   autocomplete="username"
                    class="flex-1 h-12 px-4 bg-transparent text-editorial-text font-sans text-lg font-black focus:bg-editorial-text/[0.01] outline-none transition-all placeholder:text-editorial-text/5 tracking-tight" 
                    [attr.placeholder]="'IDENTITY@HOST'">
           </div>
@@ -74,6 +75,7 @@ import { AuthService } from '../../../core/services/auth.service';
                    data-testid="login-password"
                    aria-label="Security Phrase (Password)"
                    required
+                   autocomplete="current-password"
                    class="flex-1 h-12 px-4 bg-transparent text-editorial-text font-sans text-lg font-black focus:bg-editorial-text/[0.01] outline-none transition-all placeholder:text-editorial-text/5 tracking-widest" 
                    [attr.placeholder]="'••••••••••••'">
           </div>

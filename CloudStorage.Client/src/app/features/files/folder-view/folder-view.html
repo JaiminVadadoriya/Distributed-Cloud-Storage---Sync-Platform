@@ -43,10 +43,13 @@
           @for (folder of subFolders(); track folder.id) {
             <div class="group p-6 border border-editorial-text/10 bg-editorial-bg hover:border-editorial-text transition-all cursor-pointer relative overflow-hidden"
                  (click)="navigateTo(folder.id)" 
+                 (keydown.enter)="navigateTo(folder.id)"
+                 (keydown.space)="navigateTo(folder.id); $event.preventDefault()"
                  (contextmenu)="onFolderContextMenu($event, folder)"
                  cdkDrag [cdkDragData]="folder"
                  cdkDropList [cdkDropListData]="folder.id"
                  (cdkDropListDropped)="onDrop($event, folder.id)"
+                 [attr.aria-label]="'Folder: ' + folder.name"
                  tabindex="0" role="button">
               <div class="flex items-center gap-4">
                 <div class="text-editorial-text/20 group-hover:text-editorial-text transition-colors">
@@ -69,8 +72,11 @@
           @for (file of files(); track file.id) {
             <div class="group p-6 border border-editorial-text/10 bg-editorial-bg hover:border-editorial-text transition-all cursor-pointer relative overflow-hidden"
                  (click)="openFile(file.id)" 
+                 (keydown.enter)="openFile(file.id)"
+                 (keydown.space)="openFile(file.id); $event.preventDefault()"
                  (contextmenu)="onFileContextMenu($event, file)"
                  cdkDrag [cdkDragData]="file"
+                 [attr.aria-label]="'File: ' + file.name"
                  tabindex="0" role="button">
               <div class="space-y-4">
                 <div class="text-editorial-text/10 group-hover:text-editorial-text transition-colors">

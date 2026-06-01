@@ -36,6 +36,7 @@ import { AuthService } from '../../../core/services/auth.service';
             <input id="username" 
                    type="text" 
                    formControlName="username" 
+                   autocomplete="username"
                    class="flex-1 h-12 px-4 bg-transparent text-editorial-text font-sans text-lg font-black focus:bg-editorial-text/[0.01] outline-none transition-all placeholder:text-editorial-text/5 tracking-tight" 
                    [attr.placeholder]="'USERNAME_01'">
           </div>
@@ -59,6 +60,7 @@ import { AuthService } from '../../../core/services/auth.service';
             <input id="email" 
                    type="email" 
                    formControlName="email" 
+                   autocomplete="email"
                    class="flex-1 h-12 px-4 bg-transparent text-editorial-text font-sans text-lg font-black focus:bg-editorial-text/[0.01] outline-none transition-all placeholder:text-editorial-text/5 tracking-tight" 
                    [attr.placeholder]="'IDENTITY@HOST.COM'">
           </div>
@@ -82,9 +84,31 @@ import { AuthService } from '../../../core/services/auth.service';
             <input id="password" 
                    type="password" 
                    formControlName="password" 
+                   autocomplete="new-password"
                    class="flex-1 h-12 px-4 bg-transparent text-editorial-text font-sans text-lg font-black focus:bg-editorial-text/[0.01] outline-none transition-all placeholder:text-editorial-text/5 tracking-widest" 
                    [attr.placeholder]="'••••••••••••'">
           </div>
+          <!-- Password Strength Indicator -->
+          @if (registerForm.get('password')?.value) {
+            <div class="mt-3 flex items-center justify-between px-2">
+              <span class="text-[9px] font-mono uppercase tracking-widest text-editorial-text/30 font-bold">Strength:</span>
+              <div class="flex items-center gap-2">
+                <span class="text-[9px] font-mono uppercase tracking-widest font-black"
+                      [ngClass]="{
+                        'text-rose-500': passwordStrength === 'WEAK',
+                        'text-amber-500': passwordStrength === 'MEDIUM',
+                        'text-emerald-500': passwordStrength === 'STRONG'
+                      }">
+                  {{ passwordStrength }}
+                </span>
+                <div class="flex gap-1">
+                  <div class="w-4 h-1 transition-colors" [ngClass]="passwordStrength ? (passwordStrength === 'WEAK' ? 'bg-rose-500' : passwordStrength === 'MEDIUM' ? 'bg-amber-500' : 'bg-emerald-500') : 'bg-editorial-text/10'"></div>
+                  <div class="w-4 h-1 transition-colors" [ngClass]="passwordStrength === 'MEDIUM' || passwordStrength === 'STRONG' ? (passwordStrength === 'MEDIUM' ? 'bg-amber-500' : 'bg-emerald-500') : 'bg-editorial-text/10'"></div>
+                  <div class="w-4 h-1 transition-colors" [ngClass]="passwordStrength === 'STRONG' ? 'bg-emerald-500' : 'bg-editorial-text/10'"></div>
+                </div>
+              </div>
+            </div>
+          }
           
           @if (registerForm.get('password')?.touched && registerForm.get('password')?.invalid) {
             <div class="absolute right-0 -bottom-6 text-rose-600 text-[8px] font-mono uppercase tracking-[0.3em] font-black animate-in-fade">!_BITS_INSUFFICIENT</div>
@@ -140,6 +164,20 @@ export class RegisterComponent {
 
   isLoading = false;
   error = '';
+
+  get passwordStrength(): string {
+    const val = this.registerForm.get('password')?.value || '';
+    if (!val) return '';
+    if (val.length < 6) return 'WEAK';
+    let score = 0;
+    if (/[A-Z]/.test(val)) score++;
+    if (/[0-9]/.test(val)) score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    if (val.length >= 10) score++;
+    if (score <= 1) return 'WEAK';
+    if (score <= 3) return 'MEDIUM';
+    return 'STRONG';
+  }
 
   onSubmit() {
     if (this.registerForm.valid) {

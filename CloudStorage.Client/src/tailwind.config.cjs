@@ -37,8 +37,8 @@ module.exports = {
         success: 'var(--color-success)',
       },
       fontFamily: {
-        mono: ['Roboto Mono', 'monospace'],
-        sans: ['Roboto', 'sans-serif'],
+        mono: ['var(--font-mono)', 'monospace'],
+        sans: ['var(--font-sans)', 'sans-serif'],
       },
       boxShadow: {
         ambient: '0px 12px 32px rgba(32, 26, 17, 0.05)'
