@@ -1,6 +1,6 @@
 # Architecture Document — Distributed Cloud Storage Platform
 
-> **Version:** 2.0 &nbsp;|&nbsp; **Last Updated:** March 2026
+> **Version:** 3.0 &nbsp;|&nbsp; **Last Updated:** June 2026
 
 ---
 
@@ -31,7 +31,8 @@ The Distributed Cloud Storage Platform is a full-stack application built using *
 - **API Cluster:** Horizontal scaling via Docker replicas. All instances share the same database and storage.
 - **Redis Service:** Used for **SignalR backplane** (real-time sync across nodes), distributed caching, and upload session locks.
 - **RabbitMQ Service:** Asynchronous message broker for offloading non-blocking heavy tasks (chunk validation, cleanup).
-- **Observability Stack:** Prometheus scrapes metrics from API instances; Grafana visualizes the system health.
+- **MinIO:** S3-compatible object storage for chunk storage in development; pluggable via `IObjectStorageProvider`.
+- **Observability Stack:** OTel Collector receives telemetry and exports to Prometheus (metrics), Loki (logs), and Jaeger (traces); Grafana provides unified dashboards.
 
 ---
 
@@ -72,26 +73,41 @@ The innermost layer — zero external dependencies.
 | `FileMetadata`         | File record with versioning, upload session tracking, and status |
 | `FileChunk`            | Individual chunk reference with hash-based deduplication         |
 | `ChunkRegistry`        | Global chunk registry keyed by SHA-256 hash                      |
+| `Folder`               | Hierarchical folder with nested subfolders, files, and permissions |
 | `Device`               | User device for cross-device sync                                |
 | `FilePermission`       | Access control (Read/Write/Owner) per file per user              |
+| `FolderPermission`     | Access control per folder per user (inherits `PermissionBase`)   |
+| `PermissionBase`       | Abstract base for all permission entities                        |
+| `Notification`         | User notification with type, title, message, and read status     |
+| `ActivityLog`          | User activity audit trail (action, target, timestamp)            |
 | `RefreshToken`         | JWT refresh token with revocation support                        |
+| `PasswordResetToken`   | Time-limited token for password reset flows                      |
 | `SyncEvent`            | Synchronization event log per file per device                    |
+| `StorageObjectLifecycle` | Tracks storage tier transitions per file per provider          |
+| `DbObjectMetadata`     | Multi-tenant object metadata with tier tracking and tagging      |
+| `BaseEntity<T>`        | Generic base entity with typed primary key                       |
+| `BaseAuditableEntity<T>` | Adds `CreatedAt` audit timestamps to `BaseEntity`              |
+| `IOwnedEntity`         | Interface for polymorphic ownership checks                       |
 | `IRepository<T>`       | Generic repository abstraction (CRUD + predicate queries)        |
 | `IUserRepository`      | Extended user queries (by username, email, with includes)        |
 | `IFileMetadataRepository` | Extended file queries (by session, with chunks/permissions)   |
+| `IFolderRepository`    | Folder queries with ownership filtering                          |
+| `INotificationRepository` | Notification queries and batch mark-read operations           |
+| `IActivityLogRepository` | Activity log queries per user                                  |
 
-**Enums:** `UploadStatus` (Pending → InProgress → Complete/Failed/Cancelled), `PermissionType` (Read/Write/Owner), `SyncEventType` (Created/Modified/Deleted/Renamed)
+**Enums:** `UploadStatus` (Pending → InProgress → Complete/Failed/Cancelled), `PermissionType` (Read/Write/Owner), `SyncEventType` (Created/Modified/Deleted/Renamed), `NotificationType` (FileUploaded/FileShared/FileDeleted/SyncComplete/PermissionChanged/FileRestored), `StorageTier` (Hot/Warm/Cold/Archive)
 
 ### 2.2 Application Layer (`CloudStorage.Application`)
 
-Defines business contracts and data transfer objects.
+Defines business contracts, data transfer objects, and domain events.
 
-**Service Interfaces:**
+**Core Service Interfaces:**
 
 | Interface                     | Responsibility                                              |
 | ----------------------------- | ----------------------------------------------------------- |
 | `IAuthService`                | Registration, login, JWT tokens, password reset             |
-| `IFileService`                | File CRUD, permission grants, search, user file listing     |
+| `IFileService`                | File CRUD, permission grants, search, version history, bulk operations |
+| `IAdminService`               | Dashboard stats, user management, quota, health, audit, impersonation |
 | `IChunkStorageService`        | Physical chunk I/O (save, get, delete, existence)           |
 | `IDeduplicationService`       | Chunk registry with reference counting                      |
 | `IRefreshTokenService`        | Refresh token lifecycle (generate, validate, revoke)        |
@@ -104,15 +120,56 @@ Defines business contracts and data transfer objects.
 | `INotificationPersistenceService` | Database storage and retrieval for user notifications    |
 | `INotificationService`        | SignalR real-time push (file uploaded/deleted)              |
 | `ICacheService`               | Distributed cache abstraction (Redis)                       |
+| `IDistributedLockService`     | Redis-backed distributed locking                            |
 | `IEmailService`               | Password-reset email dispatch                               |
 | `IMessageQueue`               | RabbitMQ publish (chunk verification, cleanup tasks)        |
+| `IEventPublisher`             | Domain event publishing                                     |
 | `IAzureChunkVerificationService` | Background async chunk integrity verification            |
 
-**DTOs (22 total):**
+**Distributed Systems Interface Modules (29 submodules):**
+
+| Module            | Key Interfaces                                                    |
+| ----------------- | ----------------------------------------------------------------- |
+| `Storage`         | `IObjectStorageProvider`, `IStorageProviderFactory`, `ICapabilityNegotiator` |
+| `Replication`     | `IReplicationCoordinator`, `IReplicationProvider`                 |
+| `Tiering`         | `IStorageTieringService`, `ILifecyclePolicyEngine`, `IStorageCostAnalyzer` |
+| `Routing`         | `IStorageRoutingEngine`, `IProviderHealthService`, `IFailoverCoordinator` |
+| `Security`        | `IEncryptionKeyService`, `IClientEncryptionService`, `IIntegrityVerifier`, `IKeyHierarchyManager` |
+| `Consensus`       | `IConsensusService`, `ILeaderElectionService`                     |
+| `Merkle`          | `IMerkleTreeService`, `IMerkleVerifier`                           |
+| `Transactions`    | `ISagaOrchestrator` (distributed saga with compensating actions)  |
+| `Upload`          | `IUploadOrchestrator`, `IUploadStrategy`                          |
+| `Gateway`         | `IStorageGateway`, `IProtocolTranslator`                          |
+| `Metadata`        | `IMetadataService`, `IMetadataPartitionManager`, `IMetadataRebalancer`, `IMetadataShardRouter` |
+| `Namespace`       | `IGlobalNamespaceService`                                         |
+| `Versioning`      | `IVersionGraphService`                                            |
+| `Durability`      | `IErasureCodingEngine`, `IDurabilityScoreService`, `IAutomatedRepairService` |
+| `DR`              | `IDisasterRecoveryService`                                        |
+| `Chaos`           | `IChaosTestingService`                                            |
+| `CDC`             | `IContentDefinedChunker`, `IChunkBoundaryDetector`, `IDeduplicationOptimizer` |
+| `Billing`         | `IStorageBillingService`                                          |
+| `Cost`            | `ICostOptimizationEngine`                                         |
+| `Compliance`      | `IComplianceFramework`                                            |
+| `Policy`          | `IPolicyEngine`                                                   |
+| `Identity`        | `IIdentityFederationService`                                      |
+| `Search`          | `ISearchService`, `IIndexingPipeline`                             |
+| `SaaS`            | `ITenantService`, `ITenantIsolationProvider`                      |
+| `Sla`             | `ISloMonitoringService`                                           |
+| `Edge`            | `IEdgeDistributionService`                                        |
+| `Fleet`           | `IFleetManager`                                                   |
+| `Benchmarks`      | `IPerformanceBenchmarkService`                                    |
+| `AI`              | `IStorageIntelligenceService`                                     |
+
+**Domain Events (`Events/`):**
+
+`ChunkUploadedEvent`, `FileAssembledEvent`, `FileVersionCreatedEvent`, `SyncConflictDetectedEvent`, `PermissionGrantedEvent`, `FileDeletedEvent`, `FileReplicatedEvent`, `ReplicationFailedEvent`, `ReplicationProgressEvent`, `StorageTierChangedEvent`, `ProviderHealthChangedEvent`, `ArchiveRestoreRequestedEvent`, `UploadStrategyChangedEvent`
+
+**DTOs (12 files, 30+ records):**
 
 - **Auth:** `RegisterDto`, `LoginDto`, `LoginResponseDto`, `RefreshTokenDto`, `PasswordResetRequestDto`, `PasswordResetDto`
-- **Files:** `FileResponseDto`, `FileUploadDto`, `FilePermissionDto`, `FileListDto`, `DashboardStatsDto`, `FileEventDto`
+- **Files:** `FileResponseDto`, `FileUploadDto`, `FilePermissionDto`, `FileListDto`, `DashboardStatsDto`, `StorageBreakdownDto`, `FileVersionDto`, `FilePermissionListDto`, `FileEventDto`
 - **Chunks:** `InitiateUploadDto`, `UploadSessionResponseDto`, `ChunkUploadResponseDto`, `CompleteUploadDto`, `UploadStatusResponseDto`
+- **Admin:** `AdminDashboardStatsDto`, `AdminUserManagementDto`, `AdminAuditDto`, `SystemHealthDetailsDto`, `ServiceCheckDto`, `CreateUserDto`, `UpdateQuotaDto`, `RegionalNodeDto`
 - **Folders:** `FolderDto`, `CreateFolderDto`, `RenameFolderDto`, `MoveFolderDto`, `FolderShareDto`
 - **Devices:** `DeviceDto`, `RegisterDeviceDto`
 - **Sync:** `ConflictCheckRequestDto`, `ConflictCheckResponseDto`, `ConflictResolutionDto`, `DeltaSyncResponseDto`
@@ -121,7 +178,9 @@ Defines business contracts and data transfer objects.
 
 ### 2.3 Infrastructure Layer (`CloudStorage.Infrastructure`)
 
-Implements all interfaces defined in Domain and Application.
+Implements all interfaces defined in Domain and Application. Contains 35+ submodules.
+
+**Core Services (`Services/`):**
 
 | Component               | Implementation Details                                       |
 | ------------------------ | ----------------------------------------------------------- |
@@ -130,10 +189,57 @@ Implements all interfaces defined in Domain and Application.
 | `UserRepository`        | Eager loading for Devices, RefreshTokens                    |
 | `FileMetadataRepository`| Session-based lookup, permission checks with include chains |
 | `AuthService`           | BCrypt password hashing, JWT generation (HS256), refresh token rotation |
-| `FileService`           | File metadata CRUD with owner-based permission enforcement  |
+| `FileService`           | File metadata CRUD with owner-based permission enforcement (partials: `.History.cs`, `.Operations.cs`) |
+| `AdminService`          | System stats, user management, quota, health, audit, impersonation |
 | `ChunkStorageService`   | Local filesystem chunk storage (`/app/storage/chunks/{fileId}/{index}.chunk`) |
+| `BlobChunkStorageService` | S3-compatible (MinIO/Azure) chunk storage                  |
 | `DeduplicationService`  | Hash-based ChunkRegistry with reference counting            |
 | `RefreshTokenService`   | Cryptographic token generation, expiration, revocation      |
+| `FolderService`         | Folder CRUD with nested permission propagation              |
+| `DeviceService`         | Device registration and sync timestamp management          |
+| `ConflictDetectionService` | Version-vector conflict detection and resolution          |
+| `DeltaSyncService`      | Pull-based delta sync since UTC timestamp                   |
+| `ActivityService`       | Activity log persistence per user                           |
+| `NotificationPersistenceService` | Database-backed notification CRUD                   |
+| `EmailService`          | SMTP email dispatch (Mailpit in dev)                        |
+| `RabbitMqService`       | Message queue publish/subscribe for async tasks             |
+| `RedisCacheService`     | Distributed cache with prefix-based invalidation            |
+| `RedisDistributedLockService` | Distributed locking for concurrent operations          |
+| `BlobSasService`        | Azure SAS token generation for parallel chunk downloads     |
+| `MappingExtensions`     | Entity-to-DTO mapping helpers                               |
+
+**Distributed Systems Modules:**
+
+| Module          | Purpose                                                           |
+| --------------- | ----------------------------------------------------------------- |
+| `AI/`           | Storage intelligence and predictive optimization                  |
+| `Replication/`  | Cross-provider data replication with retry and progress tracking   |
+| `Tiering/`      | Hot/Warm/Cold/Archive lifecycle transitions                       |
+| `Routing/`      | Provider health monitoring, failover coordination, routing engine  |
+| `Security/`     | Encryption key management, client-side encryption, integrity      |
+| `Consensus/`    | Leader election and consensus protocols                           |
+| `Merkle/`       | Merkle tree construction and integrity verification               |
+| `Transactions/` | Saga orchestrator with compensating actions                       |
+| `Upload/`       | Adaptive upload orchestration and strategy selection               |
+| `Gateway/`      | Protocol translation and unified storage gateway                  |
+| `Metadata/`     | Metadata indexing, shard routing, partition management, rebalancing |
+| `Providers/`    | Pluggable storage provider implementations                        |
+| `Namespace/`    | Global namespace resolution                                       |
+| `Versioning/`   | Version graph management                                          |
+| `Durability/`   | Erasure coding engine, durability scoring, automated repair        |
+| `DR/`           | Disaster recovery orchestration                                   |
+| `Chaos/`        | Controlled fault injection for resilience testing                  |
+| `CDC/`          | Content-defined chunking and deduplication optimization            |
+| `Billing/`, `Cost/` | Usage metering and cost optimization                          |
+| `Compliance/`   | Regulatory compliance framework                                   |
+| `Policy/`       | Policy engine for storage rules                                   |
+| `Identity/`     | Identity federation across providers                              |
+| `Search/`       | Full-text search and indexing pipeline                            |
+| `SaaS/`         | Multi-tenant isolation                                            |
+| `Sla/`          | SLO monitoring and enforcement                                    |
+| `Edge/`, `Fleet/` | Edge distribution and fleet management                          |
+| `Resilience/`   | Resilience patterns (circuit breaker, retry, fallback)             |
+| `Benchmarks/`, `Telemetry/` | Performance benchmarking and telemetry export          |
 
 **Database Migrations:**
 1. `InitialCreate` — Base schema (Users, Files, Chunks, Permissions, etc.)
@@ -142,17 +248,19 @@ Implements all interfaces defined in Domain and Application.
 
 ### 2.4 API Layer (`CloudStorage.API`)
 
-RESTful API entry point with Swagger documentation.
+RESTful API entry point with Swagger documentation. All controllers inherit from `BaseApiController` for shared infrastructure (`ExecuteAsync`, `GetUserId`).
 
 | Controller              | Route Prefix         | Auth Required | Endpoints                                                    |
 | ----------------------- | -------------------- | ------------- | ------------------------------------------------------------ |
 | `AuthController`        | `api/auth`           | Partial       | register, login, refresh, logout, password-reset-request, password-reset |
-| `FilesController`       | `api/files`          | Yes           | GET list/shared/search/stats, GET by ID, GET download, GET download-link, POST create, DELETE, DELETE all, POST permissions/share |
+| `FilesController`       | `api/files`          | Yes           | GET list/shared/search/stats, GET by ID, GET download, GET download-link, POST create, DELETE, DELETE all, POST permissions/share, PATCH rename/move, POST bulk-delete/move/share, GET versions, POST restore |
 | `ChunkUploadController` | `api/files`          | Yes           | POST initiate, POST chunks (throttled), POST complete, GET session status |
 | `FoldersController`     | `api/folders`        | Yes           | GET root, GET by ID, POST create, PATCH rename, PATCH move, DELETE, POST share |
+| `TrashController`       | `api/trash`          | Yes           | GET trash, POST restore, DELETE permanent, DELETE empty-trash |
+| `AdminController`       | `api/admin`          | Admin         | GET stats, GET/POST users, PATCH quota, POST toggle-status, GET health, GET audit, POST impersonate |
 | `DevicesController`     | `api/devices`        | Yes           | GET list, POST register, PATCH sync timestamp, DELETE remove |
-| `ActivityController`    | `api/activity`       | Yes           | GET recent activity (with `?limit`) |
 | `NotificationsController` | `api/notifications` | Yes           | GET list, PATCH mark read, POST read-all |
+| `ActivityController`    | `api/activity`       | Yes           | GET recent activity (with `?limit`) |
 | `DeltaSyncController`   | `api/sync/delta`     | Yes           | GET changes since UTC timestamp |
 | `ConflictController`    | `api/sync`           | Yes           | POST check-conflicts, POST resolve |
 | `HealthController`      | `health`             | No            | GET health (liveness), GET ready (DB readiness) |
@@ -258,17 +366,21 @@ Client                      API                      Infrastructure
 
 ### 5.1 Docker Compose Services
 
-| Service                | Image                  | Port Mapping   | Purpose                        |
-| ---------------------- | ---------------------- | -------------- | ------------------------------ |
-| `nginx`                | nginx:alpine           | 5000:80        | **Load Balancer & Entry Point**|
-| `cloudstorage.api`     | Custom (.NET 10 SDK)   | Replicas (x3)  | REST API cluster (scaled)      |
-| `cloudstorage.client`  | Custom (Angular 21)    | 4200:80        | Frontend SPA                   |
-| `postgres`             | postgres:16-alpine     | 5433:5432      | Metadata database & Pools      |
-| `redis`                | redis:7-alpine         | 6379:6379      | Cache / SignalR Backplane      |
-| `rabbitmq`             | rabbitmq:3-management  | 5672, 15672    | Background Message Broker      |
-| `prometheus`           | prom/prometheus        | 9090:9090      | Scrapes telemetry from API     |
-| `grafana`              | grafana/grafana        | 3000:3000      | Visualization dashboard        |
-| `azurite`              | mcr.microsoft.com/...  | 10000-10002    | Local Azure Cloud Simulation   |
+| Service                | Image                             | Port Mapping   | Purpose                        |
+| ---------------------- | --------------------------------- | -------------- | ------------------------------ |
+| `nginx`                | nginx:alpine                      | 8000:80        | **Load Balancer & Entry Point**|
+| `cloudstorage.api`     | Custom (.NET 10 SDK)              | Replicas (x3)  | REST API cluster (scaled)      |
+| `cloudstorage.client`  | Custom (Angular 21)               | 4200:80        | Frontend SPA                   |
+| `postgres`             | postgres:16-alpine                | 5433:5432      | Metadata database & Pools      |
+| `redis`                | redis:7-alpine                    | 6379:6379      | Cache / SignalR Backplane      |
+| `minio`                | minio/minio:latest                | 9000, 9001     | S3-compatible object storage   |
+| `rabbitmq`             | rabbitmq:3-management-alpine      | 5672, 15672    | Background Message Broker      |
+| `prometheus`           | prom/prometheus:latest            | 9090:9090      | Scrapes telemetry from API     |
+| `grafana`              | grafana/grafana:latest            | 3000:3000      | Visualization dashboard        |
+| `otel-collector`       | otel/opentelemetry-collector-contrib | 4317, 4318  | OpenTelemetry collector hub    |
+| `jaeger`               | jaegertracing/all-in-one:latest   | 16686          | Distributed tracing UI         |
+| `loki`                 | grafana/loki:latest               | 3100:3100      | Log aggregation backend        |
+| `mailpit`              | axllent/mailpit:latest            | 8025, 1025     | Email capture (dev SMTP)       |
 
 ### 5.2 API Dockerfile (Multi-stage)
 
@@ -340,19 +452,34 @@ CloudStorage.Client/src/
 
 ```
 tests/
-├── CloudStorage.Domain.Tests/           # Entity validations, relationship tests
-│   ├── Entities/                         # 8 entity test files
+├── Builders/                             # Shared fluent entity builders
+├── Seeders/                              # Shared test data seeders
+├── CloudStorage.Domain.Tests/            # Entity validations, relationship tests
+│   ├── Entities/                         # 9 entity test files (incl. UncoveredEntitiesTests)
 │   └── Relationships/                    # EntityRelationshipTests.cs
-├── CloudStorage.Application.Tests/       # Service logic tests
-│   └── Services/                         # AuthService, FileService, RefreshTokenService
-├── CloudStorage.Infrastructure.Tests/    # Repository + service integration tests
+├── CloudStorage.Application.Tests/       # Service + model tests
+│   ├── ArchitectureTests.cs              # Layer dependency enforcement
+│   └── Services/                         # 12 test files: Auth, File, RefreshToken, Activity,
+│                                         #   DeltaSync, BlobChunk, ApplicationModel (DTOs,
+│                                         #   Events, ExtendedRecords, ApiResponse)
+├── CloudStorage.Infrastructure.Tests/    # Repository + service + distributed system tests
 │   ├── Repositories/                     # FileMetadata, User repository tests
-│   └── Services/                         # ChunkStorage, Deduplication, RefreshToken
-└── CloudStorage.API.Tests/               # Controller tests
-    └── Controllers/                      # Auth, ChunkUpload, Files, Health
+│   └── Services/                         # 20 test files: Core services + CloudStorageProvider,
+│                                         #   HyperscaleOrchestration (Consensus, Security),
+│                                         #   OrchestrationSystems (ProviderHealth, Tiering, Upload),
+│                                         #   ProductionGrade tests
+└── CloudStorage.API.Tests/               # Controller + integration tests
+    ├── Builders/                          # API-specific test builders
+    ├── Fixtures/                          # TestDatabaseFixture, WebApplicationFactory, BaseIntegrationTest
+    ├── Helpers/                           # JwtTokenHelper
+    ├── Controllers/                       # Auth, ChunkUpload, Conflict, DeltaSync, Files, Health
+    ├── Integration/                       # Auth + Files integration tests
+    ├── Services/                          # SignalR notification tests
+    └── Seeders/                           # API test data seeders
 ```
 
 **Frontend Tests:** Located alongside source files using `*.spec.ts` convention, run with Vitest.
+**E2E Tests:** Persona-based Playwright tests in `CloudStorage.Client/e2e/personas/` (Admin, User, Guest, Resilience, Performance, Accessibility).
 
 ---
 

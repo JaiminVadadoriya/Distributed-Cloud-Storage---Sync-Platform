@@ -1,6 +1,6 @@
 # Design Document — Distributed Cloud Storage Platform
 
-> **Version:** 2.0 &nbsp;|&nbsp; **Last Updated:** March 2026
+> **Version:** 3.0 &nbsp;|&nbsp; **Last Updated:** June 2026
 
 ---
 
@@ -257,6 +257,28 @@ Device deleted:
 | GET    | `/`       | No   | Basic liveness check               |
 | GET    | `/ready`  | No   | Readiness check (DB connectivity)  |
 
+#### Trash / Recycle Bin (`/api/trash`)
+
+| Method | Endpoint           | Auth | Description                                               |
+| ------ | ------------------ | ---- | --------------------------------------------------------- |
+| GET    | `/`                | Yes  | List all soft-deleted files for the current user          |
+| POST   | `/{id}/restore`    | Yes  | Restore a file from the trash                             |
+| DELETE | `/{id}`            | Yes  | Permanently delete a trashed file                         |
+| DELETE | `/empty`           | Yes  | Empty entire trash bin                                    |
+
+#### Admin (`/api/admin`) — Requires `Admin` Role
+
+| Method | Endpoint                     | Auth   | Description                                              |
+| ------ | ---------------------------- | ------ | -------------------------------------------------------- |
+| GET    | `/stats`                     | Admin  | System-wide dashboard statistics                         |
+| GET    | `/users`                     | Admin  | List all users with storage usage and status             |
+| POST   | `/users`                     | Admin  | Provision a new user account                             |
+| PATCH  | `/users/{id}/quota`          | Admin  | Update a user's storage quota                            |
+| POST   | `/users/{id}/toggle-status`  | Admin  | Enable or disable a user account                         |
+| GET    | `/health`                    | Admin  | Detailed system health report                            |
+| GET    | `/audit?count=50`            | Admin  | Recent audit log entries                                 |
+| POST   | `/users/{id}/impersonate`    | Admin  | Generate an impersonation token                          |
+
 ---
 
 ## 5. Frontend Component Design
@@ -395,6 +417,7 @@ Calculate SHA-256 hash  ──────────────────>�
 | -------------------------------- | ------ | ------------------------------------------------------- |
 | **Real-Time Sync (SignalR)**     | ✅ Done | Redis-backplaned SignalR hub pushes `FileUploaded`, `FileDeleted` events |
 | **Azure Blob Storage**           | ✅ Done | `AzureBlobChunkStorageService` implements `IChunkStorageService`; SAS token generation via `IBlobSasService` |
+| **MinIO (S3-Compatible)**        | ✅ Done | `IObjectStorageProvider` abstraction with MinIO in development |
 | **Delta Sync**                   | ✅ Done | `GET /api/sync/delta?sinceUtc=` returns changed/deleted file IDs since timestamp |
 | **Conflict Resolution**          | ✅ Done | Version-vector comparison via `POST /api/sync/check-conflicts` + `POST /api/sync/resolve` |
 | **Folder Management**            | ✅ Done | Full CRUD + share via `/api/folders` |
@@ -402,11 +425,24 @@ Calculate SHA-256 hash  ──────────────────>�
 | **Activity Feed**                | ✅ Done | `GET /api/activity` returns `ActivityLog` entries |
 | **Upload Throttling**            | ✅ Done | `UploadThrottlingMiddleware` caps concurrent chunk uploads at 5 per user (Redis-backed) |
 | **File Search**                  | ✅ Done | `GET /api/files/search?q=` for name-based search |
-| **Client-Side Encryption**       | ⬜ Future | Encrypt chunks before upload, store key client-side |
-| **File Versioning UI**           | ⬜ Future | Expose `Version`, `ParentVersionId` in frontend |
-| **Search Indexing**              | ⬜ Future | Elasticsearch integration for file content search |
+| **Trash / Recycle Bin**          | ✅ Done | `TrashController` with restore, permanent-delete, and empty-trash endpoints |
+| **Admin Control Plane**          | ✅ Done | `AdminController` with user management, quota, health, audit, impersonation |
+| **Version History**              | ✅ Done | `FileService.History.cs` with version chain traversal and restore |
+| **Bulk Operations**              | ✅ Done | Bulk delete, move, share via dedicated endpoints |
 | **Rate Limiting**                | ✅ Done | **NGINX** level (IP-based) + `[EnableRateLimiting]` on controllers |
 | **Redis Caching**                | ✅ Done | Sessions, metadata, permissions, and upload throttle |
-| **Observability**                | ✅ Done | **Prometheus + Grafana** pre-provisioned |
+| **Distributed Locking**          | ✅ Done | `RedisDistributedLockService` for concurrent operation safety |
+| **Observability**                | ✅ Done | OTel Collector → **Prometheus + Loki + Jaeger + Grafana** |
 | **CDN Optimization**             | ✅ Done | Cache-Control & HTTP Range headers + `X-Accel-Buffering` |
+| **Multi-Provider Storage**       | ✅ Done | `IObjectStorageProvider` with pluggable providers, capability negotiation |
+| **Storage Replication**          | ✅ Done | `IReplicationCoordinator` for cross-provider data replication |
+| **Storage Tiering**              | ✅ Done | Hot/Warm/Cold/Archive via `IStorageTieringService` + `StorageTier` enum |
+| **Merkle Verification**          | ✅ Done | `IMerkleTreeService` for chunk integrity verification |
+| **Distributed Transactions**     | ✅ Done | `ISagaOrchestrator` with compensating actions |
+| **Consensus / Leader Election**  | ✅ Done | `IConsensusService` + `ILeaderElectionService` |
+| **Erasure Coding**               | ✅ Done | `IErasureCodingEngine` for data durability |
+| **Chaos Testing**                | ✅ Done | `IChaosTestingService` for controlled fault injection |
+| **Domain Events**                | ✅ Done | 13 event records for cross-cutting concerns |
+| **Client-Side Encryption**       | ⬜ Future | Encrypt chunks before upload, store key client-side |
+| **Full-Text Search**             | ⬜ Future | Elasticsearch integration for file content search |
 | **Mobile Clients**               | ⬜ Future | Flutter/React Native using same REST API |

@@ -115,6 +115,36 @@ For SignalR hubs, pass the token as `?access_token=<token>` in the connection UR
 
 ### Activity Feed (`/api/activity`)
 
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/activity?limit=50` | Yes | Recent activity log for the current user (default: 50) |
+
+---
+
+### Trash / Recycle Bin (`/api/trash`)
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/trash` | Yes | List all soft-deleted files for the current user |
+| POST | `/api/trash/{id}/restore` | Yes | Restore a file from the trash |
+| DELETE | `/api/trash/{id}` | Yes | Permanently delete a trashed file (must be soft-deleted first) |
+| DELETE | `/api/trash/empty` | Yes | Empty entire trash bin — permanently deletes all trashed files |
+
+---
+
+### Admin (`/api/admin`) — Requires `Admin` Role
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/api/admin/stats` | Admin | System-wide dashboard statistics (files, users, storage, trends, regional traffic) |
+| GET | `/api/admin/users` | Admin | List all users with storage usage and status |
+| POST | `/api/admin/users` | Admin | Provision a new user account |
+| PATCH | `/api/admin/users/{id}/quota` | Admin | Update a user's storage quota |
+| POST | `/api/admin/users/{id}/toggle-status` | Admin | Enable or disable a user account |
+| GET | `/api/admin/health` | Admin | Detailed system health report (CPU, memory, disk, service checks) |
+| GET | `/api/admin/audit?count=50` | Admin | Recent audit log entries (default: 50) |
+| POST | `/api/admin/users/{id}/impersonate` | Admin | Generate an impersonation token for a user |
+
 ---
 
 ### Sync — Delta (`/api/sync/delta`)
